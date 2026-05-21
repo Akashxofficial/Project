@@ -2,8 +2,11 @@ import React, { useState } from 'react';
 import { BookOpen, Zap, Target } from 'lucide-react';
 import { generateAIContent, generateRevisionPrompt } from '../lib/ai';
 import ReactMarkdown from 'react-markdown';
+import { saveDocument } from '../lib/firebase';
+import { useAuth } from '../context/AuthContext';
 
 export default function Revision() {
+  const { currentUser } = useAuth();
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
 
@@ -18,11 +21,16 @@ export default function Revision() {
     
     const prompt = generateRevisionPrompt(subject, chapter, time);
     const generatedText = await generateAIContent(prompt);
-    
+    const docTitle = `${time}-Minute Recap: ${chapter}`;
     setResult({
-      title: `${time}-Minute Recap: ${chapter}`,
+      title: docTitle,
       content: generatedText
     });
+    
+    if (currentUser) {
+      await saveDocument(currentUser.uid || currentUser.email, 'revision', docTitle, generatedText);
+    }
+    
     setLoading(false);
   };
 

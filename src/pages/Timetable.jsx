@@ -2,8 +2,11 @@ import React, { useState } from 'react';
 import { Clock, Calendar, CalendarPlus } from 'lucide-react';
 import { generateAIContent, generateTimetablePrompt } from '../lib/ai';
 import ReactMarkdown from 'react-markdown';
+import { saveDocument } from '../lib/firebase';
+import { useAuth } from '../context/AuthContext';
 
 export default function Timetable() {
+  const { currentUser } = useAuth();
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
 
@@ -20,6 +23,11 @@ export default function Timetable() {
     const generatedText = await generateAIContent(prompt);
     
     setResult(generatedText);
+    
+    if (currentUser) {
+      await saveDocument(currentUser.uid || currentUser.email, 'timetable', `Study Plan for ${date}`, generatedText);
+    }
+    
     setLoading(false);
   };
 
