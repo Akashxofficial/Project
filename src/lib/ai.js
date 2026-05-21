@@ -24,40 +24,40 @@ export const generateAIContent = async (prompt) => {
 
 // Specific Prompts Generators
 export const generateNotesPrompt = (grade, subject, chapter, type) => {
-  return \`You are an expert Indian school teacher for Class \${grade}. 
-Generate \${type} for the subject \${subject}, chapter: "\${chapter}". 
+  return `You are an expert Indian school teacher for Class ${grade}. 
+Generate ${type} for the subject ${subject}, chapter: "${chapter}". 
 Format it clearly with Markdown. Use bullet points, bold text for important terms. 
-Make it easy to read, student-friendly, and focused on CBSE/State board patterns.\`;
+Make it easy to read, student-friendly, and focused on CBSE/State board patterns.`;
 };
 
 export const generateDoubtPrompt = (question) => {
-  return \`You are a friendly AI tutor for Indian school students. 
+  return `You are a friendly AI tutor for Indian school students. 
 Explain the following doubt in a very simple, step-by-step manner. 
 Use a mix of English and simple Hindi terms (Hinglish) if helpful.
-Question: \${question}\`;
+Question: ${question}`;
 };
 
 export const generateRevisionPrompt = (subject, chapter, time) => {
-  return \`You are an expert exam prep tutor. 
-Provide a \${time}-minute quick revision summary for the chapter "\${chapter}" in \${subject}.
+  return `You are an expert exam prep tutor. 
+Provide a ${time}-minute quick revision summary for the chapter "${chapter}" in ${subject}.
 Focus ONLY on the most frequently asked exam topics, key dates/formulas, and critical definitions.
-Output in clean Markdown.\`;
+Output in clean Markdown.`;
 };
 
 export const generateTimetablePrompt = (date, subjects, hours, preference) => {
-  return \`You are a smart study planner.
-Create a detailed study timetable leading up to the exam date (\${date}).
-Subjects to cover: \${subjects}.
-Daily study hours: \${hours} hours.
-Student preference: \${preference}.
-Output a day-by-day plan in Markdown format, breaking down hours per subject and giving specific advice.\`;
+  return `You are a smart study planner.
+Create a detailed study timetable leading up to the exam date (${date}).
+Subjects to cover: ${subjects}.
+Daily study hours: ${hours} hours.
+Student preference: ${preference}.
+Output a day-by-day plan in Markdown format, breaking down hours per subject and giving specific advice.`;
 };
 
 export const generateTestPrompt = (subject, topic, type, count, difficulty) => {
-  return \`You are a strict but fair examiner.
-Generate a test for \${subject}, topic: "\${topic}".
-Type of questions: \${type}.
-Number of questions: \${count}.
-Difficulty: \${difficulty}.
-Provide the test cleanly formatted. Do NOT provide the answers immediately. Provide the answers at the very end under a "Answer Key" section.\`;
+  return `You are a strict but fair examiner.
+Generate a test for ${subject}, topic: "${topic}".
+Type of questions: ${type}.
+Number of questions: ${count}.
+Difficulty: ${difficulty}.
+Provide the test cleanly formatted. Do NOT provide the answers immediately. Provide the answers at the very end under a "Answer Key" section.`;
 };

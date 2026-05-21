@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Send, Image as ImageIcon, Sparkles, User } from 'lucide-react';
+import { generateAIContent, generateDoubtPrompt } from '../lib/ai';
+import ReactMarkdown from 'react-markdown';
 
 export default function Chat() {
   const [messages, setMessages] = useState([
@@ -11,26 +13,37 @@ export default function Chat() {
   ]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const messagesEndRef = useRef(null);
 
-  const handleSend = (e) => {
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, isTyping]);
+
+  const handleSend = async (e) => {
     e.preventDefault();
     if (!input.trim()) return;
 
     const userMessage = { id: Date.now(), role: 'user', text: input };
     setMessages(prev => [...prev, userMessage]);
+    const currentInput = input;
     setInput('');
     setIsTyping(true);
 
-    // Mock AI response
-    setTimeout(() => {
-      const aiMessage = {
-        id: Date.now() + 1,
-        role: 'ai',
-        text: `Here is a simple explanation for your question:\n\nThis concept is very important for your exams. Let's break it down step-by-step so it's easy to understand. \n\n1. First, we identify the core principle.\n2. Then, we apply the formula: $E = mc^2$.\n3. Finally, you get the answer.\n\nDo you want me to explain this further in Hindi?`
-      };
-      setMessages(prev => [...prev, aiMessage]);
-      setIsTyping(false);
-    }, 1500);
+    const prompt = generateDoubtPrompt(currentInput);
+    const generatedText = await generateAIContent(prompt);
+    
+    const aiMessage = {
+      id: Date.now() + 1,
+      role: 'ai',
+      text: generatedText
+    };
+    
+    setMessages(prev => [...prev, aiMessage]);
+    setIsTyping(false);
   };
 
   return (
@@ -41,8 +54,12 @@ export default function Chat() {
             <div className="avatar">
               {msg.role === 'ai' ? <Sparkles size={18} /> : <User size={18} />}
             </div>
-            <div className="message-content" style={{ whiteSpace: 'pre-wrap' }}>
-              {msg.text}
+            <div className="message-content generated-content" style={{ margin: 0, padding: '1rem 1.5rem', width: '100%', overflowX: 'auto' }}>
+              {msg.role === 'ai' ? (
+                <ReactMarkdown>{msg.text}</ReactMarkdown>
+              ) : (
+                msg.text
+              )}
             </div>
           </div>
         ))}
@@ -54,11 +71,12 @@ export default function Chat() {
             </div>
           </div>
         )}
+        <div ref={messagesEndRef} />
       </div>
 
       <div className="chat-input-area">
         <form onSubmit={handleSend} className="chat-input-wrapper">
-          <button type="button" className="btn btn-secondary" style={{ position: 'absolute', left: '0.5rem', width: '2.5rem', height: '2.5rem', padding: 0, borderRadius: '50%', border: 'none' }}>
+          <button type="button" className="btn btn-secondary" style={{ position: 'absolute', left: '0.5rem', width: '2.5rem', height: '2.5rem', padding: 0, borderRadius: '50%', border: 'none' }} title="Upload image feature coming soon">
             <ImageIcon size={20} />
           </button>
           <input 
@@ -68,8 +86,9 @@ export default function Chat() {
             placeholder="Type your doubt here..."
             value={input}
             onChange={(e) => setInput(e.target.value)}
+            disabled={isTyping}
           />
-          <button type="submit" className="chat-submit" disabled={!input.trim()}>
+          <button type="submit" className="chat-submit" disabled={!input.trim() || isTyping}>
             <Send size={16} />
           </button>
         </form>

@@ -9,8 +9,11 @@ import {
   LayoutDashboard,
   Bell,
   User,
-  Sparkles
+  Sparkles,
+  LogOut
 } from 'lucide-react';
+import { useAuth } from './context/AuthContext';
+import { loginWithGoogle, logout } from './lib/firebase';
 
 // Import Pages
 import Home from './pages/Home';
@@ -21,6 +24,8 @@ import Timetable from './pages/Timetable';
 import TestGenerator from './pages/TestGenerator';
 
 function App() {
+  const { currentUser } = useAuth();
+
   return (
     <div className="app-container">
       {/* Sidebar Navigation */}
@@ -62,15 +67,32 @@ function App() {
       <main className="main-content">
         <header className="header">
           <div style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>
-            Welcome back, Student 👋
+            Welcome back, {currentUser ? currentUser.displayName.split(' ')[0] : 'Student'} 👋
           </div>
           <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-            <button className="btn" style={{ padding: '0.5rem' }}>
-              <Bell size={20} />
-            </button>
-            <div className="avatar" style={{ width: '36px', height: '36px', cursor: 'pointer' }}>
-              <User size={20} />
-            </div>
+            {currentUser ? (
+              <>
+                <button className="btn" style={{ padding: '0.5rem' }} title="Notifications">
+                  <Bell size={20} />
+                </button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  {currentUser.photoURL ? (
+                    <img src={currentUser.photoURL} alt="profile" style={{ width: '36px', height: '36px', borderRadius: '50%' }} />
+                  ) : (
+                    <div className="avatar" style={{ width: '36px', height: '36px', cursor: 'pointer' }}>
+                      <User size={20} />
+                    </div>
+                  )}
+                  <button className="btn" style={{ padding: '0.5rem', color: 'var(--text-secondary)' }} onClick={logout} title="Logout">
+                    <LogOut size={18} />
+                  </button>
+                </div>
+              </>
+            ) : (
+              <button className="btn btn-primary" onClick={loginWithGoogle}>
+                Sign In
+              </button>
+            )}
           </div>
         </header>
 

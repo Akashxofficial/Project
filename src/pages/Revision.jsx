@@ -1,17 +1,29 @@
 import React, { useState } from 'react';
-import { BookOpen, Sparkles, Zap, Target } from 'lucide-react';
+import { BookOpen, Zap, Target } from 'lucide-react';
+import { generateAIContent, generateRevisionPrompt } from '../lib/ai';
+import ReactMarkdown from 'react-markdown';
 
 export default function Revision() {
   const [loading, setLoading] = useState(false);
-  const [generated, setGenerated] = useState(false);
+  const [result, setResult] = useState(null);
 
-  const handleGenerate = (e) => {
+  // Form states
+  const [subject, setSubject] = useState('');
+  const [chapter, setChapter] = useState('');
+  const [time, setTime] = useState('10');
+
+  const handleGenerate = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setTimeout(() => {
-      setGenerated(true);
-      setLoading(false);
-    }, 1500);
+    
+    const prompt = generateRevisionPrompt(subject, chapter, time);
+    const generatedText = await generateAIContent(prompt);
+    
+    setResult({
+      title: `${time}-Minute Recap: ${chapter}`,
+      content: generatedText
+    });
+    setLoading(false);
   };
 
   return (
@@ -26,52 +38,41 @@ export default function Revision() {
         </div>
       </div>
 
-      <div className="grid-cards" style={{ gridTemplateColumns: generated ? '1fr 2fr' : '1fr', gap: '2rem' }}>
+      <div className="grid-cards" style={{ gridTemplateColumns: result ? '1fr 2fr' : '1fr', gap: '2rem' }}>
         <form onSubmit={handleGenerate} className="card">
           <div className="input-group">
             <label className="input-label">Subject</label>
-            <input type="text" className="input-field" placeholder="e.g. History" required />
+            <input type="text" className="input-field" placeholder="e.g. History" required value={subject} onChange={e => setSubject(e.target.value)} />
           </div>
           <div className="input-group">
             <label className="input-label">Chapter(s)</label>
-            <input type="text" className="input-field" placeholder="e.g. Nationalism in India" required />
+            <input type="text" className="input-field" placeholder="e.g. Nationalism in India" required value={chapter} onChange={e => setChapter(e.target.value)} />
           </div>
           <div className="input-group">
             <label className="input-label">Time Available</label>
-            <select className="input-field">
+            <select className="input-field" value={time} onChange={e => setTime(e.target.value)}>
               <option value="10">10 Minutes (Quick Recap)</option>
               <option value="30">30 Minutes (Standard Revision)</option>
               <option value="60">1 Hour (Deep Dive)</option>
             </select>
           </div>
-          <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '1rem', backgroundColor: '#10b981' }} disabled={loading}>
+          <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '1rem', backgroundColor: '#10b981' }} disabled={loading || !subject || !chapter}>
             {loading ? 'Analyzing...' : <><Zap size={18} /> Start Revision</>}
           </button>
         </form>
 
-        {generated && (
-          <div className="card" style={{ flex: 1 }}>
+        {result && (
+          <div className="card" style={{ flex: 1, overflowX: 'auto' }}>
             <h2 style={{ fontSize: '1.25rem', marginBottom: '1rem', color: '#10b981', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Target size={20} /> 10-Minute Recap: Nationalism in India
+              <Target size={20} /> {result.title}
             </h2>
             
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <div style={{ padding: '1rem', backgroundColor: 'var(--bg)', borderRadius: 'var(--radius)', borderLeft: '4px solid #10b981' }}>
-                <h4 style={{ marginBottom: '0.5rem' }}>1. First World War, Khilafat and Non-Cooperation</h4>
-                <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>The war created a new economic and political situation. Gandhiji returned in 1915 and organized Satyagraha.</p>
-              </div>
-              <div style={{ padding: '1rem', backgroundColor: 'var(--bg)', borderRadius: 'var(--radius)', borderLeft: '4px solid #10b981' }}>
-                <h4 style={{ marginBottom: '0.5rem' }}>2. Jallianwala Bagh Massacre (1919)</h4>
-                <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>General Dyer fired upon a peaceful crowd in Amritsar, causing nationwide anger.</p>
-              </div>
-              <div style={{ padding: '1rem', backgroundColor: 'var(--bg)', borderRadius: 'var(--radius)', borderLeft: '4px solid #10b981' }}>
-                <h4 style={{ marginBottom: '0.5rem' }}>3. Salt March and Civil Disobedience</h4>
-                <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Gandhiji marched to Dandi (1930) to break the salt law, launching a mass movement against British laws.</p>
-              </div>
-              
-              <div style={{ marginTop: '1rem', textAlign: 'center' }}>
-                <button className="btn btn-primary" style={{ backgroundColor: '#10b981' }}>Mark as Completed</button>
-              </div>
+            <div className="generated-content" style={{ marginTop: '1rem', backgroundColor: 'var(--bg)' }}>
+              <ReactMarkdown>{result.content}</ReactMarkdown>
+            </div>
+            
+            <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>
+              <button className="btn btn-primary" style={{ backgroundColor: '#10b981' }} onClick={() => setResult(null)}>Done Revising</button>
             </div>
           </div>
         )}
