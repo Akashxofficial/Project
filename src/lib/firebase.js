@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { getFirestore, collection, addDoc, query, where, getDocs, orderBy, serverTimestamp } from 'firebase/firestore';
 
 // Your web app's Firebase configuration
 // Replace these with your actual Firebase config from Firebase Console
@@ -41,5 +41,54 @@ export const logout = async () => {
     await signOut(auth);
   } catch (error) {
     console.error("Error signing out", error);
+  }
+};
+
+// Firestore Database Helpers
+export const saveDocument = async (userId, type, title, content) => {
+  if (!import.meta.env.VITE_FIREBASE_API_KEY) {
+    console.warn("Mock DB Save: ", { type, title });
+    return true;
+  }
+  
+  try {
+    const docRef = await addDoc(collection(db, "saved_materials"), {
+      userId,
+      type, // 'note', 'revision', 'timetable', 'test'
+      title,
+      content,
+      createdAt: serverTimestamp()
+    });
+    return docRef.id;
+  } catch (e) {
+    console.error("Error adding document: ", e);
+    return null;
+  }
+};
+
+export const getUserDocuments = async (userId) => {
+  if (!import.meta.env.VITE_FIREBASE_API_KEY) {
+    // Return mock data for UI testing
+    return [
+      { id: '1', type: 'note', title: 'Structure of Atom - Short Notes', createdAt: { toDate: () => new Date() } },
+      { id: '2', type: 'test', title: 'Biology - Cell Structure', createdAt: { toDate: () => new Date() } }
+    ];
+  }
+
+  try {
+    const q = query(
+      collection(db, "saved_materials"),
+      where("userId", "==", userId),
+      orderBy("createdAt", "desc")
+    );
+    const querySnapshot = await getDocs(q);
+    const docs = [];
+    querySnapshot.forEach((doc) => {
+      docs.push({ id: doc.id, ...doc.data() });
+    });
+    return docs;
+  } catch (e) {
+    console.error("Error getting documents: ", e);
+    return [];
   }
 };

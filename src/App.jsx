@@ -10,7 +10,8 @@ import {
   Bell,
   User,
   Sparkles,
-  LogOut
+  LogOut,
+  Bookmark
 } from 'lucide-react';
 import { useAuth } from './context/AuthContext';
 import { loginWithGoogle, logout } from './lib/firebase';
@@ -22,6 +23,7 @@ import Notes from './pages/Notes';
 import Revision from './pages/Revision';
 import Timetable from './pages/Timetable';
 import TestGenerator from './pages/TestGenerator';
+import History from './pages/History';
 
 function App() {
   const { currentUser } = useAuth();
@@ -59,6 +61,10 @@ function App() {
           <NavLink to="/test" className={({isActive}) => isActive ? "nav-item active" : "nav-item"}>
             <GraduationCap size={20} />
             <span>Test Generator</span>
+          </NavLink>
+          <NavLink to="/history" className={({isActive}) => isActive ? "nav-item active" : "nav-item"}>
+            <Bookmark size={20} />
+            <span>Saved Materials</span>
           </NavLink>
         </nav>
       </aside>
@@ -103,6 +109,7 @@ function App() {
           <Route path="/revision" element={<Revision />} />
           <Route path="/timetable" element={<Timetable />} />
           <Route path="/test" element={<TestGenerator />} />
+          <Route path="/history" element={<History />} />
         </Routes>
       </main>
     </div>

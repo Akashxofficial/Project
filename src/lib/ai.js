@@ -12,7 +12,7 @@ export const generateAIContent = async (prompt) => {
       return `[MOCK AI RESPONSE - ADD GEMINI API KEY TO SEE REAL RESULTS]\n\nBased on your request:\n\n${prompt}\n\nHere is a simple explanation...`;
     }
 
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
     const result = await model.generateContent(prompt);
     const response = await result.response;
     return response.text();

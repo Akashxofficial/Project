@@ -4,8 +4,11 @@ import { generateAIContent, generateTestPrompt } from '../lib/ai';
 import ReactMarkdown from 'react-markdown';
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
+import { saveDocument } from '../lib/firebase';
+import { useAuth } from '../context/AuthContext';
 
 export default function TestGenerator() {
+  const { currentUser } = useAuth();
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
 
@@ -23,11 +26,16 @@ export default function TestGenerator() {
     
     const prompt = generateTestPrompt(subject, topic, type, count, difficulty);
     const generatedText = await generateAIContent(prompt);
-    
+    const docTitle = `${subject} - ${topic} (Mock Test)`;
     setResult({
-      title: `${subject} - ${topic} (Mock Test)`,
+      title: docTitle,
       content: generatedText
     });
+    
+    if (currentUser) {
+      await saveDocument(currentUser.uid || currentUser.email, 'test', docTitle, generatedText);
+    }
+    
     setLoading(false);
   };
 

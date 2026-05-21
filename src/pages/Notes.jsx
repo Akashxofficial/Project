@@ -4,8 +4,11 @@ import { generateAIContent, generateNotesPrompt } from '../lib/ai';
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
 import ReactMarkdown from 'react-markdown';
+import { saveDocument } from '../lib/firebase';
+import { useAuth } from '../context/AuthContext';
 
 export default function Notes() {
+  const { currentUser } = useAuth();
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [copied, setCopied] = useState(false);
@@ -29,6 +32,12 @@ export default function Notes() {
       title: `${chapter} - ${type}`,
       content: generatedText
     });
+    
+    // Save to Database
+    if (currentUser) {
+      await saveDocument(currentUser.uid || currentUser.email, 'note', `${chapter} - ${type}`, generatedText);
+    }
+    
     setLoading(false);
   };
 
