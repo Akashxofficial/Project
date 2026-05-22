@@ -1,40 +1,35 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+// Frontend AI client — calls our SECURE server-side API endpoint.
+// The Gemini API key NEVER touches the browser. It lives only in the serverless function.
 
-const apiKey = import.meta.env.VITE_GEMINI_API_KEY || "dummy-key";
-const genAI = new GoogleGenerativeAI(apiKey);
+const API_ENDPOINT = "/api/generate";
 
 export const generateAIContent = async (prompt) => {
   try {
-    // If the user hasn't added their API key yet, return a mock response
-    if (apiKey === "dummy-key" || !apiKey) {
-      console.warn("Using mock AI because no VITE_GEMINI_API_KEY is set in .env");
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      return `[MOCK AI RESPONSE - ADD GEMINI API KEY TO SEE REAL RESULTS]\n\nBased on your request:\n\n${prompt}\n\nHere is a simple explanation...`;
+    const response = await fetch(API_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt }),
+    });
+
+    const data = await response.json();
+
+    if (response.status === 429) {
+      return `⚠️ ${data.error}`;
+    }
+    if (!response.ok) {
+      return `⚠️ ${data.error || "Something went wrong. Please try again."}`;
     }
 
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    return response.text();
+    return data.text;
   } catch (error) {
-    console.error("AI Generation Error:", error);
-    
-    // Check for rate limit / quota errors
-    if (error.message && (error.message.includes("429") || error.message.toLowerCase().includes("quota"))) {
-      return "Whoops! The AI is getting too many requests right now (Rate Limit). Please wait a few seconds and try again.";
-    }
-    
-    // Check for safety filter blocks
-    if (error.message && error.message.toLowerCase().includes("safety")) {
-      return "I couldn't generate a response for that due to safety filters.";
-    }
-
-    // Return the actual error message for debugging out-of-context issues
-    return `Hmm, I ran into an error: ${error.message.split('\n')[0]}`;
+    console.error("Network error calling AI API:", error);
+    return "⚠️ Could not connect to the AI service. Please check your internet connection.";
   }
 };
 
-// Specific Prompts Generators
+// ─── Prompt Builders ───────────────────────────────────────────────────────────
+// These run on the CLIENT only (no secrets involved — just text formatting).
+
 export const generateNotesPrompt = (grade, subject, chapter, type) => {
   return `You are an expert Indian school teacher for Class ${grade}. 
 Generate ${type} for the subject ${subject}, chapter: "${chapter}". 
@@ -43,12 +38,12 @@ Make it easy to read, student-friendly, and focused on CBSE/State board patterns
 };
 
 export const generateDoubtPrompt = (question) => {
-  return `You are TaniOS AI, an intelligent but concise study assistant for Indian school students. 
-Rule 1: If the user just says hello or greets you, reply with a single short sentence (e.g., "Hello! How can I help you today?"). Do NOT explain what the greeting means.
+  return `You are TaniOS AI, an intelligent but concise assistant for Indian school students.
+Rule 1: If the user just says hello or greets you, reply with a single short sentence. Do NOT explain what the greeting means.
 Rule 2: If the user asks an academic doubt, answer ONLY what is asked without unnecessary background.
-Rule 3: If the user asks a general, non-academic, or out-of-context question (e.g., jokes, advice, tech questions), answer it normally, accurately, and naturally.
-Rule 4: Keep your answers brief, simple, and to the point.
-Rule 5: MATCH THE USER'S LANGUAGE EXACTLY. If the user asks in English, answer purely in English. If the user asks in Hindi or Hinglish, answer in conversational Hindi/Hinglish.
+Rule 3: If the user asks a general, non-academic, or out-of-context question (e.g., jokes, advice, tech questions, general knowledge), answer it normally, accurately, and naturally.
+Rule 4: Keep answers brief and to the point.
+Rule 5: MATCH THE USER'S LANGUAGE EXACTLY. English question → English answer. Hindi/Hinglish question → Hindi/Hinglish answer.
 User input: "${question}"`;
 };
 

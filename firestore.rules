@@ -1,0 +1,33 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // saved_materials collection: each student can ONLY access their own documents.
+    match /saved_materials/{docId} {
+
+      // READ: A logged-in user can only read documents where userId matches their own UID.
+      allow read: if request.auth != null 
+                  && request.auth.uid == resource.data.userId;
+
+      // CREATE: A logged-in user can only create a document if they set userId to their own UID.
+      // Also validates that required fields exist and content isn't empty.
+      allow create: if request.auth != null 
+                    && request.resource.data.userId == request.auth.uid
+                    && request.resource.data.title is string
+                    && request.resource.data.content is string
+                    && request.resource.data.type in ['note', 'revision', 'timetable', 'test'];
+
+      // UPDATE: Not allowed — we only append, never edit saved docs.
+      allow update: if false;
+
+      // DELETE: A logged-in user can only delete their own documents.
+      allow delete: if request.auth != null 
+                    && request.auth.uid == resource.data.userId;
+    }
+
+    // Deny access to everything else by default.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
