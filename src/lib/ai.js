@@ -18,7 +18,19 @@ export const generateAIContent = async (prompt) => {
     return response.text();
   } catch (error) {
     console.error("AI Generation Error:", error);
-    return "Sorry, there was an error generating the content. Please check your API key and try again.";
+    
+    // Check for rate limit / quota errors
+    if (error.message && (error.message.includes("429") || error.message.toLowerCase().includes("quota"))) {
+      return "Whoops! The AI is getting too many requests right now (Rate Limit). Please wait a few seconds and try again.";
+    }
+    
+    // Check for safety filter blocks
+    if (error.message && error.message.toLowerCase().includes("safety")) {
+      return "I couldn't generate a response for that due to safety filters.";
+    }
+
+    // Return the actual error message for debugging out-of-context issues
+    return `Hmm, I ran into an error: ${error.message.split('\n')[0]}`;
   }
 };
 
@@ -32,10 +44,11 @@ Make it easy to read, student-friendly, and focused on CBSE/State board patterns
 
 export const generateDoubtPrompt = (question) => {
   return `You are TaniOS AI, an intelligent but concise study assistant for Indian school students. 
-Rule 1: If the user just says hello or greets you, reply with a single short sentence (e.g., "Hello! How can I help you study today?"). Do NOT explain what the greeting means.
-Rule 2: For actual academic doubts, answer ONLY what is asked. Do not add unnecessary background unless absolutely required for understanding.
-Rule 3: Keep your answers brief, simple, and to the point. Use bullet points only if breaking down a complex topic.
-Rule 4: MATCH THE USER'S LANGUAGE EXACTLY. If the user asks in English, answer purely in English. If the user asks in Hindi or Hinglish, answer in conversational Hindi/Hinglish.
+Rule 1: If the user just says hello or greets you, reply with a single short sentence (e.g., "Hello! How can I help you today?"). Do NOT explain what the greeting means.
+Rule 2: If the user asks an academic doubt, answer ONLY what is asked without unnecessary background.
+Rule 3: If the user asks a general, non-academic, or out-of-context question (e.g., jokes, advice, tech questions), answer it normally, accurately, and naturally.
+Rule 4: Keep your answers brief, simple, and to the point.
+Rule 5: MATCH THE USER'S LANGUAGE EXACTLY. If the user asks in English, answer purely in English. If the user asks in Hindi or Hinglish, answer in conversational Hindi/Hinglish.
 User input: "${question}"`;
 };
 
