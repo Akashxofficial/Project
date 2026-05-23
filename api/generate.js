@@ -27,37 +27,77 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Prompt is required' });
     }
 
-    if (!process.env.GEMINI_API_KEY) {
-      console.error('GEMINI_API_KEY not set');
+    // Parse multiple keys if provided (comma-separated), otherwise fallback to single key
+    const rawKeys = process.env.GEMINI_API_KEYS || process.env.GEMINI_API_KEY;
+    if (!rawKeys) {
+      console.error('No Gemini API keys configured');
       return res.status(500).json({ error: 'API key not configured' });
     }
 
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    const apiKeys = rawKeys.split(',').map(k => k.trim()).filter(Boolean);
+    let lastError = null;
+    let responseText = null;
+    let chosenModel = "gemini-2.5-flash";
 
-    // ✅ USE gemini-2.5-flash (WORKS!)
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    // ✅ KEY ROTATION & MODEL FALLBACK LOOP
+    for (let i = 0; i < apiKeys.length; i++) {
+      const apiKey = apiKeys[i];
+      try {
+        const genAI = new GoogleGenerativeAI(apiKey);
+        
+        // Try the premium 2.5-flash first
+        let model = genAI.getGenerativeModel({ model: chosenModel });
+        
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 20000);
+        
+        console.log(`[API] Attempting with Key index ${i} using ${chosenModel}...`);
+        
+        let result;
+        try {
+          result = await model.generateContent(prompt);
+        } catch (innerErr) {
+          // If 2.5-flash has strict quota limits, try falling back to 2.0-flash-lite immediately
+          if (innerErr.message?.includes('429') && chosenModel !== "gemini-2.0-flash-lite") {
+            console.warn(`[API] Key ${i} hit 429 on 2.5-flash. Falling back to 2.0-flash-lite...`);
+            chosenModel = "gemini-2.0-flash-lite";
+            model = genAI.getGenerativeModel({ model: chosenModel });
+            result = await model.generateContent(prompt);
+          } else {
+            throw innerErr;
+          }
+        }
 
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 20000);
+        const response = await result.response;
+        responseText = response.text();
+        clearTimeout(timeoutId);
+        break; // Successfully got response, break out of key loop
+      } catch (err) {
+        console.error(`[API] Key ${i} failed:`, err.message);
+        lastError = err;
+        // If it's a rate limit/quota issue (429), continue loop to try next key
+        if (err.status === 429 || err.message.includes('429') || err.message.toLowerCase().includes('quota')) {
+          continue; 
+        } else {
+          // Break immediately on non-quota errors (e.g., safety, invalid key)
+          break;
+        }
+      }
+    }
 
-    console.log(`[API] Generating content...`);
-
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text();
-
-    clearTimeout(timeoutId);
+    if (!responseText) {
+      throw lastError || new Error("All API keys failed to generate content.");
+    }
 
     console.log(`[API] ✅ Success!`);
-
     return res.status(200).json({
       success: true,
-      text: text,
-      model: "gemini-2.5-flash"
+      text: responseText,
+      model: chosenModel
     });
 
   } catch (error) {
-    console.error('[API] Error:', error.message);
+    console.error('[API] Final Failure:', error.message);
 
     if (error.name === 'AbortError') {
       return res.status(504).json({
@@ -66,15 +106,15 @@ export default async function handler(req, res) {
       });
     }
 
-    if (error.status === 429 || error.message.includes('429')) {
+    if (error.status === 429 || error.message.includes('429') || error.message.toLowerCase().includes('quota')) {
       return res.status(429).json({
-        error: 'API rate limit exceeded. Please wait.',
+        error: 'All service pipelines are highly congested. Please wait a moment.',
         code: 'RATE_LIMIT'
       });
     }
 
     return res.status(500).json({
-      error: error.message || 'An error occurred',
+      error: error.message || 'An error occurred during AI execution',
       code: 'INTERNAL_ERROR'
     });
   }
