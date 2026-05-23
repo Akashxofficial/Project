@@ -1,14 +1,23 @@
-// Frontend AI client — calls our SECURE server-side API endpoint.
-// The Gemini API key NEVER touches the browser. It lives only in the serverless function.
+// src/lib/ai.js
+
+import { cache } from './cache';
 
 const API_ENDPOINT = "/api/generate";
 
 export const generateAIContent = async (prompt, retries = 2) => {
+  // ✅ CHECK CACHE FIRST - Save API calls!
+  const cached = cache.get(prompt);
+  if (cached) {
+    console.log("📦 Cache hit! Returning saved response");
+    return cached;
+  }
+
+  // Loop for retries on failure
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
-      // Set timeout controller
+      // Set timeout controller (25 seconds max)
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 25000); // 25 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 25000);
 
       const response = await fetch(API_ENDPOINT, {
         method: "POST",
@@ -19,50 +28,57 @@ export const generateAIContent = async (prompt, retries = 2) => {
 
       clearTimeout(timeoutId);
 
-      // Handle rate limiting with retry
+      // Handle rate limiting (429 = Too Many Requests)
       if (response.status === 429) {
         if (attempt < retries) {
-          // Exponential backoff: 2s, 4s, 6s...
-          const waitTime = 2000 * (attempt + 1);
-          console.warn(`Rate limited. Retrying in ${waitTime}ms...`);
+          // Exponential backoff: 10s, 20s, 40s
+          const waitTime = 10000 * Math.pow(2, attempt);
+          console.warn(`⏳ Rate limited. Waiting ${waitTime / 1000}s before retry...`);
           await new Promise(r => setTimeout(r, waitTime));
-          continue; // Retry
+          continue; // Try again
         }
-        return "⚠️ Service busy. Please wait a moment and try again.";
+        return "⚠️ Service busy. Please wait a few minutes before asking another question. (API quota reached)";
       }
 
-      // Handle other errors
+      // Handle other HTTP errors
       if (!response.ok) {
         const data = await response.json().catch(() => ({}));
         return `⚠️ ${data.error || "Something went wrong. Please try again."}`;
       }
 
-      // Success
+      // Success! Parse response
       const data = await response.json();
-      return data.text;
+      const result = data.text;
+
+      // ✅ CACHE THE RESPONSE for future use
+      cache.set(prompt, result);
+
+      return result;
 
     } catch (error) {
-      // Handle timeout
+      // Handle request timeout
       if (error.name === "AbortError") {
         if (attempt < retries) {
-          console.warn("Request timeout. Retrying...");
-          await new Promise(r => setTimeout(r, 2000));
-          continue; // Retry
+          const waitTime = 10000 * Math.pow(2, attempt);
+          console.warn(`⏰ Timeout. Retrying in ${waitTime / 1000}s...`);
+          await new Promise(r => setTimeout(r, waitTime));
+          continue; // Try again
         }
         return "⚠️ Request took too long. Please try again.";
       }
 
-      // Network error
+      // Network error - only return error on final attempt
       if (attempt === retries) {
         console.error("Network error calling AI API:", error);
-        return "⚠️ Could not connect to the AI service. Please check your internet connection.";
+        return "⚠️ Could not connect to AI service. Please check your internet connection.";
       }
     }
   }
 };
 
-// ─── Prompt Builders ───────────────────────────────────────────────────────────
-// These run on the CLIENT only (no secrets involved — just text formatting).
+// ─────────────────────────────────────────────────────────────────────────────
+// PROMPT BUILDERS (These just format text - no API calls)
+// ─────────────────────────────────────────────────────────────────────────────
 
 export const generateNotesPrompt = (grade, subject, chapter, type) => {
   return `You are an expert Indian school teacher for Class ${grade}. 
