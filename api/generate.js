@@ -99,13 +99,14 @@ export default async function handler(req, res) {
     console.error('[API] Final Failure:', error.message);
 
     const rawKeys = process.env.GEMINI_API_KEYS || process.env.GEMINI_API_KEY || "";
-    const parsedKeysCount = rawKeys.split(/[\s,;\n]+/).map(k => k.trim()).filter(Boolean).length;
+    const apiKeys = rawKeys.split(/[\s,;\n]+/).map(k => k.trim()).filter(Boolean);
+    const maskedKeys = apiKeys.map(k => k.length > 8 ? k.substring(0, 8) + '...' : 'invalid');
 
     if (error.name === 'AbortError') {
       return res.status(504).json({
         error: 'Request timeout',
         code: 'TIMEOUT',
-        diagnostics: { keysFound: parsedKeysCount }
+        diagnostics: { keysFound: apiKeys.length, maskedKeys }
       });
     }
 
@@ -114,7 +115,8 @@ export default async function handler(req, res) {
         error: `AI service pipelines congested. Google returned 429 (Quota limit reached).`,
         code: 'RATE_LIMIT',
         diagnostics: {
-          keysFoundInEnv: parsedKeysCount,
+          keysFoundInEnv: apiKeys.length,
+          maskedKeys,
           lastError: error.message.split('\n')[0]
         }
       });
@@ -123,7 +125,7 @@ export default async function handler(req, res) {
     return res.status(500).json({
       error: error.message || 'An error occurred during AI execution',
       code: 'INTERNAL_ERROR',
-      diagnostics: { keysFound: parsedKeysCount }
+      diagnostics: { keysFound: apiKeys.length, maskedKeys }
     });
   }
 }
