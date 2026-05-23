@@ -1,5 +1,5 @@
 async function testLiveApi() {
-  const url = "https://project-14ez.vercel.app/api/generate";
+  const url = "https://project-delta-beige.vercel.app/api/generate";
   console.log(`Sending test request to live API: ${url}...`);
 
   try {
