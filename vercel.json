@@ -7,7 +7,7 @@
   ],
   "functions": {
     "api/generate.js": {
-      "maxDuration": 30
+      "maxDuration": 10
     }
   }
 }

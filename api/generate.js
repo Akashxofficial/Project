@@ -99,23 +99,32 @@ export default async function handler(req, res) {
   } catch (error) {
     console.error('[API] Final Failure:', error.message);
 
+    const rawKeys = process.env.GEMINI_API_KEYS || process.env.GEMINI_API_KEY || "";
+    const parsedKeysCount = rawKeys.split(/[\s,;\n]+/).map(k => k.trim()).filter(Boolean).length;
+
     if (error.name === 'AbortError') {
       return res.status(504).json({
         error: 'Request timeout',
-        code: 'TIMEOUT'
+        code: 'TIMEOUT',
+        diagnostics: { keysFound: parsedKeysCount }
       });
     }
 
     if (error.status === 429 || error.message.includes('429') || error.message.toLowerCase().includes('quota')) {
       return res.status(429).json({
-        error: 'All service pipelines are highly congested. Please wait a moment.',
-        code: 'RATE_LIMIT'
+        error: `AI service pipelines congested. Google returned 429 (Quota limit reached).`,
+        code: 'RATE_LIMIT',
+        diagnostics: {
+          keysFoundInEnv: parsedKeysCount,
+          lastError: error.message.split('\n')[0]
+        }
       });
     }
 
     return res.status(500).json({
       error: error.message || 'An error occurred during AI execution',
-      code: 'INTERNAL_ERROR'
+      code: 'INTERNAL_ERROR',
+      diagnostics: { keysFound: parsedKeysCount }
     });
   }
 }
