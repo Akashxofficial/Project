@@ -1,76 +1,124 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-// In-memory rate limiter: max 10 requests per IP per minute
-const rateLimitMap = new Map();
-const RATE_LIMIT = 10;
-const WINDOW_MS = 60 * 1000; // 1 minute
-
-function isRateLimited(ip) {
-  const now = Date.now();
-  const entry = rateLimitMap.get(ip) || { count: 0, start: now };
-
-  // Reset window if expired
-  if (now - entry.start > WINDOW_MS) {
-    entry.count = 0;
-    entry.start = now;
-  }
-
-  entry.count++;
-  rateLimitMap.set(ip, entry);
-  return entry.count > RATE_LIMIT;
-}
-
 export default async function handler(req, res) {
+  // ─────────────────────────────────────────────────────────────────────────
+  // CORS Headers - Allow cross-origin requests
+  // ─────────────────────────────────────────────────────────────────────────
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
+  res.setHeader(
+    'Access-Control-Allow-Headers',
+    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
+  );
+
+  // Handle preflight requests
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+    return;
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
   // Only allow POST requests
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method not allowed" });
-  }
-
-  // Get client IP for rate limiting
-  const ip =
-    req.headers["x-forwarded-for"]?.split(",")[0] ||
-    req.socket?.remoteAddress ||
-    "unknown";
-
-  if (isRateLimited(ip)) {
-    return res.status(429).json({
-      error:
-        "Too many requests. Please wait a moment and try again.",
-    });
-  }
-
-  const { prompt } = req.body;
-
-  if (!prompt || typeof prompt !== "string" || prompt.trim() === "") {
-    return res.status(400).json({ error: "Prompt is required." });
-  }
-
-  // API key is only accessible server-side (no VITE_ prefix = never sent to browser)
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    return res.status(500).json({ error: "AI service is not configured." });
+  // ─────────────────────────────────────────────────────────────────────────
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-lite" });
+    // ───────────────────────────────────────────────────────────────────────
+    // Extract prompt from request
+    // ───────────────────────────────────────────────────────────────────────
+    const { prompt } = req.body;
+
+    if (!prompt) {
+      return res.status(400).json({ error: 'Prompt is required' });
+    }
+
+    // ───────────────────────────────────────────────────────────────────────
+    // Check API key exists
+    // ───────────────────────────────────────────────────────────────────────
+    if (!process.env.GEMINI_API_KEY) {
+      console.error('GEMINI_API_KEY not set in environment variables');
+      return res.status(500).json({ error: 'API key not configured' });
+    }
+
+    // ───────────────────────────────────────────────────────────────────────
+    // Initialize Gemini API
+    // ───────────────────────────────────────────────────────────────────────
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+
+    // ✅ USE FASTER MODEL: gemini-1.5-flash (faster for free tier)
+    // If you want higher quality, use: "gemini-pro" (slower, costs more)
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+    // ───────────────────────────────────────────────────────────────────────
+    // Call Gemini API with timeout
+    // ───────────────────────────────────────────────────────────────────────
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 20000); // 20 second timeout
+
+    console.log(`[API] Generating content for prompt: ${prompt.substring(0, 50)}...`);
+
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const text = response.text();
-    return res.status(200).json({ text });
-  } catch (error) {
-    console.error("AI Generation Error:", error.message);
 
-    if (error.message?.includes("429") || error.message?.toLowerCase().includes("quota")) {
+    clearTimeout(timeoutId);
+
+    // ───────────────────────────────────────────────────────────────────────
+    // Return success response
+    // ───────────────────────────────────────────────────────────────────────
+    console.log(`[API] ✅ Success! Response length: ${text.length} characters`);
+
+    return res.status(200).json({
+      success: true,
+      text: text,
+      model: "gemini-1.5-flash"
+    });
+
+  } catch (error) {
+    // ───────────────────────────────────────────────────────────────────────
+    // Error Handling
+    // ───────────────────────────────────────────────────────────────────────
+    console.error('[API] Error:', error.message);
+
+    // Handle timeout
+    if (error.name === 'AbortError') {
+      return res.status(504).json({
+        error: 'Request timeout - Gemini API response took too long',
+        code: 'TIMEOUT'
+      });
+    }
+
+    // Handle invalid API key
+    if (error.message.includes('API key') || error.message.includes('authentication')) {
+      return res.status(401).json({
+        error: 'Invalid or expired API key',
+        code: 'AUTH_ERROR'
+      });
+    }
+
+    // Handle rate limiting (429)
+    if (error.status === 429 || error.message.includes('429')) {
       return res.status(429).json({
-        error: "AI service is busy. Please wait a few seconds and try again.",
+        error: 'Gemini API rate limit exceeded. Please wait a moment.',
+        code: 'RATE_LIMIT'
       });
     }
-    if (error.message?.toLowerCase().includes("safety")) {
-      return res.status(400).json({
-        error: "That message was blocked by safety filters.",
+
+    // Handle quota exceeded
+    if (error.message.includes('quota') || error.message.includes('Resource has been exhausted')) {
+      return res.status(429).json({
+        error: 'API quota exceeded for today. Try again tomorrow.',
+        code: 'QUOTA_EXCEEDED'
       });
     }
-    return res.status(500).json({ error: "AI generation failed. Please try again." });
+
+    // Generic error response
+    return res.status(500).json({
+      error: error.message || 'An error occurred while generating content',
+      code: 'INTERNAL_ERROR'
+    });
   }
 }
