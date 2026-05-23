@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "dev:server": "node server.js",
-    "dev:all": "start node server.js && vite",
+    "dev:server": "node --env-file=.env server.js",
+    "dev:all": "start node --env-file=.env server.js && vite",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview"

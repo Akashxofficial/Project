@@ -75,13 +75,8 @@ export default async function handler(req, res) {
       } catch (err) {
         console.error(`[API] Key ${i} failed:`, err.message);
         lastError = err;
-        // If it's a rate limit/quota issue (429), continue loop to try next key
-        if (err.status === 429 || err.message.includes('429') || err.message.toLowerCase().includes('quota')) {
-          continue; 
-        } else {
-          // Break immediately on non-quota errors (e.g., safety, invalid key)
-          break;
-        }
+        // Try the next key in the list for any failure (quota limit, leaked, invalid, etc.)
+        continue;
       }
     }
 
