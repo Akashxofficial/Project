@@ -38,45 +38,49 @@ export default async function handler(req, res) {
     let lastError = null;
     let responseText = null;
     let chosenModel = "gemini-2.5-flash";
+    const modelsToTry = [
+      "gemini-2.5-flash",
+      "gemini-2.0-flash-lite",
+      "gemini-1.5-flash",
+      "gemini-1.5-pro"
+    ];
 
-    // ✅ KEY ROTATION & MODEL FALLBACK LOOP
+    // ✅ NESTED KEY & MODEL ROTATION PIPELINE
     for (let i = 0; i < apiKeys.length; i++) {
       const apiKey = apiKeys[i];
-      try {
-        const genAI = new GoogleGenerativeAI(apiKey);
-        
-        // Try the premium 2.5-flash first
-        let model = genAI.getGenerativeModel({ model: chosenModel });
-        
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 20000);
-        
-        console.log(`[API] Attempting with Key index ${i} using ${chosenModel}...`);
-        
-        let result;
+      const genAI = new GoogleGenerativeAI(apiKey);
+      
+      for (const modelName of modelsToTry) {
         try {
-          result = await model.generateContent(prompt);
-        } catch (innerErr) {
-          // If 2.5-flash has strict quota limits, try falling back to 2.0-flash-lite immediately
-          if (innerErr.message?.includes('429') && chosenModel !== "gemini-2.0-flash-lite") {
-            console.warn(`[API] Key ${i} hit 429 on 2.5-flash. Falling back to 2.0-flash-lite...`);
-            chosenModel = "gemini-2.0-flash-lite";
-            model = genAI.getGenerativeModel({ model: chosenModel });
-            result = await model.generateContent(prompt);
+          console.log(`[API] Attempting with Key index ${i} using model ${modelName}...`);
+          const model = genAI.getGenerativeModel({ model: modelName });
+          
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 20000);
+          
+          const result = await model.generateContent(prompt);
+          const response = await result.response;
+          responseText = response.text();
+          chosenModel = modelName;
+          
+          clearTimeout(timeoutId);
+          break; // Successfully got response from this model, break model loop
+        } catch (err) {
+          console.warn(`[API] Key ${i} with model ${modelName} failed:`, err.message);
+          lastError = err;
+          
+          // Continue to next model if it's a rate limit or quota block
+          if (err.status === 429 || err.message?.includes('429') || err.message?.toLowerCase().includes('quota')) {
+            continue;
           } else {
-            throw innerErr;
+            // Break model loop for non-quota errors (invalid key, leaked key) to go to next key immediately
+            break;
           }
         }
-
-        const response = await result.response;
-        responseText = response.text();
-        clearTimeout(timeoutId);
-        break; // Successfully got response, break out of key loop
-      } catch (err) {
-        console.error(`[API] Key ${i} failed:`, err.message);
-        lastError = err;
-        // Try the next key in the list for any failure (quota limit, leaked, invalid, etc.)
-        continue;
+      }
+      
+      if (responseText) {
+        break; // Successfully got response, break key loop
       }
     }
 
