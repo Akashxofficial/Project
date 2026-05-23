@@ -3,27 +3,61 @@
 
 const API_ENDPOINT = "/api/generate";
 
-export const generateAIContent = async (prompt) => {
-  try {
-    const response = await fetch(API_ENDPOINT, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ prompt }),
-    });
+export const generateAIContent = async (prompt, retries = 2) => {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      // Set timeout controller
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 25000); // 25 second timeout
 
-    const data = await response.json();
+      const response = await fetch(API_ENDPOINT, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt }),
+        signal: controller.signal,
+      });
 
-    if (response.status === 429) {
-      return `⚠️ ${data.error}`;
+      clearTimeout(timeoutId);
+
+      // Handle rate limiting with retry
+      if (response.status === 429) {
+        if (attempt < retries) {
+          // Exponential backoff: 2s, 4s, 6s...
+          const waitTime = 2000 * (attempt + 1);
+          console.warn(`Rate limited. Retrying in ${waitTime}ms...`);
+          await new Promise(r => setTimeout(r, waitTime));
+          continue; // Retry
+        }
+        return "⚠️ Service busy. Please wait a moment and try again.";
+      }
+
+      // Handle other errors
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        return `⚠️ ${data.error || "Something went wrong. Please try again."}`;
+      }
+
+      // Success
+      const data = await response.json();
+      return data.text;
+
+    } catch (error) {
+      // Handle timeout
+      if (error.name === "AbortError") {
+        if (attempt < retries) {
+          console.warn("Request timeout. Retrying...");
+          await new Promise(r => setTimeout(r, 2000));
+          continue; // Retry
+        }
+        return "⚠️ Request took too long. Please try again.";
+      }
+
+      // Network error
+      if (attempt === retries) {
+        console.error("Network error calling AI API:", error);
+        return "⚠️ Could not connect to the AI service. Please check your internet connection.";
+      }
     }
-    if (!response.ok) {
-      return `⚠️ ${data.error || "Something went wrong. Please try again."}`;
-    }
-
-    return data.text;
-  } catch (error) {
-    console.error("Network error calling AI API:", error);
-    return "⚠️ Could not connect to the AI service. Please check your internet connection.";
   }
 };
 
