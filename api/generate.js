@@ -27,14 +27,14 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Prompt is required' });
     }
 
-    // Parse multiple keys if provided (comma-separated), otherwise fallback to single key
     const rawKeys = process.env.GEMINI_API_KEYS || process.env.GEMINI_API_KEY;
     if (!rawKeys) {
       console.error('No Gemini API keys configured');
       return res.status(500).json({ error: 'API key not configured' });
     }
 
-    const apiKeys = rawKeys.split(',').map(k => k.trim()).filter(Boolean);
+    // Split by commas, semicolons, newlines, or general whitespace so it never breaks!
+    const apiKeys = rawKeys.split(/[\s,;\n]+/).map(k => k.trim()).filter(Boolean);
     let lastError = null;
     let responseText = null;
     let chosenModel = "gemini-2.5-flash";
