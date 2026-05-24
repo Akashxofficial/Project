@@ -15,20 +15,28 @@ export default function Revision() {
   const [chapter, setChapter] = useState('');
   const [time, setTime] = useState('10');
 
+  const [error, setError] = useState(null);
+
   const handleGenerate = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setError(null);
+    setResult(null);
     
     const prompt = generateRevisionPrompt(subject, chapter, time);
-    const generatedText = await generateAIContent(prompt);
+    const response = await generateAIContent(prompt);
+
+    if (response.error || !response.text) {
+      setError(response.message || '⚠️ Something went wrong. Please try again.');
+      setLoading(false);
+      return;
+    }
+
     const docTitle = `${time}-Minute Recap: ${chapter}`;
-    setResult({
-      title: docTitle,
-      content: generatedText
-    });
+    setResult({ title: docTitle, content: response.text });
     
     if (currentUser) {
-      await saveDocument(currentUser.uid || currentUser.email, 'revision', docTitle, generatedText);
+      await saveDocument(currentUser.uid || currentUser.email, 'revision', docTitle, response.text);
     }
     
     setLoading(false);
@@ -45,6 +53,16 @@ export default function Revision() {
           <p style={{ color: 'var(--text-secondary)' }}>One-shot summaries and last-minute exam prep.</p>
         </div>
       </div>
+
+      {error && (
+        <div style={{
+          background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626',
+          padding: '0.875rem 1.25rem', borderRadius: 'var(--radius-sm)',
+          marginBottom: '1.5rem', fontSize: '0.9rem'
+        }}>
+          {error}
+        </div>
+      )}
 
       <div className={`generator-layout ${result ? 'has-result' : ''}`}>
         <form onSubmit={handleGenerate} className="card">

@@ -21,21 +21,31 @@ export default function Notes() {
 
   const contentRef = useRef(null);
 
+  const [error, setError] = useState(null);
+
   const handleGenerate = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setError(null);
+    setResult(null);
     
     const prompt = generateNotesPrompt(grade, subject, chapter, type);
-    const generatedText = await generateAIContent(prompt);
+    const response = await generateAIContent(prompt);
     
+    if (response.error || !response.text) {
+      setError(response.message || '⚠️ Something went wrong. Please try again.');
+      setLoading(false);
+      return;
+    }
+
     setResult({
       title: `${chapter} - ${type}`,
-      content: generatedText
+      content: response.text
     });
     
     // Save to Database
     if (currentUser) {
-      await saveDocument(currentUser.uid || currentUser.email, 'note', `${chapter} - ${type}`, generatedText);
+      await saveDocument(currentUser.uid || currentUser.email, 'note', `${chapter} - ${type}`, response.text);
     }
     
     setLoading(false);
@@ -74,6 +84,16 @@ export default function Notes() {
           <p style={{ color: 'var(--text-secondary)' }}>Generate short notes, key points, and formula sheets instantly.</p>
         </div>
       </div>
+
+      {error && (
+        <div style={{
+          background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626',
+          padding: '0.875rem 1.25rem', borderRadius: 'var(--radius-sm)',
+          marginBottom: '1.5rem', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.5rem'
+        }}>
+          {error}
+        </div>
+      )}
 
       <div className={`generator-layout ${result ? 'has-result' : ''}`}>
         <form onSubmit={handleGenerate} className="card">
