@@ -128,28 +128,50 @@ export const saveChatSession = async (userId, sessionId, title, messages) => {
       updatedAt: serverTimestamp()
     }, { merge: true });
   } catch (e) {
-    console.error("❌ Error saving chat session:", e.message);
+    console.warn("⚠️ Firestore save failed, falling back to local storage:", e.message);
+    // Robust Fallback: if rules block it or offline, save it locally for this user
+    try {
+      const fbKey = `fallback_chats_${userId}`;
+      const existing = JSON.parse(localStorage.getItem(fbKey) || '[]');
+      const sessionIndex = existing.findIndex(s => s.id === sessionId);
+      const sessionObj = { id: sessionId, userId, title, messages, updatedAt: Date.now() };
+      if (sessionIndex >= 0) existing[sessionIndex] = sessionObj;
+      else existing.push(sessionObj);
+      localStorage.setItem(fbKey, JSON.stringify(existing));
+    } catch(err) {}
   }
 };
 
 export const getUserChatSessions = async (userId) => {
   if (!import.meta.env.VITE_FIREBASE_API_KEY || import.meta.env.VITE_FIREBASE_API_KEY === 'dummy-api-key') return [];
+  
+  const sessions = [];
   try {
     const q = query(collection(db, "chat_sessions"), where("userId", "==", userId));
     const snap = await getDocs(q);
-    const sessions = [];
     snap.forEach(d => sessions.push({ id: d.id, ...d.data() }));
-    // Sort client-side — no composite index needed
-    sessions.sort((a, b) => {
-      const ta = a.updatedAt?.toDate?.() || new Date(0);
-      const tb = b.updatedAt?.toDate?.() || new Date(0);
-      return tb - ta;
-    });
-    return sessions;
   } catch (e) {
-    console.error("❌ Error fetching chat sessions:", e.message);
-    return [];
+    console.warn("⚠️ Firestore fetch failed, relying on local fallback:", e.message);
   }
+
+  // Merge with Robust Fallback
+  try {
+    const fbKey = `fallback_chats_${userId}`;
+    const fallbackSessions = JSON.parse(localStorage.getItem(fbKey) || '[]');
+    fallbackSessions.forEach(fs => {
+      if (!sessions.find(s => s.id === fs.id)) {
+        sessions.push(fs);
+      }
+    });
+  } catch(err) {}
+
+  // Sort client-side — no composite index needed
+  sessions.sort((a, b) => {
+    const ta = a.updatedAt?.toDate ? a.updatedAt.toDate() : new Date(a.updatedAt || 0);
+    const tb = b.updatedAt?.toDate ? b.updatedAt.toDate() : new Date(b.updatedAt || 0);
+    return tb - ta;
+  });
+  return sessions;
 };
 
 export const deleteChatSession = async (sessionId) => {

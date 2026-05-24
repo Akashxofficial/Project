@@ -152,8 +152,9 @@ export default function Chat() {
     const isFirstMsg = !currentSession || currentSession.title === 'New Chat';
     const title = isFirstMsg ? userText.slice(0, 45) + (userText.length > 45 ? '…' : '') : undefined;
 
-    // Fire AI
-    const prompt = generateDoubtPrompt(userText);
+    // Fire AI (pass recent history for memory!)
+    const historyCtx = messages.filter(m => m.id !== 'welcome').slice(-6);
+    const prompt = generateDoubtPrompt(userText, historyCtx);
     const result = await generateAIContent(prompt, (msg) => setStatusMsg(msg || ''));
 
     setIsLoading(false);
