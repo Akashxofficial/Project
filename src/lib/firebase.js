@@ -119,6 +119,20 @@ export const getUserDocuments = async (userId) => {
 // ── Chat Session Helpers ────────────────────────────────────────────────────
 
 export const saveChatSession = async (userId, sessionId, title, messages) => {
+  // Always save to localStorage immediately for instant UI reliability (offline-first fallback)
+  try {
+    const fbKey = `fallback_chats_${userId}`;
+    const existing = JSON.parse(localStorage.getItem(fbKey) || '[]');
+    const sessionIndex = existing.findIndex(s => s.id === sessionId);
+    const sessionObj = { id: sessionId, userId, title, messages, updatedAt: Date.now() };
+    if (sessionIndex >= 0) existing[sessionIndex] = sessionObj;
+    else existing.push(sessionObj);
+    localStorage.setItem(fbKey, JSON.stringify(existing));
+  } catch(err) {
+    console.error("Local storage save failed", err);
+  }
+
+  // Then attempt Firestore sync in background
   if (!import.meta.env.VITE_FIREBASE_API_KEY || import.meta.env.VITE_FIREBASE_API_KEY === 'dummy-api-key') return;
   try {
     await setDoc(doc(db, "chat_sessions", sessionId), {
@@ -128,17 +142,7 @@ export const saveChatSession = async (userId, sessionId, title, messages) => {
       updatedAt: serverTimestamp()
     }, { merge: true });
   } catch (e) {
-    console.warn("⚠️ Firestore save failed, falling back to local storage:", e.message);
-    // Robust Fallback: if rules block it or offline, save it locally for this user
-    try {
-      const fbKey = `fallback_chats_${userId}`;
-      const existing = JSON.parse(localStorage.getItem(fbKey) || '[]');
-      const sessionIndex = existing.findIndex(s => s.id === sessionId);
-      const sessionObj = { id: sessionId, userId, title, messages, updatedAt: Date.now() };
-      if (sessionIndex >= 0) existing[sessionIndex] = sessionObj;
-      else existing.push(sessionObj);
-      localStorage.setItem(fbKey, JSON.stringify(existing));
-    } catch(err) {}
+    console.warn("⚠️ Firestore sync skipped (expected if rules deny):", e.message);
   }
 };
 

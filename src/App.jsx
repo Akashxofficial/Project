@@ -192,11 +192,20 @@ function MainApp() {
 
 // ── Root app — includes dynamic login modal wrapper ──────────────────────────
 function App() {
-  const { showLoginModal, setShowLoginModal, login } = useAuth();
+  const { showLoginModal, setShowLoginModal, login, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)' }}>
+        <div style={{ color: 'var(--primary)', fontWeight: 600 }}>Loading TaniOS AI...</div>
+      </div>
+    );
+  }
 
   return (
     <>
       <MainApp />
+
 
       {/* Glassmorphic Premium Login Modal */}
       {showLoginModal && (
