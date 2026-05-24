@@ -18,10 +18,9 @@ export default function LoginPage() {
     setError('');
     try {
       await loginWithGoogle();
-      // Auth state change handled by AuthContext — page will re-render automatically
     } catch (err) {
       console.error(err);
-      setError('Sign-in failed. Please try again or allow popups for this site.');
+      setError('Sign-in failed. Please allow popups and try again.');
       setLoading(false);
     }
   };
@@ -38,41 +37,54 @@ export default function LoginPage() {
       position: 'relative',
       overflow: 'hidden',
     }}>
-      {/* Background glow blobs */}
+
+      {/* ── Animated background orbs ── */}
       <div style={{
         position: 'absolute', top: '-10%', right: '-5%',
         width: '500px', height: '500px',
-        background: 'radial-gradient(circle, rgba(99,102,241,0.12) 0%, transparent 70%)',
-        borderRadius: '50%', pointerEvents: 'none'
+        background: 'radial-gradient(circle, rgba(99,102,241,0.14) 0%, transparent 70%)',
+        borderRadius: '50%', pointerEvents: 'none',
+        animation: 'orb-drift 9s ease-in-out infinite',
       }} />
       <div style={{
         position: 'absolute', bottom: '-10%', left: '-5%',
         width: '400px', height: '400px',
-        background: 'radial-gradient(circle, rgba(245,158,11,0.08) 0%, transparent 70%)',
-        borderRadius: '50%', pointerEvents: 'none'
+        background: 'radial-gradient(circle, rgba(245,158,11,0.1) 0%, transparent 70%)',
+        borderRadius: '50%', pointerEvents: 'none',
+        animation: 'orb-drift 11s ease-in-out infinite reverse',
+      }} />
+      <div style={{
+        position: 'absolute', top: '40%', left: '20%',
+        width: '200px', height: '200px',
+        background: 'radial-gradient(circle, rgba(16,185,129,0.07) 0%, transparent 70%)',
+        borderRadius: '50%', pointerEvents: 'none',
+        animation: 'orb-drift 7s ease-in-out infinite 2s',
       }} />
 
-      {/* Card */}
+      {/* ── Login Card ── */}
       <div style={{
         background: 'var(--bg-secondary)',
         border: '1px solid var(--border)',
         borderRadius: '1.5rem',
-        boxShadow: '0 20px 60px rgba(79,70,229,0.12)',
+        boxShadow: '0 20px 60px rgba(79,70,229,0.14)',
         padding: '2.5rem 2rem',
         maxWidth: '420px',
         width: '100%',
         position: 'relative',
         zIndex: 1,
+        animation: 'scaleIn 0.4s cubic-bezier(.34,1.56,.64,1) both',
       }}>
+
         {/* Logo */}
-        <div style={{ textAlign: 'center', marginBottom: '1.75rem' }}>
+        <div style={{ textAlign: 'center', marginBottom: '1.75rem', animation: 'fadeUp 0.4s 0.1s both' }}>
           <div style={{
             width: '3.5rem', height: '3.5rem',
             background: 'linear-gradient(135deg, #4f46e5, #f59e0b)',
             borderRadius: '1rem',
             display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 4px 16px rgba(79,70,229,0.35)',
-            marginBottom: '1rem'
+            boxShadow: '0 4px 20px rgba(79,70,229,0.4)',
+            marginBottom: '1rem',
+            animation: 'float 3s ease-in-out infinite',
           }}>
             <Sparkles size={22} color="white" />
           </div>
@@ -84,7 +96,7 @@ export default function LoginPage() {
           </p>
         </div>
 
-        {/* Feature chips */}
+        {/* Feature chips — staggered entrance */}
         <div style={{
           display: 'grid', gridTemplateColumns: '1fr 1fr',
           gap: '0.625rem', marginBottom: '1.75rem'
@@ -95,7 +107,18 @@ export default function LoginPage() {
               border: '1px solid var(--border)',
               borderRadius: '0.75rem',
               padding: '0.75rem',
-              display: 'flex', flexDirection: 'column', gap: '0.375rem'
+              display: 'flex', flexDirection: 'column', gap: '0.375rem',
+              animation: `fadeUp 0.35s ${0.15 + i * 0.07}s cubic-bezier(.4,0,.2,1) both`,
+              transition: 'transform 0.2s ease, border-color 0.2s ease',
+              cursor: 'default',
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.transform = 'translateY(-2px)';
+              e.currentTarget.style.borderColor = 'rgba(99,102,241,0.35)';
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.borderColor = 'var(--border)';
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--primary)' }}>
                 {f.icon}
@@ -108,7 +131,8 @@ export default function LoginPage() {
 
         {/* Divider */}
         <div style={{
-          display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem'
+          display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem',
+          animation: 'fadeIn 0.4s 0.4s both'
         }}>
           <div style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
           <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>Sign in to continue</span>
@@ -133,13 +157,25 @@ export default function LoginPage() {
             gap: '0.75rem',
             cursor: loading ? 'not-allowed' : 'pointer',
             opacity: loading ? 0.7 : 1,
-            transition: 'all 0.2s',
+            transition: 'all 0.22s cubic-bezier(.4,0,.2,1)',
             boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+            animation: 'bounce-in 0.5s 0.45s cubic-bezier(.4,0,.2,1) both',
           }}
-          onMouseEnter={e => { if (!loading) e.currentTarget.style.boxShadow = '0 4px 16px rgba(79,70,229,0.15)'; e.currentTarget.style.borderColor = 'var(--primary)'; }}
-          onMouseLeave={e => { e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.06)'; e.currentTarget.style.borderColor = 'var(--border)'; }}
+          onMouseEnter={e => {
+            if (!loading) {
+              e.currentTarget.style.transform = 'translateY(-2px)';
+              e.currentTarget.style.boxShadow = '0 8px 24px rgba(79,70,229,0.2)';
+              e.currentTarget.style.borderColor = 'var(--primary)';
+            }
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.06)';
+            e.currentTarget.style.borderColor = 'var(--border)';
+          }}
+          onMouseDown={e => { e.currentTarget.style.transform = 'scale(0.97)'; }}
+          onMouseUp={e => { e.currentTarget.style.transform = 'translateY(-2px)'; }}
         >
-          {/* Google icon */}
           {!loading ? (
             <svg width="20" height="20" viewBox="0 0 24 24">
               <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
@@ -149,22 +185,25 @@ export default function LoginPage() {
             </svg>
           ) : (
             <div style={{
-              width: '20px', height: '20px', border: '2px solid var(--primary)',
-              borderTopColor: 'transparent', borderRadius: '50%',
+              width: '20px', height: '20px',
+              border: '2.5px solid var(--primary)',
+              borderTopColor: 'transparent',
+              borderRadius: '50%',
               animation: 'spin 0.7s linear infinite'
             }} />
           )}
           {loading ? 'Signing in...' : 'Continue with Google'}
         </button>
 
-        {/* Error message */}
+        {/* Error */}
         {error && (
           <p style={{
             marginTop: '1rem', textAlign: 'center',
             fontSize: '0.82rem', color: '#ef4444',
             background: 'rgba(239,68,68,0.08)',
             border: '1px solid rgba(239,68,68,0.2)',
-            borderRadius: '0.5rem', padding: '0.625rem'
+            borderRadius: '0.5rem', padding: '0.625rem',
+            animation: 'fadeUp 0.3s ease both',
           }}>
             {error}
           </p>
@@ -173,7 +212,8 @@ export default function LoginPage() {
         {/* Footer badges */}
         <div style={{
           display: 'flex', justifyContent: 'center',
-          gap: '1rem', marginTop: '1.5rem'
+          gap: '1rem', marginTop: '1.5rem',
+          animation: 'fadeIn 0.5s 0.5s both'
         }}>
           {[
             { icon: <Shield size={12} />, text: 'Privacy first' },
@@ -182,7 +222,8 @@ export default function LoginPage() {
           ].map((b, i) => (
             <div key={i} style={{
               display: 'flex', alignItems: 'center', gap: '0.3rem',
-              color: 'var(--text-secondary)', fontSize: '0.72rem'
+              color: 'var(--text-secondary)', fontSize: '0.72rem',
+              transition: 'color 0.2s ease',
             }}>
               {b.icon}
               <span>{b.text}</span>
@@ -191,8 +232,37 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* Spin animation */}
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      {/* Shared keyframe for spin + login page animations */}
+      <style>{`
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes scaleIn {
+          from { opacity: 0; transform: scale(0.92); }
+          to   { opacity: 1; transform: scale(1); }
+        }
+        @keyframes fadeUp {
+          from { opacity: 0; transform: translateY(16px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to   { opacity: 1; }
+        }
+        @keyframes float {
+          0%, 100% { transform: translateY(0); }
+          50%       { transform: translateY(-7px); }
+        }
+        @keyframes bounce-in {
+          0%   { opacity: 0; transform: scale(0.88); }
+          60%  { opacity: 1; transform: scale(1.03); }
+          100% { transform: scale(1); }
+        }
+        @keyframes orb-drift {
+          0%   { transform: translate(0,0) scale(1); }
+          33%  { transform: translate(25px,-18px) scale(1.05); }
+          66%  { transform: translate(-12px,14px) scale(0.97); }
+          100% { transform: translate(0,0) scale(1); }
+        }
+      `}</style>
     </div>
   );
 }
