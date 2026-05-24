@@ -1,17 +1,22 @@
-import React, { useEffect, useState } from 'react';
-import { Bookmark, FileText, GraduationCap, Clock, BookOpen, AlertCircle } from 'lucide-react';
+import React, { useEffect, useState, useRef } from 'react';
+import { Bookmark, FileText, GraduationCap, Clock, BookOpen, AlertCircle, X, Copy, Check, Download } from 'lucide-react';
 import { getUserDocuments } from '../lib/firebase';
 import { useAuth } from '../context/AuthContext';
+import ReactMarkdown from 'react-markdown';
+import { jsPDF } from 'jspdf';
+import html2canvas from 'html2canvas';
 
 export default function History() {
   const { currentUser } = useAuth();
   const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedDoc, setSelectedDoc] = useState(null);
+  const [copied, setCopied] = useState(false);
+  const contentRef = useRef(null);
 
   useEffect(() => {
     async function fetchDocs() {
       if (currentUser) {
-        // We use email as a fallback ID if uid isn't there for the mock user
         const docs = await getUserDocuments(currentUser.uid || currentUser.email);
         setDocuments(docs);
       }
@@ -28,6 +33,38 @@ export default function History() {
       case 'revision': return <BookOpen size={20} color="#10b981" />;
       default: return <FileText size={20} />;
     }
+  };
+
+  const getTypeLabel = (type) => {
+    switch(type) {
+      case 'note': return 'Short Notes';
+      case 'test': return 'Mock Test';
+      case 'timetable': return 'Study Timetable';
+      case 'revision': return 'Revision Recap';
+      default: return 'Study Material';
+    }
+  };
+
+  const handleCopy = () => {
+    if (selectedDoc) {
+      navigator.clipboard.writeText(selectedDoc.content);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  const handleDownloadPDF = async () => {
+    if (!contentRef.current || !selectedDoc) return;
+    
+    const canvas = await html2canvas(contentRef.current, { scale: 2 });
+    const imgData = canvas.toDataURL('image/png');
+    
+    const pdf = new jsPDF('p', 'mm', 'a4');
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+    
+    pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+    pdf.save(`${selectedDoc.title.replace(/\s+/g, '_')}.pdf`);
   };
 
   if (!currentUser) {
@@ -61,7 +98,7 @@ export default function History() {
       ) : (
         <div className="grid-cards">
           {documents.map(doc => (
-            <div key={doc.id} className="card" style={{ cursor: 'pointer' }} onClick={() => alert("Viewing saved document functionality coming soon!")}>
+            <div key={doc.id} className="card" style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column' }} onClick={() => setSelectedDoc(doc)}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
                 <div style={{ padding: '0.5rem', backgroundColor: 'var(--bg)', borderRadius: 'var(--radius)' }}>
                   {getIcon(doc.type)}
@@ -71,6 +108,9 @@ export default function History() {
                 </div>
               </div>
               <h3 style={{ fontSize: '1.125rem', marginBottom: '0.5rem' }}>{doc.title}</h3>
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>
+                Type: {getTypeLabel(doc.type)}
+              </p>
               <p style={{ color: 'var(--primary)', fontSize: '0.875rem', fontWeight: 600, marginTop: 'auto' }}>
                 View Document &rarr;
               </p>
@@ -78,6 +118,94 @@ export default function History() {
           ))}
         </div>
       )}
+
+      {/* ── DOCUMENT VIEWER MODAL ── */}
+      {selectedDoc && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
+          backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          zIndex: 1000, padding: '1rem'
+        }} onClick={() => setSelectedDoc(null)}>
+          <div style={{
+            background: 'var(--bg-secondary)',
+            border: '1px solid var(--border)',
+            borderRadius: '1rem',
+            width: '100%', maxWidth: '800px', maxHeight: '90vh',
+            display: 'flex', flexDirection: 'column',
+            boxShadow: 'var(--shadow-lg)',
+            overflow: 'hidden',
+            animation: 'fadeIn 0.2s ease-out'
+          }} onClick={e => e.stopPropagation()}>
+            
+            {/* Modal Header */}
+            <div style={{
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+              padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--border)',
+              background: 'var(--bg-tertiary)'
+            }}>
+              <div>
+                <span style={{
+                  fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.05em',
+                  fontWeight: 700, color: 'var(--primary)', background: 'var(--primary-light)',
+                  padding: '0.25rem 0.5rem', borderRadius: '4px', display: 'inline-block',
+                  marginBottom: '0.375rem'
+                }}>
+                  {getTypeLabel(selectedDoc.type)}
+                </span>
+                <h2 style={{ fontSize: '1.25rem', margin: 0 }}>{selectedDoc.title}</h2>
+              </div>
+              <button style={{
+                background: 'none', border: 'none', color: 'var(--text-secondary)',
+                cursor: 'pointer', padding: '0.25rem', borderRadius: '50%'
+              }} onClick={() => setSelectedDoc(null)}>
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Modal Scrollable Content */}
+            <div style={{ flex: 1, overflowY: 'auto', padding: '1.5rem' }}>
+              <div ref={contentRef} className="generated-content" style={{
+                padding: '1.5rem', background: 'var(--bg)', border: '1px solid var(--border)',
+                borderRadius: 'var(--radius-sm)', lineHeight: '1.8'
+              }}>
+                <ReactMarkdown>{selectedDoc.content}</ReactMarkdown>
+              </div>
+            </div>
+
+            {/* Modal Footer Controls */}
+            <div style={{
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+              padding: '1rem 1.5rem', borderTop: '1px solid var(--border)',
+              background: 'var(--bg-tertiary)'
+            }}>
+              <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                Saved: {selectedDoc.createdAt?.toDate ? selectedDoc.createdAt.toDate().toLocaleDateString() : 'Just now'}
+              </div>
+              <div style={{ display: 'flex', gap: '0.75rem' }}>
+                <button className="btn btn-secondary" style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }} onClick={handleCopy}>
+                  {copied ? <Check size={16} color="green" /> : <Copy size={16} />}
+                  {copied ? 'Copied!' : 'Copy Text'}
+                </button>
+                <button className="btn btn-primary" style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }} onClick={handleDownloadPDF}>
+                  <Download size={16} />
+                  Download PDF
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* Fade In Animation */}
+      <style>{`
+        @keyframes fadeIn {
+          from { opacity: 0; transform: scale(0.95); }
+          to { opacity: 1; transform: scale(1); }
+        }
+      `}</style>
+
     </div>
   );
 }
