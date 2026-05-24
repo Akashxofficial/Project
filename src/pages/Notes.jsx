@@ -12,6 +12,7 @@ export default function Notes() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [copied, setCopied] = useState(false);
+  const [statusMsg, setStatusMsg] = useState('');
   
   // Form states
   const [grade, setGrade] = useState('');
@@ -28,13 +29,16 @@ export default function Notes() {
     setLoading(true);
     setError(null);
     setResult(null);
+    setStatusMsg('thinking');
     
     const prompt = generateNotesPrompt(grade, subject, chapter, type);
-    const response = await generateAIContent(prompt);
+    const onStatus = (msg) => setStatusMsg(msg || '');
+    const response = await generateAIContent(prompt, onStatus);
     
     if (response.error || !response.text) {
       setError(response.message || '⚠️ Something went wrong. Please try again.');
       setLoading(false);
+      setStatusMsg('');
       return;
     }
 
@@ -49,6 +53,7 @@ export default function Notes() {
     }
     
     setLoading(false);
+    setStatusMsg('');
   };
 
   const handleCopy = () => {
@@ -139,7 +144,7 @@ export default function Notes() {
           </div>
 
           <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '1rem' }} disabled={loading || !grade || !subject || !chapter}>
-            {loading ? 'Generating...' : <><Sparkles size={18} /> Generate Notes</>}
+            {loading ? (statusMsg && statusMsg !== 'thinking' ? statusMsg : 'Generating Notes...') : <><Sparkles size={18} /> Generate Notes</>}
           </button>
         </form>
 
