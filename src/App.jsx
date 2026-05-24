@@ -46,10 +46,11 @@ function MainApp({ currentUser }) {
   return (
     <div className="app-container">
 
-      {/* Mobile Overlay */}
+      {/* Mobile Overlay — always in DOM, pointer-events controls interaction */}
       <div
         className={`sidebar-overlay ${sidebarOpen ? 'open' : ''}`}
         onClick={() => setSidebarOpen(false)}
+        aria-hidden="true"
       />
 
       {/* Sidebar */}
@@ -67,6 +68,7 @@ function MainApp({ currentUser }) {
               to={item.to}
               end={item.end}
               className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
+              onClick={() => setSidebarOpen(false)}
             >
               {item.icon}
               <span>{item.label}</span>
