@@ -43,13 +43,13 @@ export default function TestGenerator() {
 
     const docTitle = `${subject} - ${topic} (Mock Test)`;
     setResult({ title: docTitle, content: response.text });
-    
-    if (currentUser) {
-      await saveDocument(currentUser.uid || currentUser.email, 'test', docTitle, response.text);
-    }
-    
     setLoading(false);
     setStatusMsg('');
+    
+    if (currentUser) {
+      saveDocument(currentUser.uid || currentUser.email, 'test', docTitle, response.text)
+        .catch(err => console.warn('Save failed (non-blocking):', err));
+    }
   };
 
   const handleDownloadPDF = async () => {
