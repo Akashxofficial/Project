@@ -104,7 +104,9 @@
 .grid-cards .card:nth-child(6)  { animation: fadeUp 0.3s 0.30s cubic-bezier(.4,0,.2,1) both; }
 
 /* ─── SIDEBAR NAV ANIMATIONS ─────────────────────────────────────────────────── */
-.sidebar { animation: slideInLeft 0.3s cubic-bezier(.4,0,.2,1) both; }
+@media (min-width: 769px) {
+  .sidebar { animation: slideInLeft 0.3s cubic-bezier(.4,0,.2,1) both; }
+}
 
 .nav-item {
   transition: background 0.18s ease, color 0.18s ease,
@@ -293,16 +295,7 @@
   animation: fadeIn 0.3s ease both;
 }
 
-/* ─── SIDEBAR OVERLAY FADE ────────────────────────────────────────────────────── */
-.sidebar-overlay {
-  transition: opacity 0.25s ease !important;
-  opacity: 0;
-}
 
-.sidebar-overlay.open {
-  opacity: 1;
-  display: block;
-}
 
 /* ─── CARD ICON HOVER ──────────────────────────────────────────────────────────── */
 .card-icon {
@@ -327,7 +320,7 @@
     transition-duration: 0.01ms !important;
   }
 }
-;
+
 
 /* ─── DESIGN TOKENS ─────────────────────────────────────────────────────────── */
 :root {
@@ -414,12 +407,21 @@ img { max-width: 100%; }
 }
 
 .sidebar-overlay {
-  display: none;
+  /* Use pointer-events instead of display:none so opacity can transition smoothly */
+  display: block;
+  pointer-events: none;
   position: fixed;
   inset: 0;
   background: rgba(0,0,0,0.5);
   z-index: 99;
   backdrop-filter: blur(2px);
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+.sidebar-overlay.open {
+  pointer-events: all;
+  opacity: 1;
 }
 
 .logo {
@@ -711,6 +713,23 @@ img { max-width: 100%; }
   outline: none;
   border-color: var(--primary);
   box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
+}
+
+/* Ensure mobile date fields are fully tap-friendly to trigger date picker */
+input[type="date"].input-field {
+  position: relative;
+  min-height: 2.75rem;
+}
+
+input[type="date"].input-field::-webkit-calendar-picker-indicator {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 2;
 }
 
 /* ─── CHAT ───────────────────────────────────────────────────────────────────── */
