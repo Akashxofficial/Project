@@ -27,24 +27,15 @@ const navItems = [
   { to: '/history', icon: <Bookmark size={18} />, label: 'Saved Materials' },
 ];
 
-function App() {
-  const { currentUser } = useAuth();
+// ── Inner app — only rendered when user is logged in ──────────────────────────
+function MainApp({ currentUser }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
 
-  // ── If not logged in, show the login page ──────────────────────────────────
-  if (!currentUser) {
-    return <LoginPage />;
-  }
-
-  // ── Close sidebar on route change (mobile) ──────────────────────────────────
-  // eslint-disable-next-line react-hooks/rules-of-hooks
   useEffect(() => {
     setSidebarOpen(false);
   }, [location.pathname]);
 
-  // ── Prevent body scroll when sidebar is open ────────────────────────────────
-  // eslint-disable-next-line react-hooks/rules-of-hooks
   useEffect(() => {
     document.body.style.overflow = sidebarOpen ? 'hidden' : '';
     return () => { document.body.style.overflow = ''; };
@@ -55,13 +46,13 @@ function App() {
   return (
     <div className="app-container">
 
-      {/* ── Mobile Sidebar Overlay ── */}
+      {/* Mobile Overlay */}
       <div
         className={`sidebar-overlay ${sidebarOpen ? 'open' : ''}`}
         onClick={() => setSidebarOpen(false)}
       />
 
-      {/* ── Sidebar ── */}
+      {/* Sidebar */}
       <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
         <div className="logo">
           <div className="logo-icon"><Sparkles size={16} /></div>
@@ -83,7 +74,7 @@ function App() {
           ))}
         </nav>
 
-        {/* ── User profile at bottom ── */}
+        {/* User Profile */}
         <div style={{
           borderTop: '1px solid var(--border)',
           paddingTop: '1rem', marginTop: '1rem',
@@ -110,7 +101,7 @@ function App() {
         </div>
       </aside>
 
-      {/* ── Main Content ── */}
+      {/* Main Content */}
       <main className="main-content">
         <header className="header">
           <div className="header-left">
@@ -148,6 +139,17 @@ function App() {
       </main>
     </div>
   );
+}
+
+// ── Root app — decides login or main ─────────────────────────────────────────
+function App() {
+  const { currentUser } = useAuth();
+
+  // Not logged in → show the beautiful login page
+  if (!currentUser) return <LoginPage />;
+
+  // Logged in → show the full app
+  return <MainApp currentUser={currentUser} />;
 }
 
 export default App;
