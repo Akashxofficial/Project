@@ -46,7 +46,7 @@ export default function Revision() {
         </div>
       </div>
 
-      <div className="grid-cards" style={{ gridTemplateColumns: result ? '1fr 2fr' : '1fr', gap: '2rem' }}>
+      <div className={`generator-layout ${result ? 'has-result' : ''}`}>
         <form onSubmit={handleGenerate} className="card">
           <div className="input-group">
             <label className="input-label">Subject</label>
