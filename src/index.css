@@ -183,6 +183,7 @@ img { max-width: 100%; }
   gap: 1rem;
 }
 
+
 .header-left { display: flex; align-items: center; gap: 1rem; }
 .header-right { display: flex; align-items: center; gap: 0.75rem; }
 
@@ -588,6 +589,17 @@ h3 { font-size: 1.15rem; }
 .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
 .scrollbar-thin::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
 
+/* ─── MOBILE LOGO (shown in header on mobile only) ──────────────────────────── */
+.mobile-logo {
+  display: none; /* hidden on desktop */
+  align-items: center;
+  gap: 0.5rem;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
 /* ─── RESPONSIVE ─────────────────────────────────────────────────────────────── */
 
 /* Tablet: 768px */
@@ -607,6 +619,9 @@ h3 { font-size: 1.15rem; }
   .hamburger { display: flex; }
 
   .main-content { margin-left: 0; }
+
+  /* Show TaniOS AI logo in header on mobile */
+  .mobile-logo { display: flex; }
 
   .page-content { padding: 1.25rem 1rem; }
 
