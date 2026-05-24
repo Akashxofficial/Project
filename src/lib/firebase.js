@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
-import { getFirestore, collection, addDoc, query, where, getDocs, orderBy, serverTimestamp } from 'firebase/firestore';
+import { getFirestore, collection, addDoc, query, where, getDocs, orderBy, serverTimestamp, doc, setDoc, deleteDoc } from 'firebase/firestore';
 
 // Your web app's Firebase configuration
 // Replace these with your actual Firebase config from Firebase Console
@@ -113,5 +113,50 @@ export const getUserDocuments = async (userId) => {
       console.error("❌ Error getting documents:", e2.code, e2.message);
       return [];
     }
+  }
+};
+
+// ── Chat Session Helpers ────────────────────────────────────────────────────
+
+export const saveChatSession = async (userId, sessionId, title, messages) => {
+  if (!import.meta.env.VITE_FIREBASE_API_KEY || import.meta.env.VITE_FIREBASE_API_KEY === 'dummy-api-key') return;
+  try {
+    await setDoc(doc(db, "chat_sessions", sessionId), {
+      userId,
+      title,
+      messages,
+      updatedAt: serverTimestamp()
+    }, { merge: true });
+  } catch (e) {
+    console.error("❌ Error saving chat session:", e.message);
+  }
+};
+
+export const getUserChatSessions = async (userId) => {
+  if (!import.meta.env.VITE_FIREBASE_API_KEY || import.meta.env.VITE_FIREBASE_API_KEY === 'dummy-api-key') return [];
+  try {
+    const q = query(collection(db, "chat_sessions"), where("userId", "==", userId));
+    const snap = await getDocs(q);
+    const sessions = [];
+    snap.forEach(d => sessions.push({ id: d.id, ...d.data() }));
+    // Sort client-side — no composite index needed
+    sessions.sort((a, b) => {
+      const ta = a.updatedAt?.toDate?.() || new Date(0);
+      const tb = b.updatedAt?.toDate?.() || new Date(0);
+      return tb - ta;
+    });
+    return sessions;
+  } catch (e) {
+    console.error("❌ Error fetching chat sessions:", e.message);
+    return [];
+  }
+};
+
+export const deleteChatSession = async (sessionId) => {
+  if (!import.meta.env.VITE_FIREBASE_API_KEY || import.meta.env.VITE_FIREBASE_API_KEY === 'dummy-api-key') return;
+  try {
+    await deleteDoc(doc(db, "chat_sessions", sessionId));
+  } catch (e) {
+    console.error("❌ Error deleting chat session:", e.message);
   }
 };
