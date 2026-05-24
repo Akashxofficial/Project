@@ -10,6 +10,7 @@ export default function History() {
   const { currentUser } = useAuth();
   const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(null);
   const [selectedDoc, setSelectedDoc] = useState(null);
   const [copied, setCopied] = useState(false);
   const contentRef = useRef(null);
@@ -17,8 +18,13 @@ export default function History() {
   useEffect(() => {
     async function fetchDocs() {
       if (currentUser) {
-        const docs = await getUserDocuments(currentUser.uid || currentUser.email);
-        setDocuments(docs);
+        try {
+          const docs = await getUserDocuments(currentUser.uid || currentUser.email);
+          setDocuments(docs);
+        } catch (err) {
+          console.error("Fetch error:", err);
+          setFetchError(err.message || "Failed to load saved materials.");
+        }
       }
       setLoading(false);
     }
@@ -90,7 +96,20 @@ export default function History() {
       </div>
 
       {loading ? (
-        <p>Loading your history...</p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: 'var(--text-secondary)', padding: '2rem 0' }}>
+          <div style={{ width: '20px', height: '20px', border: '2.5px solid var(--primary)', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
+          Loading your saved materials...
+        </div>
+      ) : fetchError ? (
+        <div className="card" style={{ textAlign: 'center', padding: '3rem 2rem', borderColor: 'rgba(239,68,68,0.3)' }}>
+          <AlertCircle size={40} color="#ef4444" style={{ marginBottom: '1rem' }} />
+          <h3 style={{ color: '#ef4444', marginBottom: '0.5rem' }}>Could not load saved materials</h3>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '1rem' }}>{fetchError}</p>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>
+            This usually means Firestore Security Rules are blocking reads, or a database index is missing.<br />
+            Check the browser console for a Firestore index creation link.
+          </p>
+        </div>
       ) : documents.length === 0 ? (
         <div className="card" style={{ textAlign: 'center', padding: '4rem 2rem' }}>
           <p style={{ color: 'var(--text-secondary)' }}>You haven't saved any materials yet. Try generating some notes or a test!</p>

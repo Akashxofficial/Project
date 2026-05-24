@@ -46,7 +46,7 @@ export const logout = async () => {
 
 // Firestore Database Helpers
 export const saveDocument = async (userId, type, title, content) => {
-  if (!import.meta.env.VITE_FIREBASE_API_KEY) {
+  if (!import.meta.env.VITE_FIREBASE_API_KEY || import.meta.env.VITE_FIREBASE_API_KEY === 'dummy-api-key') {
     console.warn("Mock DB Save: ", { type, title });
     return true;
   }
@@ -59,23 +59,25 @@ export const saveDocument = async (userId, type, title, content) => {
       content,
       createdAt: serverTimestamp()
     });
+    console.log("✅ Document saved:", docRef.id);
     return docRef.id;
   } catch (e) {
-    console.error("Error adding document: ", e);
+    console.error("❌ Error saving document to Firestore:", e.code, e.message);
     return null;
   }
 };
 
 export const getUserDocuments = async (userId) => {
-  if (!import.meta.env.VITE_FIREBASE_API_KEY) {
+  if (!import.meta.env.VITE_FIREBASE_API_KEY || import.meta.env.VITE_FIREBASE_API_KEY === 'dummy-api-key') {
     // Return mock data for UI testing
     return [
-      { id: '1', type: 'note', title: 'Structure of Atom - Short Notes', createdAt: { toDate: () => new Date() } },
-      { id: '2', type: 'test', title: 'Biology - Cell Structure', createdAt: { toDate: () => new Date() } }
+      { id: '1', type: 'note', title: 'Structure of Atom - Short Notes', content: '# Sample Notes\nThis is mock content.', createdAt: { toDate: () => new Date() } },
+      { id: '2', type: 'test', title: 'Biology - Cell Structure (Mock Test)', content: '# Sample Test\nQ1. What is a cell?', createdAt: { toDate: () => new Date() } }
     ];
   }
 
   try {
+    // Try with orderBy first (requires Firestore composite index)
     const q = query(
       collection(db, "saved_materials"),
       where("userId", "==", userId),
@@ -88,7 +90,28 @@ export const getUserDocuments = async (userId) => {
     });
     return docs;
   } catch (e) {
-    console.error("Error getting documents: ", e);
-    return [];
+    console.warn("⚠️ Ordered query failed (index may be missing), trying without orderBy:", e.message);
+    // Fallback: query without orderBy — works without composite index
+    try {
+      const q2 = query(
+        collection(db, "saved_materials"),
+        where("userId", "==", userId)
+      );
+      const querySnapshot2 = await getDocs(q2);
+      const docs = [];
+      querySnapshot2.forEach((doc) => {
+        docs.push({ id: doc.id, ...doc.data() });
+      });
+      // Sort client-side by createdAt descending
+      docs.sort((a, b) => {
+        const ta = a.createdAt?.toDate?.() || new Date(0);
+        const tb = b.createdAt?.toDate?.() || new Date(0);
+        return tb - ta;
+      });
+      return docs;
+    } catch (e2) {
+      console.error("❌ Error getting documents:", e2.code, e2.message);
+      return [];
+    }
   }
 };
