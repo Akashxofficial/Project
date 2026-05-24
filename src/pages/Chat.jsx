@@ -25,9 +25,11 @@ const saveGuestSessions = (sessions) => {
 
 // ── Component ────────────────────────────────────────────────────────────────
 export default function Chat() {
-  const { currentUser, incrementGuestUsage } = useAuth();
+  const { currentUser, incrementGuestUsage, getRemainingQuota, QUOTA } = useAuth();
   const isGuest = currentUser?.isGuest;
   const userId = currentUser?.uid || currentUser?.email || 'guest';
+  const remaining = getRemainingQuota?.() ?? (isGuest ? QUOTA?.guest : QUOTA?.loggedIn);
+  const limit = isGuest ? QUOTA?.guest : QUOTA?.loggedIn;
 
   // Session list & active session
   const [sessions, setSessions] = useState([]);           // [{ id, title, messages }]
@@ -240,6 +242,33 @@ export default function Chat() {
                 </button>
               </div>
             ))
+          )}
+        </div>
+
+        {/* ── Quota counter ── */}
+        <div style={{
+          padding: '0.75rem',
+          borderTop: '1px solid var(--border)',
+          fontSize: '0.72rem',
+          color: 'var(--text-secondary)',
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
+            <span>Daily AI Requests</span>
+            <span style={{ color: remaining === 0 ? '#f87171' : remaining <= 3 ? '#fb923c' : '#a78bfa', fontWeight: 700 }}>
+              {remaining}/{limit}
+            </span>
+          </div>
+          <div style={{ height: '4px', background: 'rgba(255,255,255,0.07)', borderRadius: '99px', overflow: 'hidden' }}>
+            <div style={{
+              height: '100%',
+              width: `${limit > 0 ? (remaining / limit) * 100 : 0}%`,
+              background: remaining === 0 ? '#f87171' : remaining <= 3 ? 'linear-gradient(90deg,#fb923c,#f87171)' : 'linear-gradient(90deg,var(--primary),var(--accent))',
+              borderRadius: '99px',
+              transition: 'width 0.4s ease'
+            }} />
+          </div>
+          {remaining === 0 && (
+            <div style={{ color: '#f87171', marginTop: '0.35rem', fontSize: '0.68rem' }}>Resets at midnight 🌙</div>
           )}
         </div>
       </aside>

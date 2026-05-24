@@ -192,7 +192,7 @@ function MainApp() {
 
 // ── Root app — includes dynamic login modal wrapper ──────────────────────────
 function App() {
-  const { showLoginModal, setShowLoginModal, login, loading } = useAuth();
+  const { showLoginModal, setShowLoginModal, showQuotaModal, setShowQuotaModal, login, loading, QUOTA } = useAuth();
 
   if (loading) {
     return (
@@ -202,87 +202,84 @@ function App() {
     );
   }
 
+  const modalBackdrop = {
+    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+    background: 'rgba(10, 10, 10, 0.85)', backdropFilter: 'blur(10px)',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    zIndex: 9999, padding: '1.5rem',
+  };
+
+  const modalCard = {
+    maxWidth: '400px', width: '100%',
+    background: 'rgba(22, 22, 26, 0.9)',
+    border: '1px solid rgba(255, 255, 255, 0.08)',
+    boxShadow: '0 20px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05)',
+    padding: '2.5rem 2rem', borderRadius: '16px', textAlign: 'center',
+  };
+
+  const iconBox = {
+    width: '4rem', height: '4rem',
+    background: 'linear-gradient(135deg, rgba(108, 99, 255, 0.15), rgba(0, 242, 254, 0.15))',
+    borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+    margin: '0 auto 1.5rem'
+  };
+
+  const primaryBtn = {
+    width: '100%', padding: '0.875rem',
+    background: 'linear-gradient(135deg, var(--primary), var(--accent))',
+    color: 'white', border: 'none', borderRadius: 'var(--radius-sm)',
+    fontSize: '0.95rem', fontWeight: 700, cursor: 'pointer',
+    boxShadow: '0 6px 20px rgba(108, 99, 255, 0.25)',
+    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+    marginBottom: '1.25rem', transition: 'all 0.2s'
+  };
+
+  const ghostBtn = {
+    background: 'none', border: 'none', color: 'var(--text-secondary)',
+    fontSize: '0.82rem', cursor: 'pointer', textDecoration: 'underline'
+  };
+
   return (
     <>
       <MainApp />
 
-
-      {/* Glassmorphic Premium Login Modal */}
+      {/* ── Guest upgrade modal ── */}
       {showLoginModal && (
-        <div style={{
-          position: 'fixed',
-          top: 0, left: 0, right: 0, bottom: 0,
-          background: 'rgba(10, 10, 10, 0.85)',
-          backdropFilter: 'blur(10px)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 9999,
-          padding: '1.5rem',
-        }}>
-          <div className="card" style={{
-            maxWidth: '400px',
-            width: '100%',
-            background: 'rgba(22, 22, 26, 0.9)',
-            border: '1px solid rgba(255, 255, 255, 0.08)',
-            boxShadow: '0 20px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05)',
-            padding: '2.5rem 2rem',
-            borderRadius: '16px',
-            textAlign: 'center',
-            position: 'relative'
-          }}>
-            {/* Sparkles icon container */}
-            <div style={{
-              width: '4rem', height: '4rem',
-              background: 'linear-gradient(135deg, rgba(108, 99, 255, 0.15), rgba(0, 242, 254, 0.15))',
-              borderRadius: '50%',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              margin: '0 auto 1.5rem'
-            }}>
-              <Sparkles size={32} color="var(--primary)" />
-            </div>
-
+        <div style={modalBackdrop}>
+          <div className="card" style={modalCard}>
+            <div style={iconBox}><Sparkles size={32} color="var(--primary)" /></div>
             <h3 style={{ fontSize: '1.35rem', fontWeight: 800, marginBottom: '0.5rem', color: '#fff' }}>
               Unlock Premium AI Features! 🚀
             </h3>
             <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '2.25rem' }}>
-              Sign in with Google to get unlimited AI academic generations, study plans, mock tests, and save all your revision materials!
+              Sign in with Google to get <strong style={{ color: '#fff' }}>{QUOTA.loggedIn} free AI requests/day</strong> — unlimited study plans, mock tests, notes, and your chat history saved forever!
             </p>
+            <button onClick={login} style={primaryBtn}><Sparkles size={16} /> Continue with Google</button>
+            <button onClick={() => setShowLoginModal(false)} style={ghostBtn}>Keep Browsing as Guest</button>
+          </div>
+        </div>
+      )}
 
-            <button
-              onClick={login}
-              style={{
-                width: '100%',
-                padding: '0.875rem',
-                background: 'linear-gradient(135deg, var(--primary), var(--accent))',
-                color: 'white',
-                border: 'none',
-                borderRadius: 'var(--radius-sm)',
-                fontSize: '0.95rem',
-                fontWeight: 700,
-                cursor: 'pointer',
-                boxShadow: '0 6px 20px rgba(108, 99, 255, 0.25)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
-                marginBottom: '1.25rem',
-                transition: 'all 0.2s'
-              }}
-            >
-              <Sparkles size={16} /> Continue with Google
-            </button>
-
-            <button
-              onClick={() => setShowLoginModal(false)}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: 'var(--text-secondary)',
-                fontSize: '0.82rem',
-                cursor: 'pointer',
-                textDecoration: 'underline'
-              }}
-            >
-              Keep Browsing as Guest
-            </button>
+      {/* ── Daily quota exhausted modal (for logged-in users) ── */}
+      {showQuotaModal && (
+        <div style={modalBackdrop}>
+          <div className="card" style={modalCard}>
+            <div style={{ ...iconBox, background: 'linear-gradient(135deg, rgba(251,146,60,0.15), rgba(239,68,68,0.15))' }}>
+              <span style={{ fontSize: '2rem' }}>⏰</span>
+            </div>
+            <h3 style={{ fontSize: '1.35rem', fontWeight: 800, marginBottom: '0.5rem', color: '#fff' }}>
+              Daily Limit Reached
+            </h3>
+            <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '0.75rem' }}>
+              You've used your <strong style={{ color: '#fff' }}>{QUOTA.loggedIn} free AI requests</strong> for today.
+            </p>
+            <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginBottom: '2rem' }}>
+              Your quota resets at <strong style={{ color: '#a78bfa' }}>midnight 🌙</strong> — come back tomorrow!
+            </p>
+            <div style={{ background: 'rgba(167,139,250,0.08)', border: '1px solid rgba(167,139,250,0.2)', borderRadius: '10px', padding: '0.875rem', marginBottom: '1.5rem', fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
+              💡 <strong style={{ color: '#fff' }}>Pro tip:</strong> Common questions are cached — asking the same topic won't use your quota!
+            </div>
+            <button onClick={() => setShowQuotaModal(false)} style={primaryBtn}>Got it, I'll come back tomorrow!</button>
           </div>
         </div>
       )}
