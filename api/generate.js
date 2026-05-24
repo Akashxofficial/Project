@@ -110,6 +110,16 @@ export default async function handler(req, res) {
       });
     }
 
+    // Detect permanent key exhaustion (Daily limit 1500 reached / Billing block)
+    const errText = error.message.toLowerCase();
+    if (errText.includes('exceeded your current quota') || errText.includes('billing') || errText.includes('check your plan')) {
+      return res.status(403).json({
+        error: '⚠️ Google Gemini daily free limit has been 100% exhausted. Please create a new free API Key in Google AI Studio and update your .env file.',
+        code: 'QUOTA_EXHAUSTED',
+        diagnostics: { keysFound: apiKeys.length, maskedKeys, lastError: error.message.split('\n')[0] }
+      });
+    }
+
     if (error.status === 429 || error.message.includes('429') || error.message.toLowerCase().includes('quota')) {
       // Parse Google's retryDelay hint (e.g. "retryDelay":"31s") from the error message
       const delayMatch = error.message.match(/retryDelay.*?(\d+)/);
