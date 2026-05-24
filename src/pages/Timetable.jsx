@@ -9,6 +9,7 @@ export default function Timetable() {
   const { currentUser } = useAuth();
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
+  const [statusMsg, setStatusMsg] = useState('');
 
   const [date, setDate] = useState('');
   const [subjects, setSubjects] = useState('');
@@ -22,13 +23,16 @@ export default function Timetable() {
     setLoading(true);
     setError(null);
     setResult(null);
+    setStatusMsg('thinking');
     
     const prompt = generateTimetablePrompt(date, subjects, hours, preference);
-    const response = await generateAIContent(prompt);
+    const onStatus = (msg) => setStatusMsg(msg || '');
+    const response = await generateAIContent(prompt, onStatus);
 
     if (response.error || !response.text) {
       setError(response.message || '⚠️ Something went wrong. Please try again.');
       setLoading(false);
+      setStatusMsg('');
       return;
     }
 
@@ -39,6 +43,7 @@ export default function Timetable() {
     }
     
     setLoading(false);
+    setStatusMsg('');
   };
 
   return (
@@ -86,7 +91,7 @@ export default function Timetable() {
             </select>
           </div>
           <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '1rem', backgroundColor: '#8b5cf6' }} disabled={loading || !date || !subjects || !hours}>
-            {loading ? 'Planning...' : <><CalendarPlus size={18} /> Generate Plan</>}
+            {loading ? (statusMsg && statusMsg !== 'thinking' ? statusMsg : 'Planning...') : <><CalendarPlus size={18} /> Generate Plan</>}
           </button>
         </form>
 

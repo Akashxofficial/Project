@@ -11,6 +11,7 @@ export default function TestGenerator() {
   const { currentUser } = useAuth();
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
+  const [statusMsg, setStatusMsg] = useState('');
 
   const [subject, setSubject] = useState('');
   const [topic, setTopic] = useState('');
@@ -27,13 +28,16 @@ export default function TestGenerator() {
     setLoading(true);
     setError(null);
     setResult(null);
+    setStatusMsg('thinking');
     
     const prompt = generateTestPrompt(subject, topic, type, count, difficulty);
-    const response = await generateAIContent(prompt);
+    const onStatus = (msg) => setStatusMsg(msg || '');
+    const response = await generateAIContent(prompt, onStatus);
 
     if (response.error || !response.text) {
       setError(response.message || '⚠️ Something went wrong. Please try again.');
       setLoading(false);
+      setStatusMsg('');
       return;
     }
 
@@ -45,6 +49,7 @@ export default function TestGenerator() {
     }
     
     setLoading(false);
+    setStatusMsg('');
   };
 
   const handleDownloadPDF = async () => {
@@ -115,7 +120,7 @@ export default function TestGenerator() {
             </select>
           </div>
           <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '1rem', backgroundColor: '#f43f5e' }} disabled={loading || !subject || !topic}>
-            {loading ? 'Creating Test...' : <><Sparkles size={18} /> Generate Test</>}
+            {loading ? (statusMsg && statusMsg !== 'thinking' ? statusMsg : 'Creating Test...') : <><Sparkles size={18} /> Generate Test</>}
           </button>
         </form>
 

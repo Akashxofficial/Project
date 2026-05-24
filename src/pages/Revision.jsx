@@ -9,6 +9,7 @@ export default function Revision() {
   const { currentUser } = useAuth();
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
+  const [statusMsg, setStatusMsg] = useState('');
 
   // Form states
   const [subject, setSubject] = useState('');
@@ -22,13 +23,16 @@ export default function Revision() {
     setLoading(true);
     setError(null);
     setResult(null);
+    setStatusMsg('thinking');
     
     const prompt = generateRevisionPrompt(subject, chapter, time);
-    const response = await generateAIContent(prompt);
+    const onStatus = (msg) => setStatusMsg(msg || '');
+    const response = await generateAIContent(prompt, onStatus);
 
     if (response.error || !response.text) {
       setError(response.message || '⚠️ Something went wrong. Please try again.');
       setLoading(false);
+      setStatusMsg('');
       return;
     }
 
@@ -40,6 +44,7 @@ export default function Revision() {
     }
     
     setLoading(false);
+    setStatusMsg('');
   };
 
   return (
@@ -83,7 +88,7 @@ export default function Revision() {
             </select>
           </div>
           <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '1rem', backgroundColor: '#10b981' }} disabled={loading || !subject || !chapter}>
-            {loading ? 'Analyzing...' : <><Zap size={18} /> Start Revision</>}
+            {loading ? (statusMsg && statusMsg !== 'thinking' ? statusMsg : 'Analyzing...') : <><Zap size={18} /> Start Revision</>}
           </button>
         </form>
 
