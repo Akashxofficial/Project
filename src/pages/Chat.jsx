@@ -48,13 +48,20 @@ export default function Chat() {
   // ── Load sessions on mount ──────────────────────────────────────────────
   useEffect(() => {
     (async () => {
+      let saved = [];
       if (isGuest) {
-        const saved = loadGuestSessions();
-        setSessions(saved);
+        saved = loadGuestSessions();
       } else {
-        const saved = await getUserChatSessions(userId);
+        const fetched = await getUserChatSessions(userId);
         // Convert Firestore messages (plain array) — already serialisable
-        setSessions(saved.map(s => ({ ...s, messages: s.messages || [WELCOME_MSG] })));
+        saved = fetched.map(s => ({ ...s, messages: s.messages || [WELCOME_MSG] }));
+      }
+      setSessions(saved);
+
+      // Automatically load the most recent session into the main window so it doesn't look empty on refresh!
+      if (saved.length > 0) {
+        setActiveId(saved[0].id);
+        setMessages(saved[0].messages || [WELCOME_MSG]);
       }
     })();
     // On mobile default sidebar closed
