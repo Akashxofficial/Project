@@ -8,7 +8,7 @@ import { saveDocument } from '../lib/firebase';
 import { useAuth } from '../context/AuthContext';
 
 export default function TestGenerator() {
-  const { currentUser } = useAuth();
+  const { currentUser, incrementGuestUsage } = useAuth();
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [statusMsg, setStatusMsg] = useState('');
@@ -25,6 +25,11 @@ export default function TestGenerator() {
 
   const handleGenerate = async (e) => {
     e.preventDefault();
+    
+    if (!incrementGuestUsage()) {
+      return;
+    }
+
     setLoading(true);
     setError(null);
     setResult(null);

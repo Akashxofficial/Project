@@ -6,7 +6,7 @@ import { saveDocument } from '../lib/firebase';
 import { useAuth } from '../context/AuthContext';
 
 export default function Timetable() {
-  const { currentUser } = useAuth();
+  const { currentUser, incrementGuestUsage } = useAuth();
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [statusMsg, setStatusMsg] = useState('');
@@ -20,6 +20,11 @@ export default function Timetable() {
 
   const handleGenerate = async (e) => {
     e.preventDefault();
+    
+    if (!incrementGuestUsage()) {
+      return;
+    }
+
     setLoading(true);
     setError(null);
     setResult(null);
