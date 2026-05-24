@@ -1,21 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, NavLink, useLocation } from 'react-router-dom';
 import {
-  BookOpen,
-  MessageSquare,
-  Clock,
-  FileText,
-  GraduationCap,
-  LayoutDashboard,
-  User,
-  Sparkles,
-  LogOut,
-  Bookmark,
-  Menu,
-  X
+  BookOpen, MessageSquare, Clock, FileText,
+  GraduationCap, LayoutDashboard, User, Sparkles,
+  LogOut, Bookmark, Menu, X
 } from 'lucide-react';
 import { useAuth } from './context/AuthContext';
-import { loginWithGoogle, logout } from './lib/firebase';
+import { logout } from './lib/firebase';
 
 import Home from './pages/Home';
 import Chat from './pages/Chat';
@@ -24,6 +15,7 @@ import Revision from './pages/Revision';
 import Timetable from './pages/Timetable';
 import TestGenerator from './pages/TestGenerator';
 import History from './pages/History';
+import LoginPage from './pages/LoginPage';
 
 const navItems = [
   { to: '/', icon: <LayoutDashboard size={18} />, label: 'Dashboard', end: true },
@@ -40,27 +32,30 @@ function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
 
-  // Close sidebar on route change (mobile)
+  // ── If not logged in, show the login page ──────────────────────────────────
+  if (!currentUser) {
+    return <LoginPage />;
+  }
+
+  // ── Close sidebar on route change (mobile) ──────────────────────────────────
+  // eslint-disable-next-line react-hooks/rules-of-hooks
   useEffect(() => {
     setSidebarOpen(false);
   }, [location.pathname]);
 
-  // Prevent body scroll when sidebar is open on mobile
+  // ── Prevent body scroll when sidebar is open ────────────────────────────────
+  // eslint-disable-next-line react-hooks/rules-of-hooks
   useEffect(() => {
-    if (sidebarOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
+    document.body.style.overflow = sidebarOpen ? 'hidden' : '';
     return () => { document.body.style.overflow = ''; };
   }, [sidebarOpen]);
 
-  const firstName = currentUser?.displayName?.split(' ')[0] || 'Student';
+  const firstName = currentUser.displayName?.split(' ')[0] || 'Student';
 
   return (
     <div className="app-container">
 
-      {/* ── Sidebar Overlay (mobile) ── */}
+      {/* ── Mobile Sidebar Overlay ── */}
       <div
         className={`sidebar-overlay ${sidebarOpen ? 'open' : ''}`}
         onClick={() => setSidebarOpen(false)}
@@ -68,15 +63,11 @@ function App() {
 
       {/* ── Sidebar ── */}
       <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
-        {/* Logo */}
         <div className="logo">
-          <div className="logo-icon">
-            <Sparkles size={16} />
-          </div>
+          <div className="logo-icon"><Sparkles size={16} /></div>
           <span>TaniOS <span className="text-gradient">AI</span></span>
         </div>
 
-        {/* Nav */}
         <nav className="nav-menu">
           <span className="nav-section-label">Study Tools</span>
           {navItems.map(item => (
@@ -92,42 +83,35 @@ function App() {
           ))}
         </nav>
 
-        {/* User Profile at bottom */}
-        {currentUser && (
-          <div style={{
-            borderTop: '1px solid var(--border)',
-            paddingTop: '1rem',
-            marginTop: '1rem',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.75rem'
-          }}>
-            {currentUser.photoURL ? (
-              <img src={currentUser.photoURL} alt="profile" className="user-avatar" />
-            ) : (
-              <div className="avatar" style={{ width: '2rem', height: '2rem' }}>
-                <User size={14} />
-              </div>
-            )}
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontWeight: 600, fontSize: '0.85rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                {currentUser.displayName || 'Student'}
-              </div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                {currentUser.email}
-              </div>
+        {/* ── User profile at bottom ── */}
+        <div style={{
+          borderTop: '1px solid var(--border)',
+          paddingTop: '1rem', marginTop: '1rem',
+          display: 'flex', alignItems: 'center', gap: '0.75rem'
+        }}>
+          {currentUser.photoURL ? (
+            <img src={currentUser.photoURL} alt="profile" className="user-avatar" />
+          ) : (
+            <div className="avatar" style={{ width: '2rem', height: '2rem', flexShrink: 0 }}>
+              <User size={14} />
             </div>
-            <button className="icon-btn" onClick={logout} title="Logout">
-              <LogOut size={16} />
-            </button>
+          )}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontWeight: 600, fontSize: '0.85rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {currentUser.displayName || 'Student'}
+            </div>
+            <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {currentUser.email}
+            </div>
           </div>
-        )}
+          <button className="icon-btn" onClick={logout} title="Logout" style={{ flexShrink: 0 }}>
+            <LogOut size={16} />
+          </button>
+        </div>
       </aside>
 
       {/* ── Main Content ── */}
       <main className="main-content">
-
-        {/* ── Header ── */}
         <header className="header">
           <div className="header-left">
             <button className="hamburger" onClick={() => setSidebarOpen(o => !o)} aria-label="Toggle menu">
@@ -139,26 +123,19 @@ function App() {
           </div>
 
           <div className="header-right">
-            {currentUser ? (
-              <>
-                {currentUser.photoURL ? (
-                  <img src={currentUser.photoURL} alt="profile" className="user-avatar" />
-                ) : (
-                  <div className="avatar" style={{ width: '2rem', height: '2rem' }}>
-                    <User size={14} />
-                  </div>
-                )}
-              </>
+            {currentUser.photoURL ? (
+              <img src={currentUser.photoURL} alt="profile" className="user-avatar" title={currentUser.displayName} />
             ) : (
-              <button className="btn btn-primary" onClick={loginWithGoogle}>
-                <User size={16} />
-                Sign In with Google
-              </button>
+              <div className="avatar" style={{ width: '2rem', height: '2rem' }}>
+                <User size={14} />
+              </div>
             )}
+            <button className="icon-btn" onClick={logout} title="Logout">
+              <LogOut size={18} />
+            </button>
           </div>
         </header>
 
-        {/* ── Page Routes ── */}
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/chat" element={<Chat />} />
