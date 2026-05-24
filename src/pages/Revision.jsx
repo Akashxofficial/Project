@@ -38,12 +38,13 @@ export default function Revision() {
 
     const docTitle = `${time}-Minute Recap: ${chapter}`;
     setResult({ title: docTitle, content: response.text });
+    setLoading(false);
+    setStatusMsg('');
     
     if (currentUser) {
-      await saveDocument(currentUser.uid || currentUser.email, 'revision', docTitle, response.text);
+      saveDocument(currentUser.uid || currentUser.email, 'revision', docTitle, response.text)
+        .catch(err => console.warn('Save failed (non-blocking):', err));
     }
-    
-    setLoading(false);
     setStatusMsg('');
   };
 

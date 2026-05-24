@@ -37,13 +37,13 @@ export default function Timetable() {
     }
 
     setResult(response.text);
-    
-    if (currentUser) {
-      await saveDocument(currentUser.uid || currentUser.email, 'timetable', `Study Plan for ${date}`, response.text);
-    }
-    
     setLoading(false);
     setStatusMsg('');
+    
+    if (currentUser) {
+      saveDocument(currentUser.uid || currentUser.email, 'timetable', `Study Plan for ${date}`, response.text)
+        .catch(err => console.warn('Save failed (non-blocking):', err));
+    }
   };
 
   return (

@@ -104,11 +104,13 @@ Keep it student-friendly, concise, and exam-focused for ${board} Class ${grade} 
     const streamTag = isSenior && stream ? ` [${stream}]` : '';
     const docTitle = `[${board} Cl.${grade}${streamTag}] ${subject} — ${chapter} (${type})`;
     setResult({ title: docTitle, content: response.text });
+    setLoading(false); setStatusMsg(''); // ✅ Stop loading BEFORE saving to DB
 
+    // Fire-and-forget — never block UI on Firestore
     if (currentUser) {
-      await saveDocument(currentUser.uid || currentUser.email, 'note', docTitle, response.text);
+      saveDocument(currentUser.uid || currentUser.email, 'note', docTitle, response.text)
+        .catch(err => console.warn('Save failed (non-blocking):', err));
     }
-    setLoading(false); setStatusMsg('');
   };
 
   const handleCopy = () => {
