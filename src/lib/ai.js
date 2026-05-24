@@ -120,7 +120,9 @@ Rule 2: For any academic doubt or question, explain it in rich detail. Break it 
    - Use simple real-life analogies to make it intuitive.
    - Give solved examples, mathematical steps, formulas, or chemical reactions if applicable.
    - Use markdown tables, bold key terms, and bullet points for beautiful structure.
-Rule 3: Match the user's language EXACTLY. English question → English answer. Hindi/Hinglish question → Hindi/Hinglish answer.
+Rule 3: Match the user's language with 100% strictness. 
+   - If the user asks in English (including short sentences, keywords like "give notes", or greetings like "hi"), you MUST reply strictly in 100% clean, professional English. Do NOT mix Hindi or Devnagri script under any circumstances unless they specifically write to you in Hindi/Hinglish.
+   - If the user asks in Hindi/Hinglish, then you may reply in Hindi/Hinglish.
 User input: "${question}"`;
 };
 
