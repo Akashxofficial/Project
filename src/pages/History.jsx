@@ -73,12 +73,42 @@ export default function History() {
     pdf.save(`${selectedDoc.title.replace(/\s+/g, '_')}.pdf`);
   };
 
-  if (!currentUser) {
+  if (currentUser?.isGuest) {
     return (
-      <div className="page-content" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '60vh', textAlign: 'center' }}>
-        <AlertCircle size={48} color="var(--text-secondary)" style={{ marginBottom: '1rem' }} />
-        <h2>Please Sign In</h2>
-        <p style={{ color: 'var(--text-secondary)' }}>You must be logged in to view your saved materials.</p>
+      <div className="page-content" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '65vh', textAlign: 'center' }}>
+        <div style={{
+          width: '5rem', height: '5rem',
+          background: 'linear-gradient(135deg, rgba(108, 99, 255, 0.15), rgba(0, 242, 254, 0.15))',
+          borderRadius: '50%',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          marginBottom: '1.5rem'
+        }}>
+          <Bookmark size={36} color="var(--primary)" />
+        </div>
+        <h2 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '0.5rem', color: '#fff' }}>
+          Save &amp; Access Your Study Materials! 📚
+        </h2>
+        <p style={{ color: 'var(--text-secondary)', maxWidth: '400px', lineHeight: 1.6, marginBottom: '1.75rem' }}>
+          Get instant access to your history of custom AI notes, test papers, and timetables. Sign in with Google to enable permanent saving!
+        </p>
+        <button 
+          onClick={() => useAuth().setShowLoginModal(true)}
+          style={{
+            background: 'linear-gradient(135deg, var(--primary), var(--accent))',
+            color: 'white',
+            border: 'none',
+            borderRadius: 'var(--radius-sm)',
+            padding: '0.75rem 1.75rem',
+            fontSize: '0.95rem',
+            fontWeight: 700,
+            cursor: 'pointer',
+            boxShadow: '0 6px 20px rgba(108, 99, 255, 0.25)',
+            display: 'flex', alignItems: 'center', gap: '0.5rem',
+            margin: '0 auto'
+          }}
+        >
+          Sign In with Google
+        </button>
       </div>
     );
   }

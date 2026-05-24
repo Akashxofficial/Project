@@ -49,7 +49,7 @@ const SENIOR = ['11th', '12th'];
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function Notes() {
-  const { currentUser } = useAuth();
+  const { currentUser, incrementGuestUsage } = useAuth();
   const [loading, setLoading]     = useState(false);
   const [result, setResult]       = useState(null);
   const [copied, setCopied]       = useState(false);
@@ -83,6 +83,11 @@ export default function Notes() {
 
   const handleGenerate = async (e) => {
     e.preventDefault();
+    
+    if (!incrementGuestUsage()) {
+      return;
+    }
+
     setLoading(true); setError(null); setResult(null); setStatusMsg('thinking');
 
     const streamLabel = isSenior && stream ? ` (${stream} Stream)` : '';

@@ -2,8 +2,10 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Send, Image as ImageIcon, Sparkles, User, Clock } from 'lucide-react';
 import { generateAIContent, generateDoubtPrompt } from '../lib/ai';
 import ReactMarkdown from 'react-markdown';
+import { useAuth } from '../context/AuthContext';
 
 export default function Chat() {
+  const { incrementGuestUsage } = useAuth();
   const [messages, setMessages] = useState([
     {
       id: 1,
@@ -25,6 +27,11 @@ export default function Chat() {
   const handleSend = useCallback(async (e) => {
     e?.preventDefault();
     if (!input.trim() || isLoading) return;
+
+    // Check Guest usage limit (max 2 academic queries)
+    if (!incrementGuestUsage()) {
+      return;
+    }
 
     const userText = input.trim();
     setInput('');

@@ -27,8 +27,9 @@ const navItems = [
   { to: '/history', icon: <Bookmark size={18} />, label: 'Saved Materials' },
 ];
 
-// ── Inner app — only rendered when user is logged in ──────────────────────────
-function MainApp({ currentUser }) {
+// ── Inner app — handles primary navigation & layouts ──────────────────────────
+function MainApp() {
+  const { currentUser, setShowLoginModal } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
 
@@ -41,7 +42,7 @@ function MainApp({ currentUser }) {
     return () => { document.body.style.overflow = ''; };
   }, [sidebarOpen]);
 
-  const firstName = currentUser.displayName?.split(' ')[0] || 'Student';
+  const firstName = currentUser?.displayName?.split(' ')[0] || 'Student';
 
   return (
     <div className="app-container">
@@ -76,13 +77,13 @@ function MainApp({ currentUser }) {
           ))}
         </nav>
 
-        {/* User Profile */}
+        {/* User Profile / Guest Sign In */}
         <div style={{
           borderTop: '1px solid var(--border)',
           paddingTop: '1rem', marginTop: '1rem',
           display: 'flex', alignItems: 'center', gap: '0.75rem'
         }}>
-          {currentUser.photoURL ? (
+          {currentUser?.photoURL ? (
             <img src={currentUser.photoURL} alt="profile" className="user-avatar" />
           ) : (
             <div className="avatar" style={{ width: '2rem', height: '2rem', flexShrink: 0 }}>
@@ -91,15 +92,35 @@ function MainApp({ currentUser }) {
           )}
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontWeight: 600, fontSize: '0.85rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {currentUser.displayName || 'Student'}
+              {currentUser?.displayName || 'Guest Student'}
             </div>
             <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {currentUser.email}
+              {currentUser?.email || 'guest@tanios.ai'}
             </div>
           </div>
-          <button className="icon-btn" onClick={logout} title="Logout" style={{ flexShrink: 0 }}>
-            <LogOut size={16} />
-          </button>
+          {currentUser?.isGuest ? (
+            <button
+              onClick={() => setShowLoginModal(true)}
+              style={{
+                background: 'linear-gradient(135deg, var(--primary), var(--accent))',
+                color: 'white',
+                border: 'none',
+                borderRadius: 'var(--radius-sm)',
+                padding: '0.4rem 0.75rem',
+                fontSize: '0.75rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                boxShadow: '0 4px 10px rgba(108, 99, 255, 0.25)',
+                whiteSpace: 'nowrap'
+              }}
+            >
+              Sign In
+            </button>
+          ) : (
+            <button className="icon-btn" onClick={logout} title="Logout" style={{ flexShrink: 0 }}>
+              <LogOut size={16} />
+            </button>
+          )}
         </div>
       </aside>
 
@@ -111,7 +132,7 @@ function MainApp({ currentUser }) {
               {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
             <div className="welcome-text">
-              Welcome back, <strong>{firstName}</strong> 👋
+              {currentUser?.isGuest ? 'Welcome Guest' : `Welcome back, ${firstName}`} 👋
             </div>
           </div>
 
@@ -132,16 +153,26 @@ function MainApp({ currentUser }) {
           </div>
 
           <div className="header-right">
-            {currentUser.photoURL ? (
+            {currentUser?.photoURL ? (
               <img src={currentUser.photoURL} alt="profile" className="user-avatar" title={currentUser.displayName} />
             ) : (
               <div className="avatar" style={{ width: '2rem', height: '2rem' }}>
                 <User size={14} />
               </div>
             )}
-            <button className="icon-btn" onClick={logout} title="Logout">
-              <LogOut size={18} />
-            </button>
+            {currentUser?.isGuest ? (
+              <button
+                className="btn btn-primary"
+                onClick={() => setShowLoginModal(true)}
+                style={{ padding: '0.4rem 0.9rem', fontSize: '0.82rem', borderRadius: 'var(--radius-sm)' }}
+              >
+                Sign In
+              </button>
+            ) : (
+              <button className="icon-btn" onClick={logout} title="Logout">
+                <LogOut size={18} />
+              </button>
+            )}
           </div>
         </header>
 
@@ -159,15 +190,95 @@ function MainApp({ currentUser }) {
   );
 }
 
-// ── Root app — decides login or main ─────────────────────────────────────────
+// ── Root app — includes dynamic login modal wrapper ──────────────────────────
 function App() {
-  const { currentUser } = useAuth();
+  const { showLoginModal, setShowLoginModal, login } = useAuth();
 
-  // Not logged in → show the beautiful login page
-  if (!currentUser) return <LoginPage />;
+  return (
+    <>
+      <MainApp />
 
-  // Logged in → show the full app
-  return <MainApp currentUser={currentUser} />;
+      {/* Glassmorphic Premium Login Modal */}
+      {showLoginModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(10, 10, 10, 0.85)',
+          backdropFilter: 'blur(10px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999,
+          padding: '1.5rem',
+        }}>
+          <div className="card" style={{
+            maxWidth: '400px',
+            width: '100%',
+            background: 'rgba(22, 22, 26, 0.9)',
+            border: '1px solid rgba(255, 255, 255, 0.08)',
+            boxShadow: '0 20px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05)',
+            padding: '2.5rem 2rem',
+            borderRadius: '16px',
+            textAlign: 'center',
+            position: 'relative'
+          }}>
+            {/* Sparkles icon container */}
+            <div style={{
+              width: '4rem', height: '4rem',
+              background: 'linear-gradient(135deg, rgba(108, 99, 255, 0.15), rgba(0, 242, 254, 0.15))',
+              borderRadius: '50%',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              margin: '0 auto 1.5rem'
+            }}>
+              <Sparkles size={32} color="var(--primary)" />
+            </div>
+
+            <h3 style={{ fontSize: '1.35rem', fontWeight: 800, marginBottom: '0.5rem', color: '#fff' }}>
+              Unlock Premium AI Features! 🚀
+            </h3>
+            <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '2.25rem' }}>
+              Sign in with Google to get unlimited AI academic generations, study plans, mock tests, and save all your revision materials!
+            </p>
+
+            <button
+              onClick={login}
+              style={{
+                width: '100%',
+                padding: '0.875rem',
+                background: 'linear-gradient(135deg, var(--primary), var(--accent))',
+                color: 'white',
+                border: 'none',
+                borderRadius: 'var(--radius-sm)',
+                fontSize: '0.95rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                boxShadow: '0 6px 20px rgba(108, 99, 255, 0.25)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+                marginBottom: '1.25rem',
+                transition: 'all 0.2s'
+              }}
+            >
+              <Sparkles size={16} /> Continue with Google
+            </button>
+
+            <button
+              onClick={() => setShowLoginModal(false)}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: 'var(--text-secondary)',
+                fontSize: '0.82rem',
+                cursor: 'pointer',
+                textDecoration: 'underline'
+              }}
+            >
+              Keep Browsing as Guest
+            </button>
+          </div>
+        </div>
+      )}
+    </>
+  );
 }
 
 export default App;
