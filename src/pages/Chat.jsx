@@ -1,14 +1,9 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Send, Image as ImageIcon, Sparkles, User } from 'lucide-react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { Send, Image as ImageIcon, Sparkles, User, Clock } from 'lucide-react';
 import { generateAIContent, generateDoubtPrompt } from '../lib/ai';
-import { limiter } from '../lib/rateLimiter';
 import ReactMarkdown from 'react-markdown';
 
 export default function Chat() {
-  // ═════════════════════════════════════════════════════════════════════════
-  // STATE MANAGEMENT
-  // ═════════════════════════════════════════════════════════════════════════
-
   const [messages, setMessages] = useState([
     {
       id: 1,
@@ -18,121 +13,92 @@ export default function Chat() {
   ]);
 
   const [input, setInput] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-
+  const [isLoading, setIsLoading] = useState(false);
+  const [statusMsg, setStatusMsg] = useState(''); // Live status: "Thinking...", "Retrying in 28s..."
   const messagesEndRef = useRef(null);
-
-  // ═════════════════════════════════════════════════════════════════════════
-  // AUTO-SCROLL TO BOTTOM
-  // ═════════════════════════════════════════════════════════════════════════
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
+  const inputRef = useRef(null);
 
   useEffect(() => {
-    scrollToBottom();
-  }, [messages, isTyping, error]);
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, statusMsg]);
 
-  // ═════════════════════════════════════════════════════════════════════════
-  // HANDLE SEND MESSAGE WITH RATE LIMITING
-  // ═════════════════════════════════════════════════════════════════════════
+  const handleSend = useCallback(async (e) => {
+    e?.preventDefault();
+    if (!input.trim() || isLoading) return;
 
-  const handleSend = async (e) => {
-    e.preventDefault();
+    const userText = input.trim();
+    setInput('');
+    setIsLoading(true);
+    setStatusMsg('thinking');
 
-    // Validate input
-    if (!input.trim()) {
-      return;
+    // Add user message immediately
+    setMessages(prev => [...prev, { id: Date.now(), role: 'user', text: userText }]);
+
+    const prompt = generateDoubtPrompt(userText);
+
+    // onStatus callback — updates the live status bubble
+    const onStatus = (msg) => setStatusMsg(msg || '');
+
+    const result = await generateAIContent(prompt, onStatus);
+
+    setIsLoading(false);
+    setStatusMsg('');
+
+    if (result.text) {
+      // Success
+      setMessages(prev => [...prev, {
+        id: Date.now() + 1,
+        role: 'ai',
+        text: result.text
+      }]);
+    } else {
+      // Error — show inline as AI message (not dismissible error)
+      setMessages(prev => [...prev, {
+        id: Date.now() + 1,
+        role: 'ai',
+        text: result.message || "⚠️ Something went wrong. Please try again.",
+        isError: true
+      }]);
     }
 
-    // ✅ STEP 1: Check rate limit FIRST
-    if (!limiter.isAllowed()) {
-      const waitSeconds = limiter.getRetryAfter();
-      setError(`⏳ Please wait ${waitSeconds} seconds before asking another question.`);
+    // Re-focus input
+    setTimeout(() => inputRef.current?.focus(), 100);
+  }, [input, isLoading]);
 
-      // Auto-clear error after 5 seconds
-      setTimeout(() => setError(''), 5000);
-      return;
-    }
-
-    // Clear any previous errors
-    setError('');
-    setLoading(true);
-    setIsTyping(true);
-
-    try {
-      // ✅ STEP 2: Save user message to chat
-      const userMessage = {
-        id: Date.now(),
-        role: 'user',
-        text: input
-      };
-
-      setMessages(prev => [...prev, userMessage]);
-      const currentInput = input;
-      setInput(''); // Clear input immediately
-
-      // ✅ STEP 3: Generate the prompt for AI
-      const prompt = generateDoubtPrompt(currentInput);
-
-      // ✅ STEP 4: Call AI (with automatic caching + retry logic)
-      const generatedText = await generateAIContent(prompt);
-
-      // ✅ STEP 5: Check if response is an error message
-      if (generatedText.startsWith('⚠️')) {
-        // It's an error message from the API
-        setError(generatedText);
-        setTimeout(() => setError(''), 5000);
-      } else {
-        // It's a valid response - add to messages
-        const aiMessage = {
-          id: Date.now() + 1,
-          role: 'ai',
-          text: generatedText
-        };
-
-        setMessages(prev => [...prev, aiMessage]);
-      }
-
-    } catch (err) {
-      // Handle unexpected errors
-      console.error('Error in handleSend:', err);
-      setError('⚠️ An unexpected error occurred. Please try again.');
-      setTimeout(() => setError(''), 5000);
-    } finally {
-      setIsTyping(false);
-      setLoading(false);
+  // Allow Enter key to send
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
     }
   };
 
-  // ═════════════════════════════════════════════════════════════════════════
-  // JSX RENDER
-  // ═════════════════════════════════════════════════════════════════════════
+  // Determine what to show in the typing indicator
+  const isCountdown = statusMsg && statusMsg !== 'thinking' && statusMsg !== 'thinking';
+  const isThinking = statusMsg === 'thinking';
+  const showStatus = isLoading && statusMsg;
 
   return (
     <div className="chat-container">
-      {/* MESSAGES AREA */}
+      {/* ── MESSAGES ───────────────────────────────────────────── */}
       <div className="chat-messages">
         {messages.map(msg => (
           <div key={msg.id} className={`message ${msg.role}`}>
-            <div className="avatar">
-              {msg.role === 'ai' ? (
-                <Sparkles size={18} />
-              ) : (
-                <User size={18} />
-              )}
+            <div className="avatar" style={msg.isError ? { background: 'rgba(239,68,68,0.15)', color: '#ef4444' } : {}}>
+              {msg.role === 'ai' ? <Sparkles size={16} /> : <User size={16} />}
             </div>
-
             <div
               className="message-content generated-content"
               style={{
                 margin: 0,
-                padding: '1rem 1.5rem',
+                padding: '1rem 1.25rem',
                 width: '100%',
-                overflowX: 'auto'
+                overflowX: 'auto',
+                ...(msg.isError ? {
+                  background: 'rgba(239,68,68,0.08)',
+                  borderColor: 'rgba(239,68,68,0.2)',
+                  color: '#ef4444'
+                } : {})
               }}
             >
               {msg.role === 'ai' ? (
@@ -144,123 +110,109 @@ export default function Chat() {
           </div>
         ))}
 
-        {/* TYPING INDICATOR */}
-        {isTyping && (
+        {/* ── LIVE STATUS BUBBLE ──────────────────────────────── */}
+        {showStatus && (
           <div className="message ai">
-            <div className="avatar">
-              <Sparkles size={18} />
+            <div className="avatar" style={{
+              background: isThinking
+                ? 'var(--primary-light)'
+                : 'rgba(245,158,11,0.15)',
+              color: isThinking ? 'var(--primary)' : '#f59e0b'
+            }}>
+              {isThinking ? <Sparkles size={16} /> : <Clock size={16} />}
             </div>
-            <div
-              className="message-content"
-              style={{
-                opacity: 0.7,
-                padding: '1rem 1.5rem'
-              }}
-            >
-              <span>Thinking...</span>
+            <div className="message-content" style={{
+              padding: '0.875rem 1.25rem',
+              opacity: 0.9,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.75rem',
+              background: isThinking ? undefined : 'rgba(245,158,11,0.08)',
+              borderColor: isThinking ? undefined : 'rgba(245,158,11,0.2)'
+            }}>
+              {/* Animated dots */}
+              <span style={{ display: 'flex', gap: '3px' }}>
+                {[0, 1, 2].map(i => (
+                  <span key={i} style={{
+                    width: '6px', height: '6px', borderRadius: '50%',
+                    background: isThinking ? 'var(--primary)' : '#f59e0b',
+                    animation: `pulse 1.2s ease-in-out ${i * 0.2}s infinite`
+                  }} />
+                ))}
+              </span>
+              <span style={{ fontSize: '0.9rem', color: isThinking ? 'var(--text-secondary)' : '#f59e0b' }}>
+                {isThinking ? 'Thinking...' : statusMsg}
+              </span>
             </div>
           </div>
         )}
 
-        {/* ERROR MESSAGE */}
-        {error && (
-          <div className="message ai">
-            <div className="avatar">
-              <Sparkles size={18} />
-            </div>
-            <div
-              className="message-content"
-              style={{
-                opacity: 0.8,
-                color: error.includes('wait') ? '#ff9800' : '#f44336',
-                padding: '1rem 1.5rem'
-              }}
-            >
-              <span>{error}</span>
-            </div>
-          </div>
-        )}
-
-        {/* SCROLL ANCHOR */}
         <div ref={messagesEndRef} />
       </div>
 
-      {/* INPUT AREA */}
+      {/* ── INPUT AREA ─────────────────────────────────────────── */}
       <div className="chat-input-area">
         <form onSubmit={handleSend} className="chat-input-wrapper">
-          {/* IMAGE UPLOAD BUTTON (Coming soon) */}
+          {/* Image (coming soon) */}
           <button
             type="button"
-            className="btn btn-secondary"
             style={{
-              position: 'absolute',
-              left: '0.5rem',
-              width: '2.5rem',
-              height: '2.5rem',
-              padding: 0,
-              borderRadius: '50%',
-              border: 'none',
-              cursor: 'not-allowed',
-              opacity: 0.5
+              position: 'absolute', left: '0.5rem',
+              width: '2.25rem', height: '2.25rem', padding: 0,
+              borderRadius: '50%', border: 'none',
+              cursor: 'not-allowed', opacity: 0.4,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              background: 'var(--bg-tertiary)', color: 'var(--text-secondary)'
             }}
-            title="Upload image feature coming soon"
+            title="Upload image — coming soon"
             disabled
           >
-            <ImageIcon size={20} />
+            <ImageIcon size={18} />
           </button>
 
-          {/* TEXT INPUT */}
+          {/* Text input */}
           <input
+            ref={inputRef}
             type="text"
             className="chat-input"
-            style={{
-              paddingLeft: '3.5rem',
-              opacity: isTyping || error.includes('wait') ? 0.6 : 1
-            }}
-            placeholder="Type your doubt here..."
+            style={{ paddingLeft: '3.25rem', paddingRight: '3.25rem' }}
+            placeholder={isLoading ? 'Please wait...' : 'Type your doubt here...'}
             value={input}
-            onChange={(e) => setInput(e.target.value)}
-            disabled={isTyping || error.includes('wait')}
+            onChange={e => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            disabled={isLoading}
             autoFocus
           />
 
-          {/* SEND BUTTON */}
+          {/* Send button */}
           <button
             type="submit"
             className="chat-submit"
-            disabled={
-              !input.trim() ||
-              isTyping ||
-              loading ||
-              error.includes('wait')
-            }
-            title={
-              !input.trim()
-                ? 'Type a message first'
-                : isTyping
-                  ? 'Waiting for response...'
-                  : error.includes('wait')
-                    ? 'Please wait before sending another message'
-                    : 'Send message'
-            }
+            disabled={!input.trim() || isLoading}
+            title={isLoading ? 'Processing...' : 'Send message'}
           >
-            <Send size={16} />
+            <Send size={15} />
           </button>
         </form>
+
+        {/* Hint text */}
+        <p style={{
+          textAlign: 'center', marginTop: '0.625rem',
+          fontSize: '0.75rem', color: 'var(--text-secondary)', opacity: 0.7
+        }}>
+          {isLoading
+            ? (statusMsg && statusMsg !== 'thinking' ? '🔄 Auto-retrying — no action needed' : '🤖 Generating response...')
+            : 'Press Enter to send • Supports English & Hindi'}
+        </p>
       </div>
+
+      {/* Dot pulse animation */}
+      <style>{`
+        @keyframes pulse {
+          0%, 60%, 100% { transform: scale(1); opacity: 0.4; }
+          30% { transform: scale(1.4); opacity: 1; }
+        }
+      `}</style>
     </div>
   );
 }
-
-// ═════════════════════════════════════════════════════════════════════════════
-// FEATURES INCLUDED:
-// ═════════════════════════════════════════════════════════════════════════════
-// ✅ Rate limiting (5 messages per minute max)
-// ✅ Automatic caching (same question = instant answer)
-// ✅ Error handling (shows rate limit & API errors)
-// ✅ Loading states (typing indicator, disabled button)
-// ✅ Auto-scroll (chat scrolls to latest message)
-// ✅ Markdown support (AI responses rendered nicely)
-// ✅ Auto-focus (input field focused on load)
-// ✅ Clear error messages (helpful feedback to user)
-// ═════════════════════════════════════════════════════════════════════════════

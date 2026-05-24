@@ -4,20 +4,32 @@ import { cache } from './cache';
 
 const API_ENDPOINT = "/api/generate";
 
-export const generateAIContent = async (prompt, retries = 2) => {
-  // ✅ CHECK CACHE FIRST - Save API calls!
+/**
+ * Main AI content generator with:
+ * - Caching (same prompt = instant answer)
+ * - Auto-retry with countdown on 429 quota errors
+ * - onStatus callback so UI can show "Retrying in 28s..."
+ */
+export const generateAIContent = async (prompt, onStatus = null) => {
+  // ✅ CACHE CHECK - Instant answer for repeated questions
   const cached = cache.get(prompt);
   if (cached) {
-    console.log("📦 Cache hit! Returning saved response");
-    return cached;
+    console.log("📦 Cache hit!");
+    return { text: cached, fromCache: true };
   }
 
-  // Loop for retries on failure
-  for (let attempt = 0; attempt <= retries; attempt++) {
+  const MAX_ATTEMPTS = 5;
+
+  for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
     try {
-      // Set timeout controller (25 seconds max)
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 25000);
+      const timeoutId = setTimeout(() => controller.abort(), 28000);
+
+      if (attempt > 0) {
+        onStatus?.(`♻️ Retrying... (attempt ${attempt + 1}/${MAX_ATTEMPTS})`);
+      } else {
+        onStatus?.("thinking");
+      }
 
       const response = await fetch(API_ENDPOINT, {
         method: "POST",
@@ -28,64 +40,74 @@ export const generateAIContent = async (prompt, retries = 2) => {
 
       clearTimeout(timeoutId);
 
-      // Handle rate limiting (429 = Too Many Requests)
+      // ── 429: Quota hit → wait then auto-retry ──────────────────────────────
       if (response.status === 429) {
-        if (attempt < retries) {
-          // Exponential backoff: 10s, 20s, 40s
-          const waitTime = 10000 * Math.pow(2, attempt);
-          console.warn(`⏳ Rate limited. Waiting ${waitTime / 1000}s before retry...`);
-          await new Promise(r => setTimeout(r, waitTime));
-          continue; // Try again
+        const data = await response.json().catch(() => ({}));
+
+        // Use the exact retryDelaySecs from backend (parsed from Google's error), or default to 35s
+        let waitSecs = data.retryDelaySecs || 35;
+
+        if (attempt < MAX_ATTEMPTS - 1) {
+          // Show countdown to user
+          for (let t = waitSecs; t > 0; t--) {
+            onStatus?.(`⏳ Quota limit hit — auto-retrying in ${t}s...`);
+            await new Promise(r => setTimeout(r, 1000));
+          }
+          continue; // Retry
         }
-        return "⚠️ Service busy. Please wait a few minutes before asking another question. (API quota reached)";
+
+        // All retries exhausted
+        onStatus?.(null);
+        return { text: null, error: "quota", message: "⚠️ AI quota exhausted. Please try again in 1 minute." };
       }
 
-      // Handle other HTTP errors
+      // ── Other HTTP errors ──────────────────────────────────────────────────
       if (!response.ok) {
         const data = await response.json().catch(() => ({}));
-        return `⚠️ ${data.error || "Something went wrong. Please try again."}`;
+        onStatus?.(null);
+        return { text: null, error: "http", message: `⚠️ ${data.error || "Something went wrong. Please try again."}` };
       }
 
-      // Success! Parse response
+      // ── SUCCESS ────────────────────────────────────────────────────────────
       const data = await response.json();
       const result = data.text;
 
-      // ✅ CACHE THE RESPONSE for future use
+      // Cache successful response
       cache.set(prompt, result);
-
-      return result;
+      onStatus?.(null);
+      return { text: result, model: data.model };
 
     } catch (error) {
-      // Handle request timeout
+      // Timeout
       if (error.name === "AbortError") {
-        if (attempt < retries) {
-          const waitTime = 10000 * Math.pow(2, attempt);
-          console.warn(`⏰ Timeout. Retrying in ${waitTime / 1000}s...`);
-          await new Promise(r => setTimeout(r, waitTime));
-          continue; // Try again
+        if (attempt < MAX_ATTEMPTS - 1) {
+          onStatus?.(`⏰ Request timed out, retrying...`);
+          await new Promise(r => setTimeout(r, 3000));
+          continue;
         }
-        return "⚠️ Request took too long. Please try again.";
+        onStatus?.(null);
+        return { text: null, error: "timeout", message: "⚠️ Request took too long. Please try again." };
       }
 
-      // Network error - only return error on final attempt
-      if (attempt === retries) {
-        console.error("Network error calling AI API:", error);
-        return "⚠️ Could not connect to AI service. Please check your internet connection.";
+      // Network error
+      if (attempt < MAX_ATTEMPTS - 1) {
+        onStatus?.(`🌐 Network error, retrying in 3s...`);
+        await new Promise(r => setTimeout(r, 3000));
+        continue;
       }
+
+      onStatus?.(null);
+      return { text: null, error: "network", message: "⚠️ Could not connect. Please check your internet connection." };
     }
   }
+
+  onStatus?.(null);
+  return { text: null, error: "exhausted", message: "⚠️ All retries failed. Please try again in a minute." };
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// PROMPT BUILDERS (These just format text - no API calls)
+// PROMPT BUILDERS
 // ─────────────────────────────────────────────────────────────────────────────
-
-export const generateNotesPrompt = (grade, subject, chapter, type) => {
-  return `You are an expert Indian school teacher for Class ${grade}. 
-Generate ${type} for the subject ${subject}, chapter: "${chapter}". 
-Format it clearly with Markdown. Use bullet points, bold text for important terms. 
-Make it easy to read, student-friendly, and focused on CBSE/State board patterns.`;
-};
 
 export const generateDoubtPrompt = (question) => {
   return `You are TaniOS AI, an intelligent but concise assistant for Indian school students.
@@ -95,6 +117,13 @@ Rule 3: If the user asks a general, non-academic, or out-of-context question (e.
 Rule 4: Keep answers brief and to the point.
 Rule 5: MATCH THE USER'S LANGUAGE EXACTLY. English question → English answer. Hindi/Hinglish question → Hindi/Hinglish answer.
 User input: "${question}"`;
+};
+
+export const generateNotesPrompt = (grade, subject, chapter, type) => {
+  return `You are an expert Indian school teacher for Class ${grade}. 
+Generate ${type} for the subject ${subject}, chapter: "${chapter}". 
+Format it clearly with Markdown. Use bullet points, bold text for important terms. 
+Make it easy to read, student-friendly, and focused on CBSE/State board patterns.`;
 };
 
 export const generateRevisionPrompt = (subject, chapter, time) => {

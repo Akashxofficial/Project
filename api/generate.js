@@ -111,9 +111,14 @@ export default async function handler(req, res) {
     }
 
     if (error.status === 429 || error.message.includes('429') || error.message.toLowerCase().includes('quota')) {
+      // Parse Google's retryDelay hint (e.g. "retryDelay":"31s") from the error message
+      const delayMatch = error.message.match(/retryDelay.*?(\d+)/);
+      const retryDelaySecs = delayMatch ? parseInt(delayMatch[1]) + 2 : 35;
+
       return res.status(429).json({
-        error: `AI service pipelines congested. Google returned 429 (Quota limit reached).`,
+        error: `AI quota reached. Please wait ${retryDelaySecs} seconds.`,
         code: 'RATE_LIMIT',
+        retryDelaySecs,
         diagnostics: {
           keysFoundInEnv: apiKeys.length,
           maskedKeys,
