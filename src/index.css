@@ -497,6 +497,9 @@ img { max-width: 100%; }
   flex-direction: column;
   min-height: 100vh;
   background: var(--bg);
+  /* Prevent any page from causing horizontal scroll */
+  overflow-x: hidden;
+  min-width: 0;
 }
 
 /* ─── HEADER ─────────────────────────────────────────────────────────────────── */
@@ -601,6 +604,9 @@ img { max-width: 100%; }
   max-width: 1200px;
   margin: 0 auto;
   width: 100%;
+  /* Prevent any child from breaking out of the page */
+  overflow-x: hidden;
+  box-sizing: border-box;
 }
 
 /* ─── CARDS ──────────────────────────────────────────────────────────────────── */
@@ -986,6 +992,13 @@ input[type="date"].input-field::-webkit-calendar-picker-indicator {
   box-shadow: var(--shadow-sm);
   line-height: 1.85;
   font-size: 0.95rem;
+  /* Critical: prevent content from overflowing container */
+  overflow-x: hidden;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .generated-content h1,
@@ -994,6 +1007,7 @@ input[type="date"].input-field::-webkit-calendar-picker-indicator {
   color: var(--primary);
   margin-top: 1.5rem;
   margin-bottom: 0.75rem;
+  word-break: break-word;
 }
 
 .generated-content h1:first-child,
@@ -1006,7 +1020,7 @@ input[type="date"].input-field::-webkit-calendar-picker-indicator {
 }
 
 .generated-content li { margin-bottom: 0.375rem; }
-.generated-content p { margin-bottom: 1rem; }
+.generated-content p { margin-bottom: 1rem; word-break: break-word; }
 .generated-content strong { color: var(--text); }
 
 .generated-content code {
@@ -1014,6 +1028,7 @@ input[type="date"].input-field::-webkit-calendar-picker-indicator {
   border-radius: 4px;
   padding: 0.15em 0.4em;
   font-size: 0.875em;
+  word-break: break-all;
 }
 
 /* ─── TYPOGRAPHY ─────────────────────────────────────────────────────────────── */
@@ -1078,18 +1093,22 @@ h3 { font-size: 1.15rem; }
   margin: 1.5rem 0;
   display: block;
   overflow-x: auto;
-  white-space: nowrap;
+  -webkit-overflow-scrolling: touch;
 }
 
 .generated-content th, .generated-content td {
   border: 1px solid var(--border);
-  padding: 0.75rem 1rem;
+  padding: 0.65rem 0.875rem;
   text-align: left;
+  white-space: normal;
+  min-width: 80px;
+  word-break: break-word;
 }
 
 .generated-content th {
   background: var(--bg-tertiary);
   font-weight: 600;
+  white-space: nowrap;
 }
 
 .generated-content img {
@@ -1146,36 +1165,88 @@ h3 { font-size: 1.15rem; }
   /* Show TaniOS AI logo in header on mobile */
   .mobile-logo { display: flex; }
 
-  .page-content { padding: 1.25rem 1rem; }
+  .page-content {
+    padding: 1rem 0.875rem;
+    overflow-x: hidden;
+  }
 
-  .hero-section { padding: 2.5rem 1.25rem; }
+  .hero-section { padding: 2rem 1rem; }
 
-  .grid-cards { grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .grid-cards { grid-template-columns: 1fr 1fr; gap: 0.875rem; }
 
-  .chat-messages { padding: 1rem; }
+  .chat-messages { padding: 0.875rem; }
 
-  .chat-input-area { padding: 0.875rem 1rem 1rem; }
+  .chat-input-area { padding: 0.75rem 0.875rem 1rem; }
 
   .welcome-text { display: none; }
 
-  .generated-content { padding: 1.25rem; }
+  .generated-content {
+    padding: 1rem;
+    font-size: 0.9rem;
+  }
+
+  /* Forms: stack select fields on tablet */
+  .form-row {
+    flex-direction: column !important;
+    gap: 0.875rem !important;
+  }
+
+  /* Board exam / results section */
+  .board-exam-section {
+    padding: 1rem !important;
+  }
+
+  /* Message bubbles */
+  .message { max-width: 92%; }
+
+  /* Card padding tighter */
+  .card { padding: 1.1rem; }
+
+  h2 { font-size: 1.25rem; }
+  h3 { font-size: 1rem; }
 }
 
 /* Mobile: 480px */
 @media (max-width: 480px) {
   .grid-cards { grid-template-columns: 1fr; }
 
-  .hero-title { font-size: 1.875rem; }
+  .hero-title { font-size: 1.6rem; }
+  .hero-subtitle { font-size: 0.875rem; }
 
-  .hero-subtitle { font-size: 0.9rem; }
-
-  .card { padding: 1.25rem; }
+  .card { padding: 1rem; }
 
   .message { max-width: 95%; }
 
-  .btn { padding: 0.6rem 1rem; font-size: 0.875rem; }
+  .btn { padding: 0.55rem 0.875rem; font-size: 0.85rem; }
 
-  h2 { font-size: 1.25rem; }
+  h2 { font-size: 1.15rem; }
+
+  /* Input fields full width on mobile */
+  .input-field, select.input-field {
+    font-size: 0.875rem;
+    padding: 0.65rem 0.875rem;
+  }
+
+  /* Page content even tighter */
+  .page-content { padding: 0.875rem 0.75rem; }
+
+  /* Reduce gap in sections */
+  .generated-content {
+    padding: 0.875rem;
+    font-size: 0.875rem;
+    margin-top: 1rem;
+  }
+
+  /* Chat input smaller */
+  .chat-input {
+    font-size: 0.875rem;
+    padding: 0.75rem 3rem 0.75rem 0.875rem;
+  }
+
+  /* Tighter header */
+  .header {
+    padding: 0 0.875rem;
+  }
 }
 
 /* ─── PREMIUM MODERN PAGE ENTRANCE & SPINNER ANIMATIONS ─────────────────────── */
@@ -1229,3 +1300,205 @@ h3 { font-size: 1.15rem; }
     transform: rotate(360deg);
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   📊 MARKDOWN CONTENT STYLES — Tables, Code, Math, Blockquotes
+   Applied to all AI-generated content in Chat, Notes, Revision, etc.
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* ─── MARKDOWN TABLE ────────────────────────────────────────────────────────── */
+.md-table-wrapper {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 10px;
+  margin: 1rem 0;
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  background: rgba(15, 10, 30, 0.6);
+  /* Ensure it never breaks out of its parent */
+  box-sizing: border-box;
+}
+
+.md-table {
+  width: 100%;
+  min-width: 400px; /* allow horizontal scroll for very small screens */
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  table-layout: auto;
+}
+
+.md-thead {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.25), rgba(139, 92, 246, 0.2));
+}
+
+.md-th {
+  padding: 0.65rem 0.875rem;
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.78rem;
+  color: #c4b5fd;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  border-bottom: 1px solid rgba(139, 92, 246, 0.3);
+  border-right: 1px solid rgba(139, 92, 246, 0.1);
+  white-space: nowrap;
+}
+
+.md-th:last-child {
+  border-right: none;
+}
+
+.md-tr {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  transition: background 0.15s ease;
+}
+
+.md-tr:hover {
+  background: rgba(99, 102, 241, 0.06);
+}
+
+.md-tr:last-child {
+  border-bottom: none;
+}
+
+.md-td {
+  padding: 0.55rem 0.875rem;
+  color: var(--text-primary);
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
+  font-size: 0.85rem;
+  line-height: 1.5;
+  white-space: normal;
+  word-break: break-word;
+  min-width: 60px;
+}
+
+.md-td:last-child {
+  border-right: none;
+}
+
+/* Mobile table tweaks */
+@media (max-width: 600px) {
+  .md-th { padding: 0.5rem 0.6rem; font-size: 0.72rem; }
+  .md-td { padding: 0.45rem 0.6rem; font-size: 0.8rem; }
+}
+
+/* ─── INLINE CODE ───────────────────────────────────────────────────────────── */
+.md-inline-code {
+  background: rgba(99, 102, 241, 0.15);
+  color: #a78bfa;
+  padding: 0.1em 0.4em;
+  border-radius: 4px;
+  font-family: 'Fira Code', 'Courier New', monospace;
+  font-size: 0.85em;
+  border: 1px solid rgba(139, 92, 246, 0.2);
+}
+
+/* ─── CODE BLOCK ────────────────────────────────────────────────────────────── */
+.md-code-block {
+  background: rgba(10, 5, 25, 0.8);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+  margin: 0.75rem 0;
+  overflow-x: auto;
+}
+
+.md-code-block code {
+  font-family: 'Fira Code', 'Courier New', monospace;
+  font-size: 0.875rem;
+  color: #e2e8f0;
+  white-space: pre;
+  display: block;
+}
+
+/* ─── BLOCKQUOTE ────────────────────────────────────────────────────────────── */
+.md-blockquote {
+  border-left: 3px solid #8b5cf6;
+  background: rgba(139, 92, 246, 0.07);
+  margin: 0.75rem 0;
+  padding: 0.75rem 1rem;
+  border-radius: 0 8px 8px 0;
+  color: var(--text-secondary);
+}
+
+.md-blockquote p {
+  margin: 0;
+}
+
+/* ─── GENERATED CONTENT (chat messages, notes, etc.) ────────────────────────── */
+.generated-content h1,
+.generated-content h2,
+.generated-content h3,
+.generated-content h4 {
+  color: var(--text-primary);
+  font-weight: 700;
+  margin: 1.1rem 0 0.5rem;
+  line-height: 1.3;
+}
+
+.generated-content h1 { font-size: 1.35rem; }
+.generated-content h2 { font-size: 1.15rem; color: #c4b5fd; }
+.generated-content h3 { font-size: 1rem; color: #a78bfa; }
+
+.generated-content p {
+  margin: 0.5rem 0;
+  line-height: 1.7;
+  color: var(--text-primary);
+}
+
+.generated-content ul,
+.generated-content ol {
+  padding-left: 1.4rem;
+  margin: 0.4rem 0;
+}
+
+.generated-content li {
+  margin: 0.25rem 0;
+  line-height: 1.6;
+}
+
+.generated-content strong {
+  color: #e2d9f3;
+  font-weight: 600;
+}
+
+.generated-content em {
+  color: #c4b5fd;
+  font-style: italic;
+}
+
+.generated-content hr {
+  border: none;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  margin: 1rem 0;
+}
+
+/* ─── KATEX MATH RENDERING ──────────────────────────────────────────────────── */
+.katex {
+  font-size: 1em !important;
+  color: #f0e6ff;
+}
+
+.katex-display {
+  margin: 0.75rem 0 !important;
+  padding: 0.75rem 1rem;
+  background: rgba(99, 102, 241, 0.07);
+  border-radius: 8px;
+  border-left: 3px solid rgba(139, 92, 246, 0.5);
+  overflow-x: auto;
+}
+
+.katex-display .katex {
+  font-size: 1.1em !important;
+}
+
+/* ─── MESSAGE CONTENT WRAPPER ───────────────────────────────────────────────── */
+.message-content.generated-content > *:first-child {
+  margin-top: 0;
+}
+
+.message-content.generated-content > *:last-child {
+  margin-bottom: 0;
+}
+

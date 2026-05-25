@@ -3,8 +3,25 @@ import { Bookmark, FileText, GraduationCap, Clock, BookOpen, AlertCircle, X, Cop
 import { getUserDocuments } from '../lib/firebase';
 import { useAuth } from '../context/AuthContext';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
+import 'katex/dist/katex.min.css';
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
+
+const markdownComponents = {
+  table: ({ children }) => (<div className="md-table-wrapper"><table className="md-table">{children}</table></div>),
+  thead: ({ children }) => <thead className="md-thead">{children}</thead>,
+  tbody: ({ children }) => <tbody>{children}</tbody>,
+  tr: ({ children }) => <tr className="md-tr">{children}</tr>,
+  th: ({ children }) => <th className="md-th">{children}</th>,
+  td: ({ children }) => <td className="md-td">{children}</td>,
+  code: ({ inline, children }) => inline
+    ? <code className="md-inline-code">{children}</code>
+    : <div className="md-code-block"><code>{children}</code></div>,
+  blockquote: ({ children }) => <blockquote className="md-blockquote">{children}</blockquote>,
+};
 
 export default function History() {
   const { currentUser } = useAuth();
@@ -218,7 +235,7 @@ export default function History() {
                 padding: '1.5rem', background: 'var(--bg)', border: '1px solid var(--border)',
                 borderRadius: 'var(--radius-sm)', lineHeight: '1.8'
               }}>
-                <ReactMarkdown>{selectedDoc.content}</ReactMarkdown>
+                <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]} components={markdownComponents}>{selectedDoc.content}</ReactMarkdown>
               </div>
             </div>
 

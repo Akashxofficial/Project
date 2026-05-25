@@ -2,10 +2,27 @@ import React, { useState, useRef } from 'react';
 import { GraduationCap, Sparkles, FileCheck, Download, Loader2 } from 'lucide-react';
 import { generateAIContent, generateTestPrompt } from '../lib/ai';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
+import 'katex/dist/katex.min.css';
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
 import { saveDocument } from '../lib/firebase';
 import { useAuth } from '../context/AuthContext';
+
+const markdownComponents = {
+  table: ({ children }) => (<div className="md-table-wrapper"><table className="md-table">{children}</table></div>),
+  thead: ({ children }) => <thead className="md-thead">{children}</thead>,
+  tbody: ({ children }) => <tbody>{children}</tbody>,
+  tr: ({ children }) => <tr className="md-tr">{children}</tr>,
+  th: ({ children }) => <th className="md-th">{children}</th>,
+  td: ({ children }) => <td className="md-td">{children}</td>,
+  code: ({ inline, children }) => inline
+    ? <code className="md-inline-code">{children}</code>
+    : <div className="md-code-block"><code>{children}</code></div>,
+  blockquote: ({ children }) => <blockquote className="md-blockquote">{children}</blockquote>,
+};
 
 export default function TestGenerator() {
   const { currentUser, incrementGuestUsage } = useAuth();
@@ -146,7 +163,7 @@ export default function TestGenerator() {
             </div>
             
             <div ref={contentRef} className="generated-content" style={{ marginTop: 0, backgroundColor: 'var(--bg-secondary)' }}>
-              <ReactMarkdown>{result.content}</ReactMarkdown>
+              <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]} components={markdownComponents}>{result.content}</ReactMarkdown>
             </div>
             
             <div style={{ marginTop: '1rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'flex-end' }}>

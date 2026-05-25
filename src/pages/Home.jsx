@@ -8,7 +8,38 @@ import {
 } from 'lucide-react';
 import { generateAIContent, generateExamRoadmapPrompt, generateOneClickPrompt } from '../lib/ai';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
+import 'katex/dist/katex.min.css';
 import { useAuth } from '../context/AuthContext';
+
+// Custom renderers for beautiful markdown tables
+const markdownComponents = {
+  table: ({ children }) => (
+    <div className="md-table-wrapper">
+      <table className="md-table">{children}</table>
+    </div>
+  ),
+  thead: ({ children }) => <thead className="md-thead">{children}</thead>,
+  tbody: ({ children }) => <tbody>{children}</tbody>,
+  tr: ({ children }) => <tr className="md-tr">{children}</tr>,
+  th: ({ children }) => <th className="md-th">{children}</th>,
+  td: ({ children }) => <td className="md-td">{children}</td>,
+  code: ({ inline, className, children }) => {
+    if (inline) {
+      return <code className="md-inline-code">{children}</code>;
+    }
+    return (
+      <div className="md-code-block">
+        <code>{children}</code>
+      </div>
+    );
+  },
+  blockquote: ({ children }) => (
+    <blockquote className="md-blockquote">{children}</blockquote>
+  ),
+};
 
 export default function Home() {
   const { currentUser } = useAuth();
@@ -724,8 +755,12 @@ export default function Home() {
                         </button>
                       </div>
                     </div>
-                    <div className="generated-content" style={{ fontSize: '0.88rem', lineHeight: 1.6 }}>
-                      <ReactMarkdown>{oneClickResult}</ReactMarkdown>
+                    <div className="generated-content" style={{ fontSize: '0.88rem', lineHeight: 1.7, background: 'transparent', border: 'none', padding: 0, margin: 0, boxShadow: 'none' }}>
+                      <ReactMarkdown
+                        remarkPlugins={[remarkGfm, remarkMath]}
+                        rehypePlugins={[rehypeKatex]}
+                        components={markdownComponents}
+                      >{oneClickResult}</ReactMarkdown>
                     </div>
                   </div>
                 )}
@@ -816,8 +851,12 @@ export default function Home() {
                     {roadmapCopied ? 'Copied Roadmap' : 'Copy Roadmap'}
                   </button>
                 </div>
-                <div className="generated-content" style={{ fontSize: '0.88rem', lineHeight: 1.6 }}>
-                  <ReactMarkdown>{examResult}</ReactMarkdown>
+                <div className="generated-content" style={{ fontSize: '0.88rem', lineHeight: 1.7, background: 'transparent', border: 'none', padding: 0, margin: 0, boxShadow: 'none' }}>
+                  <ReactMarkdown
+                    remarkPlugins={[remarkGfm, remarkMath]}
+                    rehypePlugins={[rehypeKatex]}
+                    components={markdownComponents}
+                  >{examResult}</ReactMarkdown>
                 </div>
               </div>
             )}

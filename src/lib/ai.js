@@ -6,6 +6,45 @@ import { limiter } from './rateLimiter';
 const API_ENDPOINT = "/api/generate";
 
 /**
+ * Post-processor: fixes AI output that contains math NOT wrapped in LaTeX.
+ * Acts as a safety net when the AI ignores the $...$ instruction.
+ * Converts Unicode super/subscripts and common bare equations to LaTeX.
+ */
+export function fixMathFormatting(text) {
+  if (!text) return text;
+
+  let result = text;
+
+  // 1. Convert Unicode superscripts → LaTeX (e.g. v² → $v^2$, x³ → $x^3$)
+  //    But ONLY when they appear outside existing $...$ blocks
+  const unicodeSuperMap = { '²': '^2', '³': '^3', '¹': '^1', '⁴': '^4', '⁰': '^0', '⁵': '^5', '⁶': '^6', '⁷': '^7', '⁸': '^8', '⁹': '^9' };
+  const unicodeSubMap = { '₀': '_0', '₁': '_1', '₂': '_2', '₃': '_3', '₄': '_4', '₅': '_5', '₆': '_6', '₇': '_7', '₈': '_8', '₉': '_9' };
+
+  // Replace unicode super/subscripts within math-looking contexts
+  result = result.replace(/[a-zA-Z0-9][²³¹⁴⁰⁵⁶⁷⁸⁹₀₁₂₃₄₅₆₇₈₉]+/g, (match) => {
+    // If already inside $...$, leave it
+    let fixed = match;
+    Object.entries(unicodeSuperMap).forEach(([u, l]) => { fixed = fixed.replaceAll(u, l); });
+    Object.entries(unicodeSubMap).forEach(([u, l]) => { fixed = fixed.replaceAll(u, l); });
+    if (fixed !== match) return `$${fixed}$`;
+    return match;
+  });
+
+  // 2. Fix standalone Unicode chemical formulas like H₂SO₄, CO₂, H₂O
+  result = result.replace(/\b([A-Z][a-z]?)([₀₁₂₃₄₅₆₇₈₉]+)([A-Z][a-z]?)?([₀₁₂₃₄₅₆₇₈₉]*)/g, (match) => {
+    if (match.match(/[₀₁₂₃₄₅₆₇₈₉]/)) {
+      let fixed = match;
+      Object.entries(unicodeSubMap).forEach(([u, l]) => { fixed = fixed.replaceAll(u, l); });
+      return `$${fixed}$`;
+    }
+    return match;
+  });
+
+  return result;
+}
+
+
+/**
  * Main AI content generator with:
  * - Caching (same prompt = instant answer)
  * - Auto-retry with countdown on 429 quota errors
@@ -127,65 +166,87 @@ export const generateAIContent = async (prompt, onStatus = null) => {
       return { text: null, error: "network", message: "⚠️ Could not connect. Please check your internet connection." };
     }
   }
-
-  onStatus?.(null);
-  return { text: null, error: "exhausted", message: "⚠️ All retries failed. Please try again in a minute." };
 };
-
-// ─────────────────────────────────────────────────────────────────────────────
-// PROMPT BUILDERS
-// ─────────────────────────────────────────────────────────────────────────────
 
 export const generateDoubtPrompt = (question, history = []) => {
   const historyText = history.length > 0 
     ? `\n\nPrevious conversation context:\n${history.map(m => `${m.role === 'user' ? 'Student' : 'AI Teacher'}: ${m.text}`).join('\n')}\n`
     : '';
 
-  // Get current date beautifully formatted
   const currentDate = new Date().toLocaleDateString('en-US', { 
-    weekday: 'long', 
-    year: 'numeric', 
-    month: 'long', 
-    day: 'numeric' 
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
   });
 
-  return `You are TaniOS AI, an elite-level, premium personal AI teacher and tutor built specifically for Indian school students.
-Role: You are a hyper-intelligent, precise, and supportive companion tutor. You explain concepts with maximum clarity and factual rigor.
+  return `You are TaniOS AI, an elite-level personal AI teacher built for Indian school students (Class 8-12 CBSE/RBSE).
 
----
-[SYSTEM CONTEXT]
-- Today's Real-Time Current Date: ${currentDate}
-- Target Audience: Class 8 to 12 Indian Board Students.
----
+[SYSTEM DATE: ${currentDate}]
 
-Critical Output Rules:
-1. **STRICTLY NO HTML TAGS**: You must NEVER output any raw HTML elements (like <div>, <span>, <p>, <br>, etc.) under any circumstances. The UI markdown parser does not render HTML and will display them as ugly raw code.
-   - To create a definition box or callout, use standard Markdown blockquotes: \`> **Formal Definition:** ...\`.
-   - Use standard Markdown bolding (\`**\`), lists (\`-\`), and code blocks (\`\`\`).
-2. **CLEAN STANDARD TABLES**: When outputting comparison tables, use standard Markdown table syntax cleanly. Do NOT add extra vertical bars \`||\`, double borders, or broken delimiters that fail markdown rendering.
-3. **DYNAMIC ANSWER LENGTH (IMPORTANT)**: 
-   - Adapt your answer length based on the student's question. Do NOT force a massive, bloated academic layout with analogies and tables for simple general knowledge or quick definitions (e.g. "who is Elon Musk").
-   - For general queries, quick questions, or simple definitions, keep your response **highly crisp, concise, direct, and engaging** (max 2-3 short, high-impact paragraphs).
-   - Only use deep academic structures, solved math steps, analogies, and detailed tables when asked about complex science/math chapters, board exam questions, or when a student requests an in-depth explanation!
-4. **Bilingual Behavior**:
-   - If the student asks in English, reply in clean, elite academic English.
-   - If the student asks in Hindi/Hinglish, reply in scannable, natural Hinglish. Keep core academic terms in standard English brackets.${historyText}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⚠️ ABSOLUTE MANDATORY RULES — ZERO EXCEPTIONS ALLOWED
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Current Student Question: "${question}"`;
+RULE 1 — MATH/FORMULA FORMATTING (THIS IS THE MOST CRITICAL RULE):
+The UI uses a KaTeX renderer. Every single math formula, equation, variable, or scientific expression MUST be wrapped in LaTeX dollar-sign delimiters. If you do NOT wrap math in $...$ or $$...$$, the formula will appear as broken garbage text.
+
+HOW TO WRITE FORMULAS — MANDATORY FORMAT:
+✅ CORRECT (wrap ALL math in $ signs):
+- Inline formula: $v = u + at$
+- Block/display formula (on its own line):
+  $$s = ut + \\frac{1}{2}at^2$$
+- Chemical formula: $H_2SO_4$, $CO_2$
+- Fractions: $\\frac{1}{f} = \\frac{1}{v} + \\frac{1}{u}$
+- Superscripts: $v^2 = u^2 + 2as$, $E = mc^2$
+- Subscripts: $H_2O$, $m_1$, $m_2$
+- Square root: $\\sqrt{b^2 - 4ac}$
+- Greek letters: $\\theta$, $\\rho$, $\\alpha$, $\\omega$
+- Complex: $$F = G\\frac{m_1 m_2}{r^2}$$
+
+❌ COMPLETELY WRONG (never do this):
+- Writing: v = u + at (NO dollar signs = broken!)
+- Writing: H₂SO₄ (Unicode subscripts = broken!)
+- Writing: v²=u²+2as (no LaTeX = broken!)
+- Writing: 1/f = 1/v + 1/u (fraction without \\frac = broken!)
+
+RULE 2 — NO HTML: Never use <div>, <span>, <br>, <p> or any HTML tag. Use Markdown only.
+
+RULE 3 — TABLES: Use proper Markdown tables with | pipes | and a separator row:
+| Column A | Column B |
+| :--- | :--- |
+| value | value |
+Never use || double pipes. Always include the separator row.
+
+RULE 4 — RESPONSE LENGTH:
+- Short question (definition, who is X, simple fact) → 2-3 crisp paragraphs max.
+- Science/Math formula question → Use structured headings, LaTeX formulas, worked examples.
+- Board exam question → Give a full model answer in CBSE marking-scheme style.
+
+RULE 5 — BILINGUAL:
+- English question → Answer in elite academic English.
+- Hindi/Hinglish question → Answer in natural Hinglish, keep technical terms in English.${historyText}
+
+Student Question: "${question}"`;
 };
 
 export const generateNotesPrompt = (grade, subject, chapter, type) => {
   return `You are an expert Indian school teacher for Class ${grade}. 
 Generate ${type} for the subject ${subject}, chapter: "${chapter}". 
 Format it clearly with Markdown. Use bullet points, bold text for important terms. 
-Make it easy to read, student-friendly, and focused on CBSE/State board patterns.`;
+Make it easy to read, student-friendly, and focused on CBSE/State board patterns.
+
+CRITICAL FORMATTING & FORMULA RULES:
+- Comparison Tables: ALWAYS use clean Markdown tables with single pipes (\`|\`) and proper \`| :--- | :--- |\` separator rows.
+- Math & Science Formulas: Use LaTeX syntax. Inline: \`$formula$\`. Block: \`$$formula$$\`. Examples: \`$H_2SO_4$\`, \`$E = mc^2$\`, \`$x = \\frac{-b \\pm \\sqrt{b^2-4ac}}{2a}$\`. NEVER use Unicode subscripts/superscripts like H₂SO₄ — always use LaTeX.`;
 };
 
 export const generateRevisionPrompt = (subject, chapter, time) => {
   return `You are an expert exam prep tutor. 
 Provide a ${time}-minute quick revision summary for the chapter "${chapter}" in ${subject}.
 Focus ONLY on the most frequently asked exam topics, key dates/formulas, and critical definitions.
-Output in clean Markdown.`;
+Output in clean Markdown.
+
+CRITICAL FORMATTING & FORMULA RULES:
+- Comparison Tables: ALWAYS use clean Markdown tables with single pipes (\`|\`) and proper \`| :--- | :--- |\` separator rows.
+- Math & Science Formulas: Use LaTeX syntax. Inline: \`$formula$\`. Block: \`$$formula$$\`. Examples: \`$H_2SO_4$\`, \`$E = mc^2$\`, \`$x = \\frac{-b \\pm \\sqrt{b^2-4ac}}{2a}$\`. NEVER use Unicode subscripts/superscripts like H₂SO₄.`;
 };
 
 export const generateTimetablePrompt = (date, subjects, hours, preference) => {
@@ -227,7 +288,11 @@ Generate a test for ${subject}, topic: "${topic}".
 Type of questions: ${type}.
 Number of questions: ${count}.
 Difficulty: ${difficulty}.
-Provide the test cleanly formatted. Do NOT provide the answers immediately. Provide the answers at the very end under a "Answer Key" section.`;
+Provide the test cleanly formatted. Do NOT provide the answers immediately. Provide the answers at the very end under a "Answer Key" section.
+
+CRITICAL FORMATTING & FORMULA RULES:
+- Comparison Tables: ALWAYS use clean Markdown tables with single pipes (\`|\`) and proper \`| :--- | :--- |\` separator rows.
+- Math & Science Formulas: Use LaTeX syntax. Inline: \`$formula$\`. Block: \`$$formula$$\`. Examples: \`$H_2SO_4$\`, \`$E = mc^2$\`. NEVER use Unicode subscripts/superscripts.`;
 };
 
 export const generateExamRoadmapPrompt = (board, grade, subject, days) => {
@@ -244,7 +309,11 @@ Provide a professional study plan in beautiful Markdown:
 3. **Most Repeated Board Questions / Hot Topics**: List the top 5 most frequently repeated concepts or questions in past 10 years of ${board} exams for this subject.
 4. **Consistency & Psychology Advice**: Give 3 quick elite exam-crushing tips specifically for an Indian student facing pressure.
 
-Use beautiful bolding, list formatting, and a structured layout so it feels extremely professional, realistic, and highly motivating. Use a friendly, encouraging companion tone!`;
+Use beautiful bolding, list formatting, and a structured layout so it feels extremely professional, realistic, and highly motivating. Use a friendly, encouraging companion tone!
+
+CRITICAL FORMATTING & FORMULA RULES:
+- Comparison Tables: ALWAYS use clean Markdown tables with single pipes (\`|\`) and proper \`| :--- | :--- |\` separator rows.
+- Math & Science Formulas: Use LaTeX syntax. Inline: \`$formula$\`. Block: \`$$formula$$\`. Examples: \`$H_2SO_4$\`, \`$E = mc^2$\`, \`$x = \\frac{-b \\pm \\sqrt{b^2-4ac}}{2a}$\`. NEVER use Unicode subscripts/superscripts.`;
 };
 
 export const generateOneClickPrompt = (type, topic, grade) => {
@@ -299,7 +368,9 @@ ${promptText}
 
 Always use markdown tables, list layouts, clear spacing, and bullet points to make the output feel extremely premium, legible, and visual. Write in an encouraging, high-dopamine, supportive tone!
 
-CRITICAL OUTPUT SPEED RULE:
+CRITICAL FORMATTING, FORMULA & SPEED RULES:
+- Comparison Tables: ALWAYS use clean Markdown tables with single pipes (\`|\`) and proper \`| :--- | :--- |\` separator rows. NEVER use double pipes.
+- Math & Science Formulas: Use LaTeX syntax always. Inline: \`$formula$\`. Block: \`$$formula$$\`. Examples: \`$H_2SO_4$\`, \`$E = mc^2$\`, \`$x = \\frac{-b \\pm \\sqrt{b^2-4ac}}{2a}$\`. NEVER use Unicode subscripts/superscripts like H₂SO₄.
 - Be highly direct, crisp, and concise. 
 - Eliminate all unnecessary conversational filler, preambles, and postambles (do NOT write "Here is your plan..." or "I hope this helps..."). Start writing the markdown resource immediately.
 - Use clear bullet points and short 1-2 sentence paragraphs to ensure the model responds under 2-3 seconds!`;

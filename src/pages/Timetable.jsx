@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Clock, Calendar, CalendarPlus, Loader2 } from 'lucide-react';
 import { generateAIContent, generateTimetablePrompt } from '../lib/ai';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { saveDocument } from '../lib/firebase';
 import { useAuth } from '../context/AuthContext';
 
@@ -114,7 +115,7 @@ export default function Timetable() {
             </h2>
             
             <div className="generated-content" style={{ marginTop: 0, backgroundColor: 'var(--bg)' }}>
-              <ReactMarkdown>{result}</ReactMarkdown>
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>{result}</ReactMarkdown>
             </div>
           </div>
         )}

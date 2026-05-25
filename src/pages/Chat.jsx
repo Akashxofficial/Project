@@ -1,9 +1,40 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Send, Sparkles, User, Clock, Plus, Trash2, MessageSquare, PanelLeftOpen, PanelLeftClose, Loader2 } from 'lucide-react';
-import { generateAIContent, generateDoubtPrompt } from '../lib/ai';
+import { generateAIContent, generateDoubtPrompt, fixMathFormatting } from '../lib/ai';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
+import 'katex/dist/katex.min.css';
 import { useAuth } from '../context/AuthContext';
 import { saveChatSession, getUserChatSessions, deleteChatSession } from '../lib/firebase';
+
+// Custom renderers for beautiful markdown tables
+const markdownComponents = {
+  table: ({ children }) => (
+    <div className="md-table-wrapper">
+      <table className="md-table">{children}</table>
+    </div>
+  ),
+  thead: ({ children }) => <thead className="md-thead">{children}</thead>,
+  tbody: ({ children }) => <tbody>{children}</tbody>,
+  tr: ({ children }) => <tr className="md-tr">{children}</tr>,
+  th: ({ children }) => <th className="md-th">{children}</th>,
+  td: ({ children }) => <td className="md-td">{children}</td>,
+  code: ({ inline, className, children }) => {
+    if (inline) {
+      return <code className="md-inline-code">{children}</code>;
+    }
+    return (
+      <div className="md-code-block">
+        <code>{children}</code>
+      </div>
+    );
+  },
+  blockquote: ({ children }) => (
+    <blockquote className="md-blockquote">{children}</blockquote>
+  ),
+};
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 const genId = () => `sess_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
@@ -222,7 +253,7 @@ export default function Chat() {
     const aiMsg = {
       id: Date.now() + 1,
       role: 'ai',
-      text: result.text || result.message || '⚠️ Something went wrong. Please try again.',
+      text: fixMathFormatting(result.text) || result.message || '⚠️ Something went wrong. Please try again.',
       isError: !result.text
     };
 
@@ -392,7 +423,11 @@ export default function Chat() {
                   }}
                 >
                   {msg.role === 'ai' ? (
-                    <ReactMarkdown>{msg.text}</ReactMarkdown>
+                    <ReactMarkdown
+                      remarkPlugins={[remarkGfm, remarkMath]}
+                      rehypePlugins={[rehypeKatex]}
+                      components={markdownComponents}
+                    >{msg.text}</ReactMarkdown>
                   ) : (
                     <span>{msg.text}</span>
                   )}
