@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "dev:server": "node --env-file=.env server.js",
-    "dev:all": "concurrently \"node --env-file=.env server.js\" \"vite\" --names \"API,UI\" --prefix-colors \"magenta,cyan\"",
+    "dev:server": "node --watch --env-file=.env server.js",
+    "dev:all": "concurrently \"node --watch --env-file=.env server.js\" \"vite\" --names \"API,UI\" --prefix-colors \"magenta,cyan\"",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview"

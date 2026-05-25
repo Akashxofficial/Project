@@ -3,7 +3,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { 
   BookOpen, MessageSquare, Clock, FileText, GraduationCap, ArrowRight,
   Flame, Star, Trophy, Award, Target, CheckCircle2, ChevronRight, 
-  AlertCircle, RefreshCw, Plus, Trash2, Sparkles, Zap, Play, Copy, Check, Calendar
+  AlertCircle, RefreshCw, Plus, Trash2, Sparkles, Zap, Play, Copy, Check, Calendar,
+  Loader2
 } from 'lucide-react';
 import { generateAIContent, generateExamRoadmapPrompt, generateOneClickPrompt } from '../lib/ai';
 import ReactMarkdown from 'react-markdown';
@@ -680,13 +681,17 @@ export default function Home() {
                       id="quick-gen-btn"
                       type="submit" 
                       className="btn btn-primary" 
-                      style={{ padding: '0.5rem 1.25rem', fontSize: '0.82rem', flex: 1 }}
+                      style={{ padding: '0.5rem 1.25rem', fontSize: '0.82rem', flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
                       disabled={oneClickLoading || !oneClickTopic}
                     >
-                      {oneClickLoading 
-                        ? (oneClickStatus && oneClickStatus !== 'thinking' ? oneClickStatus : 'Generating...') 
-                        : `Instant Generate ${activeOneClickTool}`
-                      }
+                      {oneClickLoading ? (
+                        <>
+                          <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />
+                          {oneClickStatus && oneClickStatus !== 'thinking' ? oneClickStatus : `Generating ${activeOneClickTool}...`}
+                        </>
+                      ) : (
+                        `Instant Generate ${activeOneClickTool}`
+                      )}
                     </button>
                     <button 
                       type="button" 
@@ -781,10 +786,14 @@ export default function Home() {
                   style={{ width: '100%', padding: '0.65rem', backgroundColor: 'var(--accent)', color: '#fff', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
                   disabled={examLoading}
                 >
-                  {examLoading 
-                    ? (examStatus && examStatus !== 'thinking' ? examStatus : 'Engineering Board Roadmap...') 
-                    : <><Sparkles size={16} /> Generate Day-by-Day Exam Roadmap</>
-                  }
+                  {examLoading ? (
+                    <>
+                      <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />
+                      {examStatus && examStatus !== 'thinking' ? examStatus : 'Engineering Board Roadmap...'}
+                    </>
+                  ) : (
+                    <><Sparkles size={16} /> Generate Day-by-Day Exam Roadmap</>
+                  )}
                 </button>
               </div>
             </form>

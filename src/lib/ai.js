@@ -35,7 +35,7 @@ export const generateAIContent = async (prompt, onStatus = null) => {
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 28000);
+      const timeoutId = setTimeout(() => controller.abort(), 45000);
 
       if (attempt > 0) {
         onStatus?.(`♻️ Retrying... (attempt ${attempt + 1}/${MAX_ATTEMPTS})`);
@@ -297,5 +297,10 @@ Target Audience: Class ${grade} students (CBSE/RBSE board).
 Here are the specific instructions for your output:
 ${promptText}
 
-Always use markdown tables, list layouts, clear spacing, and bullet points to make the output feel extremely premium, legible, and visual. Write in an encouraging, high-dopamine, supportive tone!`;
+Always use markdown tables, list layouts, clear spacing, and bullet points to make the output feel extremely premium, legible, and visual. Write in an encouraging, high-dopamine, supportive tone!
+
+CRITICAL OUTPUT SPEED RULE:
+- Be highly direct, crisp, and concise. 
+- Eliminate all unnecessary conversational filler, preambles, and postambles (do NOT write "Here is your plan..." or "I hope this helps..."). Start writing the markdown resource immediately.
+- Use clear bullet points and short 1-2 sentence paragraphs to ensure the model responds under 2-3 seconds!`;
 };
