@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
 import { Clock, Calendar, CalendarPlus, Loader2 } from 'lucide-react';
-import { generateAIContent, generateTimetablePrompt } from '../lib/ai';
+import { generateAIContent, generateTimetablePrompt, fixMathFormatting } from '../lib/ai';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
+import 'katex/dist/katex.min.css';
 import { saveDocument } from '../lib/firebase';
 import { useAuth } from '../context/AuthContext';
 
@@ -42,7 +45,7 @@ export default function Timetable() {
       return;
     }
 
-    setResult(response.text);
+    setResult(fixMathFormatting(response.text));
     setLoading(false);
     setStatusMsg('');
     
@@ -115,7 +118,7 @@ export default function Timetable() {
             </h2>
             
             <div className="generated-content" style={{ marginTop: 0, backgroundColor: 'var(--bg)' }}>
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>{result}</ReactMarkdown>
+              <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}>{result}</ReactMarkdown>
             </div>
           </div>
         )}

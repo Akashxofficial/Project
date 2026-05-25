@@ -6,7 +6,7 @@ import {
   AlertCircle, RefreshCw, Plus, Trash2, Sparkles, Zap, Play, Copy, Check, Calendar,
   Loader2
 } from 'lucide-react';
-import { generateAIContent, generateExamRoadmapPrompt, generateOneClickPrompt } from '../lib/ai';
+import { generateAIContent, generateExamRoadmapPrompt, generateOneClickPrompt, fixMathFormatting } from '../lib/ai';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
@@ -41,6 +41,19 @@ const markdownComponents = {
   ),
 };
 
+const standardSubjects = [
+  { name: 'Physics', icon: '⚛️', color: '#6366f1' },
+  { name: 'Chemistry', icon: '🧪', color: '#10b981' },
+  { name: 'Mathematics', icon: '📐', color: '#3b82f6' },
+  { name: 'Biology', icon: '🧬', color: '#ec4899' },
+  { name: 'Social Science', icon: '🌍', color: '#f59e0b' },
+  { name: 'English', icon: '📝', color: '#a855f7' },
+  { name: 'Hindi', icon: '✍️', color: '#ef4444' },
+  { name: 'Computer Science', icon: '💻', color: '#06b6d4' }
+];
+
+
+
 export default function Home() {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
@@ -56,26 +69,30 @@ export default function Home() {
   const [badges, setBadges] = useState(['doubt_destroyer']);
   const [xpAwardedMsg, setXpAwardedMsg] = useState('');
 
-  // ── 2. STUDY MISSIONS STATE ──
-  const [missions, setMissions] = useState([
-    { id: 'm1', type: 'concept', label: 'Physics Doubt Practice: Heal Refraction of Light', xp: 20, done: false, prompt: 'Explain refraction of light simply with CBSE Class 10 board context' },
-    { id: 'm2', type: 'revision', label: '15-Minute Revision: Quick Chemistry Formulas sheet', xp: 25, done: false, topic: 'Chemical Reactions and Equations' },
-    { id: 'm3', type: 'quiz', label: 'Quick Quiz: Science Chapter 1 MCQ Test', xp: 30, done: false, link: '/test?subject=Science&topic=Chemical+Reactions&count=5' },
-    { id: 'm4', type: 'login', label: 'Daily consistency check-in', xp: 15, done: true } // Auto-checked on load
-  ]);
+  // ── 1.5. STUDENT PROFILE STATE ──
+  const [profileBoard, setProfileBoard] = useState('');
+  const [profileClass, setProfileClass] = useState('');
+  const [profileSubjects, setProfileSubjects] = useState([]);
+  const [profileSetupDone, setProfileSetupDone] = useState(false);
+  const [showProfileSetup, setShowProfileSetup] = useState(false);
 
-  // ── 3. WEAKNESSES STATE ──
-  const [weaknesses, setWeaknesses] = useState([
-    { id: 'w1', subject: 'Physics', chapter: 'Light: Reflection & Refraction', score: 42 },
-    { id: 'w2', subject: 'Chemistry', chapter: 'Carbon & its Compounds', score: 58 },
-    { id: 'w3', subject: 'Mathematics', chapter: 'Trigonometry Identities', score: 48 }
-  ]);
+  // Temp state for profile setup form
+  const [setupBoard, setSetupBoard] = useState('CBSE');
+  const [setupClass, setSetupClass] = useState('10');
+  const [setupSubjects, setSetupSubjects] = useState('');
+  const [selectedSubjects, setSelectedSubjects] = useState([]);
+
+  // ── 2. STUDY MISSIONS STATE (starts EMPTY — generated from profile) ──
+  const [missions, setMissions] = useState([]);
+
+  // ── 3. WEAKNESSES STATE (starts EMPTY — student adds their own) ──
+  const [weaknesses, setWeaknesses] = useState([]);
   const [newWeakSubject, setNewWeakSubject] = useState('');
   const [newWeakChapter, setNewWeakChapter] = useState('');
   const [showAddWeakness, setShowAddWeakness] = useState(false);
 
   // ── 4. ONE-CLICK OUTPUT PANEL STATE ──
-  const [activeOneClickTool, setActiveOneClickTool] = useState(null); // 'Explain Easy', 'Important Questions', etc.
+  const [activeOneClickTool, setActiveOneClickTool] = useState(null);
   const [oneClickTopic, setOneClickTopic] = useState('');
   const [oneClickGrade, setOneClickGrade] = useState('10');
   const [oneClickLoading, setOneClickLoading] = useState(false);
@@ -93,6 +110,92 @@ export default function Home() {
   const [examResult, setExamResult] = useState('');
   const [roadmapCopied, setRoadmapCopied] = useState(false);
 
+  // ── MISSION GENERATOR (generates from student's actual subjects) ──
+  const generateMissionsFromProfile = (board, grade, subjects) => {
+    if (!subjects || subjects.length === 0) return [];
+
+    const missionTemplates = [
+      { type: 'concept', labelFn: (s) => `Doubt Practice: Solve a ${s} concept`, xp: 20, promptFn: (s, g) => `Explain a key concept from ${s} simply for ${board} Class ${g} board exam context` },
+      { type: 'revision', labelFn: (s) => `15-Min Revision: ${s} quick recap`, xp: 25, topicFn: (s) => s },
+      { type: 'quiz', labelFn: (s) => `Quick Quiz: ${s} MCQ Test (5 Qs)`, xp: 30, linkFn: (s) => `/test?subject=${encodeURIComponent(s)}&topic=${encodeURIComponent(s)}&count=5` },
+    ];
+
+    const generated = [];
+    // Pick up to 3 subjects for missions (rotate daily by date)
+    const today = new Date().getDate();
+    const shuffled = [...subjects].sort((a, b) => ((a.charCodeAt(0) + today) % 7) - ((b.charCodeAt(0) + today) % 7));
+    const picked = shuffled.slice(0, 3);
+
+    picked.forEach((subj, idx) => {
+      const tmpl = missionTemplates[idx % missionTemplates.length];
+      const mission = {
+        id: `m_${idx + 1}`,
+        type: tmpl.type,
+        label: tmpl.labelFn(subj),
+        xp: tmpl.xp,
+        done: false,
+      };
+      if (tmpl.promptFn) mission.prompt = tmpl.promptFn(subj, grade);
+      if (tmpl.topicFn) mission.topic = tmpl.topicFn(subj);
+      if (tmpl.linkFn) mission.link = tmpl.linkFn(subj);
+      generated.push(mission);
+    });
+
+    // Always add daily check-in
+    generated.push({ id: 'm_checkin', type: 'login', label: 'Daily consistency check-in', xp: 15, done: true });
+
+    return generated;
+  };
+
+  // ── SAVE PROFILE ──
+  const handleSaveProfile = (e) => {
+    e.preventDefault();
+    
+    // Combine clicked quick subjects and custom entered subjects
+    const quickSubjectsList = [...selectedSubjects];
+    const customList = setupSubjects.split(',')
+      .map(s => s.trim())
+      .filter(s => s.length > 0 && !quickSubjectsList.some(q => q.toLowerCase() === s.toLowerCase()));
+    
+    const subjectsArray = [...quickSubjectsList, ...customList];
+    
+    if (subjectsArray.length === 0) {
+      alert("Please select or enter at least one subject to customize your missions.");
+      return;
+    }
+
+    setProfileBoard(setupBoard);
+    setProfileClass(setupClass);
+    setProfileSubjects(subjectsArray);
+    setProfileSetupDone(true);
+    setShowProfileSetup(false);
+
+    // Persist profile
+    const profile = { board: setupBoard, grade: setupClass, subjects: subjectsArray };
+    localStorage.setItem('tanios_profile', JSON.stringify(profile));
+
+    // Generate missions
+    const newMissions = generateMissionsFromProfile(setupBoard, setupClass, subjectsArray);
+    setMissions(newMissions);
+    saveState('tanios_missions', newMissions);
+
+    // Also update exam mode defaults
+    setExamBoard(setupBoard === 'CBSE' ? 'CBSE (Central Board)' : setupBoard === 'RBSE' ? 'RBSE (Rajasthan Board)' : setupBoard);
+    setExamGrade(`Class ${setupClass}`);
+    setOneClickGrade(setupClass);
+
+    awardXp(10, 'Profile Setup Complete');
+  };
+
+  // Sync to local storage
+  const saveState = (key, value) => {
+    try {
+      localStorage.setItem(key, typeof value === 'object' ? JSON.stringify(value) : value.toString());
+    } catch (e) {
+      console.warn(e);
+    }
+  };
+
   // ── LOAD STATE ON MOUNT ──
   useEffect(() => {
     try {
@@ -102,6 +205,7 @@ export default function Home() {
       const storedBadges = localStorage.getItem('tanios_badges');
       const storedWeaknesses = localStorage.getItem('tanios_weaknesses');
       const storedMissions = localStorage.getItem('tanios_missions');
+      const storedProfile = localStorage.getItem('tanios_profile');
 
       if (storedXp) setXp(parseInt(storedXp, 10));
       else localStorage.setItem('tanios_xp', '120');
@@ -116,9 +220,39 @@ export default function Home() {
       else localStorage.setItem('tanios_badges', JSON.stringify(['doubt_destroyer']));
 
       if (storedWeaknesses) setWeaknesses(JSON.parse(storedWeaknesses));
-      else localStorage.setItem('tanios_weaknesses', JSON.stringify(weaknesses));
 
-      if (storedMissions) setMissions(JSON.parse(storedMissions));
+      // Load profile
+      if (storedProfile) {
+        const profile = JSON.parse(storedProfile);
+        setProfileBoard(profile.board);
+        setProfileClass(profile.grade);
+        setProfileSubjects(profile.subjects);
+        setProfileSetupDone(true);
+        setSetupBoard(profile.board);
+        setSetupClass(profile.grade);
+        
+        // Split profile subjects into standard ones and custom ones
+        const standardList = ['Physics', 'Chemistry', 'Mathematics', 'Biology', 'Social Science', 'English', 'Hindi', 'Computer Science'];
+        const matchedStandard = profile.subjects.filter(s => standardList.some(std => std.toLowerCase() === s.trim().toLowerCase()));
+        setSelectedSubjects(matchedStandard);
+        
+        const customSubjs = profile.subjects.filter(s => !standardList.some(std => std.toLowerCase() === s.trim().toLowerCase()));
+        setSetupSubjects(customSubjs.join(', '));
+
+        // If missions are stored, use them; otherwise regenerate from profile
+        if (storedMissions) {
+          setMissions(JSON.parse(storedMissions));
+        } else {
+          const newMissions = generateMissionsFromProfile(profile.board, profile.grade, profile.subjects);
+          setMissions(newMissions);
+          localStorage.setItem('tanios_missions', JSON.stringify(newMissions));
+        }
+      } else {
+        setProfileSetupDone(false);
+        setMissions([]);
+        localStorage.removeItem('tanios_missions'); // clean up orphan missions
+      }
+
     } catch (e) {
       console.warn("Could not load local storage states:", e);
     }
@@ -143,15 +277,6 @@ export default function Home() {
       triggerBadgeAward('consistency_king', updatedBadges);
     }
   }, [xp, streak]);
-
-  // Sync to local storage
-  const saveState = (key, value) => {
-    try {
-      localStorage.setItem(key, typeof value === 'object' ? JSON.stringify(value) : value.toString());
-    } catch (e) {
-      console.warn(e);
-    }
-  };
 
   // Listen to doubt solved event from Chat page to dynamically update XP!
   useEffect(() => {
@@ -265,7 +390,7 @@ export default function Home() {
     if (response.error || !response.text) {
       setOneClickResult(`⚠️ Generation failed: ${response.message || 'Please try again.'}`);
     } else {
-      setOneClickResult(response.text);
+      setOneClickResult(fixMathFormatting(response.text));
       // Award XP
       awardXp(15, `Generated AI ${activeOneClickTool}`);
     }
@@ -293,7 +418,7 @@ export default function Home() {
     if (response.error || !response.text) {
       setExamResult(`⚠️ Roadmap creation failed: ${response.message || 'Please check your connection.'}`);
     } else {
-      setExamResult(response.text);
+      setExamResult(fixMathFormatting(response.text));
       awardXp(30, 'Unlocked Board Revision Roadmap');
     }
   };
@@ -557,74 +682,232 @@ export default function Home() {
           
           {/* A. MISSION CONTROL WIDGET */}
           <section className="card" id="mission-center" style={{ borderLeft: '4px solid var(--primary)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Target color="var(--primary)" size={20} />
-                <h2 style={{ fontSize: '1.25rem', margin: 0 }}>Complete Today’s Study Mission</h2>
-              </div>
-              <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
-                {missions.filter(m => m.done).length} / {missions.length} Complete
-              </span>
-            </div>
-
-            <div style={{ height: '6px', background: 'var(--bg-tertiary)', borderRadius: '99px', overflow: 'hidden', marginBottom: '1.25rem' }}>
-              <div style={{
-                height: '100%',
-                width: `${(missions.filter(m => m.done).length / missions.length) * 100}%`,
-                background: 'linear-gradient(90deg, var(--primary), var(--success))',
-                borderRadius: '99px',
-                transition: 'width 0.4s ease'
-              }} />
-            </div>
-
-            <div>
-              {missions.map(mission => (
-                <div key={mission.id} className={`mission-item ${mission.done ? 'completed' : ''}`}>
-                  <button 
-                    onClick={() => toggleMission(mission.id)}
-                    disabled={mission.done}
-                    style={{ background: 'none', border: 'none', color: mission.done ? 'var(--success)' : 'var(--text-secondary)', cursor: mission.done ? 'default' : 'pointer' }}
-                  >
-                    <CheckCircle2 size={20} style={mission.done ? {} : { opacity: 0.4 }} />
-                  </button>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{
-                      fontSize: '0.88rem',
-                      fontWeight: 600,
-                      textDecoration: mission.done ? 'line-through' : 'none',
-                      color: mission.done ? 'var(--text-secondary)' : 'var(--text)'
-                    }}>
-                      {mission.label}
-                    </div>
+            {!profileSetupDone ? (
+              <div style={{ padding: '0.5rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+                  <div style={{
+                    background: 'rgba(99, 102, 241, 0.1)',
+                    width: '36px', height: '36px',
+                    borderRadius: '50%',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center'
+                  }}>
+                    <Target color="var(--primary)" size={20} />
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <span style={{ fontSize: '0.72rem', background: 'rgba(99, 102, 241, 0.1)', color: 'var(--primary)', padding: '0.2rem 0.5rem', borderRadius: '4px', fontWeight: 700 }}>
-                      +{mission.xp} XP
-                    </span>
-                    {!mission.done && (
-                      <button 
-                        onClick={() => {
-                          if (mission.type === 'concept') {
-                            navigate(`/chat?prompt=${encodeURIComponent(mission.prompt)}`);
-                          } else if (mission.type === 'revision') {
-                            setActiveOneClickTool('Revision Sheet');
-                            setOneClickTopic(mission.topic);
-                            setOneClickGrade('10');
-                            setOneClickResult('');
-                          } else if (mission.type === 'quiz') {
-                            navigate(mission.link);
-                          }
-                        }}
-                        className="btn btn-secondary" 
-                        style={{ padding: '0.3rem 0.6rem', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}
-                      >
-                        Start <Play size={10} />
-                      </button>
-                    )}
+                  <div>
+                    <h2 style={{ fontSize: '1.25rem', margin: 0, color: 'var(--text)' }}>Set Up Your Study Profile</h2>
+                    <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: '0.25rem 0 0 0' }}>
+                      Lock in your board & subjects to unlock personalized study missions and target tasks.
+                    </p>
                   </div>
                 </div>
-              ))}
-            </div>
+
+                <form onSubmit={handleSaveProfile} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', marginTop: '1.5rem' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                    <div>
+                      <label className="input-label" style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text)', display: 'block', marginBottom: '0.35rem' }}>
+                        Select Board
+                      </label>
+                      <select 
+                        className="input-field" 
+                        value={setupBoard} 
+                        onChange={e => setSetupBoard(e.target.value)} 
+                        style={{ padding: '0.6rem 0.75rem', fontSize: '0.88rem', background: 'var(--bg-secondary)', border: '1px solid var(--border)', color: 'var(--text)', borderRadius: '6px', width: '100%' }}
+                      >
+                        <option value="CBSE">CBSE (Central Board)</option>
+                        <option value="RBSE">RBSE (Rajasthan Board)</option>
+                        <option value="ICSE">ICSE Board</option>
+                        <option value="UP Board">UP Board</option>
+                        <option value="Bihar Board">Bihar Board</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="input-label" style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text)', display: 'block', marginBottom: '0.35rem' }}>
+                        Class Grade
+                      </label>
+                      <select 
+                        className="input-field" 
+                        value={setupClass} 
+                        onChange={e => setSetupClass(e.target.value)} 
+                        style={{ padding: '0.6rem 0.75rem', fontSize: '0.88rem', background: 'var(--bg-secondary)', border: '1px solid var(--border)', color: 'var(--text)', borderRadius: '6px', width: '100%' }}
+                      >
+                        <option value="8">Class 8</option>
+                        <option value="9">Class 9</option>
+                        <option value="10">Class 10</option>
+                        <option value="11">Class 11</option>
+                        <option value="12">Class 12</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="input-label" style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text)', display: 'block', marginBottom: '0.5rem' }}>
+                      Select Your Subjects
+                    </label>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.75rem' }}>
+                      {standardSubjects.map(sub => {
+                        const isSelected = selectedSubjects.includes(sub.name);
+                        return (
+                          <button
+                            key={sub.name}
+                            type="button"
+                            onClick={() => {
+                              if (isSelected) {
+                                setSelectedSubjects(selectedSubjects.filter(s => s !== sub.name));
+                              } else {
+                                setSelectedSubjects([...selectedSubjects, sub.name]);
+                              }
+                            }}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.35rem',
+                              padding: '0.45rem 0.75rem',
+                              borderRadius: '20px',
+                              fontSize: '0.8rem',
+                              fontWeight: 600,
+                              cursor: 'pointer',
+                              transition: 'all 0.2s ease',
+                              background: isSelected ? 'rgba(99, 102, 241, 0.15)' : 'var(--bg-tertiary)',
+                              border: isSelected ? '2px solid var(--primary)' : '2px solid var(--border)',
+                              color: isSelected ? 'var(--text)' : 'var(--text-secondary)',
+                            }}
+                          >
+                            <span>{sub.icon}</span>
+                            <span>{sub.name}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    <div style={{ marginTop: '0.75rem' }}>
+                      <label className="input-label" style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.35rem' }}>
+                        Other Subjects (comma separated, e.g. Sanskrit, Computer, Physical Education)
+                      </label>
+                      <input
+                        type="text"
+                        className="input-field"
+                        placeholder="e.g. Sanskrit, Physical Education"
+                        value={setupSubjects}
+                        onChange={e => setSetupSubjects(e.target.value)}
+                        style={{ padding: '0.5rem 0.75rem', fontSize: '0.85rem', width: '100%', background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: '6px', color: 'var(--text)' }}
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="btn btn-primary"
+                    style={{
+                      width: '100%',
+                      padding: '0.75rem',
+                      fontSize: '0.9rem',
+                      fontWeight: 700,
+                      background: 'linear-gradient(135deg, var(--primary), var(--accent))',
+                      border: 'none',
+                      color: 'white',
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '0.5rem',
+                      boxShadow: '0 4px 15px rgba(99, 102, 241, 0.3)',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    <Sparkles size={16} /> Generate Customized Study Dashboard & Claim +10 XP
+                  </button>
+                </form>
+              </div>
+            ) : (
+              <>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <Target color="var(--primary)" size={20} />
+                    <h2 style={{ fontSize: '1.25rem', margin: 0 }}>Complete Today’s Study Mission</h2>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <button
+                      onClick={() => setProfileSetupDone(false)}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: 'var(--text-secondary)',
+                        cursor: 'pointer',
+                        fontSize: '0.75rem',
+                        fontWeight: 600,
+                        textDecoration: 'underline',
+                        padding: 0,
+                      }}
+                    >
+                      Edit Profile ⚙️
+                    </button>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
+                      {missions.filter(m => m.done).length} / {missions.length} Complete
+                    </span>
+                  </div>
+                </div>
+
+                <div style={{ height: '6px', background: 'var(--bg-tertiary)', borderRadius: '99px', overflow: 'hidden', marginBottom: '1.25rem' }}>
+                  <div style={{
+                    height: '100%',
+                    width: `${missions.length > 0 ? (missions.filter(m => m.done).length / missions.length) * 100 : 0}%`,
+                    background: 'linear-gradient(90deg, var(--primary), var(--success))',
+                    borderRadius: '99px',
+                    transition: 'width 0.4s ease'
+                  }} />
+                </div>
+
+                <div>
+                  {missions.map(mission => (
+                    <div key={mission.id} className={`mission-item ${mission.done ? 'completed' : ''}`}>
+                      <button 
+                        onClick={() => toggleMission(mission.id)}
+                        disabled={mission.done}
+                        style={{ background: 'none', border: 'none', color: mission.done ? 'var(--success)' : 'var(--text-secondary)', cursor: mission.done ? 'default' : 'pointer' }}
+                      >
+                        <CheckCircle2 size={20} style={mission.done ? {} : { opacity: 0.4 }} />
+                      </button>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{
+                          fontSize: '0.88rem',
+                          fontWeight: 600,
+                          textDecoration: mission.done ? 'line-through' : 'none',
+                          color: mission.done ? 'var(--text-secondary)' : 'var(--text)'
+                        }}>
+                          {mission.label}
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <span style={{ fontSize: '0.72rem', background: 'rgba(99, 102, 241, 0.1)', color: 'var(--primary)', padding: '0.2rem 0.5rem', borderRadius: '4px', fontWeight: 700 }}>
+                          +{mission.xp} XP
+                        </span>
+                        {!mission.done && (
+                          <button 
+                            onClick={() => {
+                              if (mission.type === 'concept') {
+                                navigate(`/chat?prompt=${encodeURIComponent(mission.prompt)}`);
+                              } else if (mission.type === 'revision') {
+                                setActiveOneClickTool('Revision Sheet');
+                                setOneClickTopic(mission.topic);
+                                setOneClickGrade('10');
+                                setOneClickResult('');
+                              } else if (mission.type === 'quiz') {
+                                navigate(mission.link);
+                              }
+                            }}
+                            className="btn btn-secondary" 
+                            style={{ padding: '0.3rem 0.6rem', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}
+                          >
+                            Start <Play size={10} />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
           </section>
 
           {/* B. ONE-CLICK OUTPUTS HUB (FAST SHORTCUT COMPANION GENERATOR) */}

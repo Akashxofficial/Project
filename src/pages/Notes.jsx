@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { FileText, Sparkles, Download, Copy, Check, Loader2 } from 'lucide-react';
-import { generateAIContent } from '../lib/ai';
+import { generateAIContent, fixMathFormatting } from '../lib/ai';
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
 import ReactMarkdown from 'react-markdown';
@@ -125,7 +125,7 @@ Keep it student-friendly, concise, and exam-focused for ${board} Class ${grade} 
 
     const streamTag = isSenior && stream ? ` [${stream}]` : '';
     const docTitle = `[${board} Cl.${grade}${streamTag}] ${subject} — ${chapter} (${type})`;
-    setResult({ title: docTitle, content: response.text });
+    setResult({ title: docTitle, content: fixMathFormatting(response.text) });
     setLoading(false); setStatusMsg(''); // ✅ Stop loading BEFORE saving to DB
 
     // Fire-and-forget — never block UI on Firestore
