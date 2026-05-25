@@ -1,6 +1,7 @@
 // src/lib/ai.js
 
 import { cache } from './cache';
+import { limiter } from './rateLimiter';
 
 const API_ENDPOINT = "/api/generate";
 
@@ -16,6 +17,17 @@ export const generateAIContent = async (prompt, onStatus = null) => {
   if (cached) {
     console.log("📦 Cache hit!");
     return { text: cached, fromCache: true };
+  }
+
+  // ✅ Client-side rate-limiting check
+  if (!limiter.isAllowed()) {
+    const waitSecs = limiter.getRetryAfter();
+    onStatus?.(null);
+    return {
+      text: null,
+      error: "rate_limit",
+      message: `Slow down! You are asking doubts too fast. Please wait ${waitSecs} seconds before asking another doubt.`
+    };
   }
 
   const MAX_ATTEMPTS = 5;
@@ -40,9 +52,19 @@ export const generateAIContent = async (prompt, onStatus = null) => {
 
       clearTimeout(timeoutId);
 
-      // ── 429: Quota hit → wait then auto-retry ──────────────────────────────
+      // ── 429: Quota hit or User Rate Limit ──────────────────────────────────
       if (response.status === 429) {
         const data = await response.json().catch(() => ({}));
+
+        // Check if it is a User Rate Limit from our server
+        if (data.code === 'USER_RATE_LIMIT') {
+          onStatus?.(null);
+          return {
+            text: null,
+            error: "rate_limit",
+            message: `⚠️ ${data.error || "Please wait a few seconds before asking another doubt."}`
+          };
+        }
 
         // Use the exact retryDelaySecs from backend (parsed from Google's error), or default to 35s
         let waitSecs = data.retryDelaySecs || 35;
@@ -65,6 +87,11 @@ export const generateAIContent = async (prompt, onStatus = null) => {
       if (!response.ok) {
         const data = await response.json().catch(() => ({}));
         onStatus?.(null);
+
+        if (data.code === 'USER_RATE_LIMIT') {
+          return { text: null, error: "rate_limit", message: `⚠️ ${data.error || "Please wait a few seconds before asking another doubt."}` };
+        }
+
         return { text: null, error: "http", message: `⚠️ ${data.error || "Something went wrong. Please try again."}` };
       }
 
