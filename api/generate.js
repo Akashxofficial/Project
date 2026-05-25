@@ -90,11 +90,9 @@ export default async function handler(req, res) {
     const apiKeys = rawKeys.split(/[\s,;\n]+/).map(k => k.trim()).filter(Boolean);
     let lastError = null;
     let responseText = null;
-    let chosenModel = "gemini-2.0-flash";
+    let chosenModel = "gemini-2.5-flash";
     const modelsToTry = [
-      "gemini-2.0-flash",
       "gemini-2.5-flash",
-      "gemini-2.0-flash-lite",
       "gemini-2.5-pro"
     ];
 
@@ -116,7 +114,7 @@ export default async function handler(req, res) {
           })();
 
           const timeoutPromise = new Promise((_, reject) =>
-            setTimeout(() => reject(new Error("TimeoutError")), 15000)
+            setTimeout(() => reject(new Error("TimeoutError")), 35000)
           );
 
           responseText = await Promise.race([generatePromise, timeoutPromise]);
@@ -126,11 +124,13 @@ export default async function handler(req, res) {
           console.warn(`[API] Key ${i} with model ${modelName} failed:`, err.message);
           lastError = err;
           
-          // Key-wide exhaustion or rate limits (429/quota/billing) or TimeoutError apply to all models for this key.
+          // Key-wide exhaustion, rate limits, server/service overload (503/500/429/quota/billing), or TimeoutError.
           // Break immediately to rotate to the next key instead of sending failing calls repeatedly.
           const errMsg = err.message?.toLowerCase() || '';
-          if (err.message === "TimeoutError" || err.status === 429 || errMsg.includes('429') || errMsg.includes('quota') || errMsg.includes('billing') || errMsg.includes('limit exceeded')) {
-            console.warn(`[API] Key ${i} failed or timed out. Breaking model loop to try next key...`);
+          const isOverloaded = err.status === 503 || err.status === 429 || errMsg.includes('503') || errMsg.includes('429') || errMsg.includes('quota') || errMsg.includes('billing') || errMsg.includes('limit') || errMsg.includes('overloaded') || errMsg.includes('demand');
+          
+          if (err.message === "TimeoutError" || isOverloaded) {
+            console.warn(`[API] Key ${i} failed or is overloaded (503/429/Timeout). Breaking model loop to try next key...`);
             break;
           } else {
             // Model specific error (e.g. model not found), continue trying the next model on the same key
@@ -198,7 +198,7 @@ export default async function handler(req, res) {
     }
 
     return res.status(500).json({
-      error: 'TaniOS AI is experiencing temporary high load. Please try again in a few seconds.',
+      error: 'TaniOS AI server is busy or experiencing high demand. Please try again in a few seconds.',
       code: 'INTERNAL_ERROR',
       diagnostics: { keysFound: apiKeys.length, maskedKeys, lastError: error.message || 'An error occurred during AI execution' }
     });
