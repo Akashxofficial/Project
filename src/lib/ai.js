@@ -30,7 +30,7 @@ export const generateAIContent = async (prompt, onStatus = null) => {
     };
   }
 
-  const MAX_ATTEMPTS = 5;
+  const MAX_ATTEMPTS = 2;
 
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
     try {
@@ -189,12 +189,36 @@ Output in clean Markdown.`;
 };
 
 export const generateTimetablePrompt = (date, subjects, hours, preference) => {
-  return `You are a smart study planner.
-Create a detailed study timetable leading up to the exam date (${date}).
-Subjects to cover: ${subjects}.
-Daily study hours: ${hours} hours.
-Student preference: ${preference}.
-Output a day-by-day plan in Markdown format, breaking down hours per subject and giving specific advice.`;
+  // Calculate days remaining dynamically to give high-yield phase durations
+  let diffDays = 7;
+  try {
+    const today = new Date();
+    const exam = new Date(date);
+    const diffTime = Math.abs(exam - today);
+    diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) || 7;
+  } catch (e) {
+    diffDays = 7;
+  }
+
+  return `You are TaniOS AI, a hyper-intelligent, elite personal study counselor.
+Role: Generate a highly practical, high-impact Study Plan leading up to the exam date (${date}) which is in approximately ${diffDays} days.
+Subjects to cover: ${subjects}
+Daily study hours: ${hours} hours/day
+Student preference: ${preference} (morning person / night owl)
+
+Please structure your response to be extremely concise, visual, and high-impact to ensure instant loading speed. Avoid long-winded paragraphs.
+
+Format:
+1. 🗓️ **PHASED TIMELINE BLUEPRINT** (${diffDays} Days Remaining):
+   - Group the timeline into 3 concise phases (e.g. Phase 1: Syllabus Core, Phase 2: Weak Spot Healing, Phase 3: Active Recall Sprint).
+   - For each phase, write 2-3 actionable bullet points of specific milestones for these subjects (${subjects}). Do NOT write a tedious day-by-day log for many weeks.
+2. ⏱️ **ELITE DAILY ROUTINE TEMPLATE** (${hours} Hours):
+   - Provide a highly structured hour-by-hour breakdown for a single typical study day customized for a ${preference} study preference.
+   - Example: 06:00 AM - 08:00 AM (Subject 1 Focus), etc.
+3. 🚀 **TOPPER STRATEGY BOX**:
+   - Provide 2 high-impact exam-crushing revision tips.
+
+Keep the entire output extremely crisp, scannable, and scrupulously formatted in clean Markdown so it generates instantly (in under 3 seconds)!`;
 };
 
 export const generateTestPrompt = (subject, topic, type, count, difficulty) => {
