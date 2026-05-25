@@ -2,8 +2,25 @@ import React, { useState } from 'react';
 import { BookOpen, Zap, Target, Loader2 } from 'lucide-react';
 import { generateAIContent, generateRevisionPrompt } from '../lib/ai';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
+import 'katex/dist/katex.min.css';
 import { saveDocument } from '../lib/firebase';
 import { useAuth } from '../context/AuthContext';
+
+const markdownComponents = {
+  table: ({ children }) => (<div className="md-table-wrapper"><table className="md-table">{children}</table></div>),
+  thead: ({ children }) => <thead className="md-thead">{children}</thead>,
+  tbody: ({ children }) => <tbody>{children}</tbody>,
+  tr: ({ children }) => <tr className="md-tr">{children}</tr>,
+  th: ({ children }) => <th className="md-th">{children}</th>,
+  td: ({ children }) => <td className="md-td">{children}</td>,
+  code: ({ inline, children }) => inline
+    ? <code className="md-inline-code">{children}</code>
+    : <div className="md-code-block"><code>{children}</code></div>,
+  blockquote: ({ children }) => <blockquote className="md-blockquote">{children}</blockquote>,
+};
 
 export default function Revision() {
   const { currentUser, incrementGuestUsage } = useAuth();
@@ -112,7 +129,7 @@ export default function Revision() {
             </h2>
             
             <div className="generated-content" style={{ marginTop: '1rem', backgroundColor: 'var(--bg)' }}>
-              <ReactMarkdown>{result.content}</ReactMarkdown>
+              <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]} components={markdownComponents}>{result.content}</ReactMarkdown>
             </div>
             
             <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>

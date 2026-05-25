@@ -4,8 +4,25 @@ import { generateAIContent } from '../lib/ai';
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
+import 'katex/dist/katex.min.css';
 import { saveDocument } from '../lib/firebase';
 import { useAuth } from '../context/AuthContext';
+
+const markdownComponents = {
+  table: ({ children }) => (<div className="md-table-wrapper"><table className="md-table">{children}</table></div>),
+  thead: ({ children }) => <thead className="md-thead">{children}</thead>,
+  tbody: ({ children }) => <tbody>{children}</tbody>,
+  tr: ({ children }) => <tr className="md-tr">{children}</tr>,
+  th: ({ children }) => <th className="md-th">{children}</th>,
+  td: ({ children }) => <td className="md-td">{children}</td>,
+  code: ({ inline, children }) => inline
+    ? <code className="md-inline-code">{children}</code>
+    : <div className="md-code-block"><code>{children}</code></div>,
+  blockquote: ({ children }) => <blockquote className="md-blockquote">{children}</blockquote>,
+};
 
 // ─── Curriculum Data ──────────────────────────────────────────────────────────
 
@@ -258,7 +275,7 @@ Keep it student-friendly, concise, and exam-focused for ${board} Class ${grade} 
               </div>
             </div>
             <div ref={contentRef} style={{ lineHeight: '1.8', padding: '1rem', backgroundColor: 'var(--bg-secondary)' }} className="generated-content">
-              <ReactMarkdown>{result.content}</ReactMarkdown>
+              <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]} components={markdownComponents}>{result.content}</ReactMarkdown>
             </div>
           </div>
         )}
