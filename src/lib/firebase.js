@@ -160,7 +160,7 @@ export const getUserChatSessions = async (userId) => {
       })();
 
       const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error("Timeout")), 100)
+        setTimeout(() => reject(new Error("Timeout")), 1500)
       );
 
       // Race Firestore query against a 1.5s timeout

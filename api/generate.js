@@ -90,10 +90,10 @@ export default async function handler(req, res) {
     const apiKeys = rawKeys.split(/[\s,;\n]+/).map(k => k.trim()).filter(Boolean);
     let lastError = null;
     let responseText = null;
-    let chosenModel = "gemini-2.5-flash";
+    let chosenModel = "gemini-2.0-flash";
     const modelsToTry = [
-      "gemini-2.5-flash",
       "gemini-2.0-flash",
+      "gemini-2.5-flash",
       "gemini-2.0-flash-lite",
       "gemini-2.5-pro"
     ];
@@ -108,26 +108,33 @@ export default async function handler(req, res) {
           console.log(`[API] Attempting with Key index ${i} using model ${modelName}...`);
           const model = genAI.getGenerativeModel({ model: modelName });
           
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 20000);
-          
-          const result = await model.generateContent(prompt);
-          const response = await result.response;
-          responseText = response.text();
+          // Race the generation promise against a 15-second timeout to prevent serverless hanging
+          const generatePromise = (async () => {
+            const result = await model.generateContent(prompt);
+            const response = await result.response;
+            return response.text();
+          })();
+
+          const timeoutPromise = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error("TimeoutError")), 15000)
+          );
+
+          responseText = await Promise.race([generatePromise, timeoutPromise]);
           chosenModel = modelName;
-          
-          clearTimeout(timeoutId);
           break; // Successfully got response from this model, break model loop
         } catch (err) {
           console.warn(`[API] Key ${i} with model ${modelName} failed:`, err.message);
           lastError = err;
           
-          // Continue to next model if it's a rate limit or quota block
-          if (err.status === 429 || err.message?.includes('429') || err.message?.toLowerCase().includes('quota')) {
-            continue;
-          } else {
-            // Break model loop for non-quota errors (invalid key, leaked key) to go to next key immediately
+          // Key-wide exhaustion or rate limits (429/quota/billing) or TimeoutError apply to all models for this key.
+          // Break immediately to rotate to the next key instead of sending failing calls repeatedly.
+          const errMsg = err.message?.toLowerCase() || '';
+          if (err.message === "TimeoutError" || err.status === 429 || errMsg.includes('429') || errMsg.includes('quota') || errMsg.includes('billing') || errMsg.includes('limit exceeded')) {
+            console.warn(`[API] Key ${i} failed or timed out. Breaking model loop to try next key...`);
             break;
+          } else {
+            // Model specific error (e.g. model not found), continue trying the next model on the same key
+            continue;
           }
         }
       }
