@@ -1177,3 +1177,28 @@ h3 { font-size: 1.15rem; }
 
   h2 { font-size: 1.25rem; }
 }
+
+/* ─── PREMIUM MODERN PAGE ENTRANCE & SPINNER ANIMATIONS ─────────────────────── */
+
+.page-content,
+.chat-layout-wrapper {
+  animation: taniosPageEnter 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  opacity: 0;
+  transform: translateY(12px);
+}
+
+@keyframes taniosPageEnter {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}

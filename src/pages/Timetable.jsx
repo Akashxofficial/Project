@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Clock, Calendar, CalendarPlus } from 'lucide-react';
+import { Clock, Calendar, CalendarPlus, Loader2 } from 'lucide-react';
 import { generateAIContent, generateTimetablePrompt } from '../lib/ai';
 import ReactMarkdown from 'react-markdown';
 import { saveDocument } from '../lib/firebase';
@@ -95,8 +95,15 @@ export default function Timetable() {
               <option value="mixed">Mixed</option>
             </select>
           </div>
-          <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '1rem', backgroundColor: '#8b5cf6' }} disabled={loading || !date || !subjects || !hours}>
-            {loading ? (statusMsg && statusMsg !== 'thinking' ? statusMsg : 'Planning...') : <><CalendarPlus size={18} /> Generate Plan</>}
+          <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '1rem', backgroundColor: '#8b5cf6', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }} disabled={loading || !date || !subjects || !hours}>
+            {loading ? (
+              <>
+                <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} />
+                {statusMsg && statusMsg !== 'thinking' ? statusMsg : 'Planning...'}
+              </>
+            ) : (
+              <><CalendarPlus size={18} /> Generate Plan</>
+            )}
           </button>
         </form>
 

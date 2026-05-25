@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { FileText, Sparkles, Download, Copy, Check } from 'lucide-react';
+import { FileText, Sparkles, Download, Copy, Check, Loader2 } from 'lucide-react';
 import { generateAIContent } from '../lib/ai';
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
@@ -231,8 +231,15 @@ Keep it student-friendly, concise, and exam-focused for ${board} Class ${grade} 
             </select>
           </div>
 
-          <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '1rem' }} disabled={loading || !isFormReady}>
-            {loading ? (statusMsg && statusMsg !== 'thinking' ? statusMsg : '✨ Generating Notes...') : <><Sparkles size={18} /> Generate Notes</>}
+          <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }} disabled={loading || !isFormReady}>
+            {loading ? (
+              <>
+                <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} />
+                {statusMsg && statusMsg !== 'thinking' ? statusMsg : 'Generating Notes...'}
+              </>
+            ) : (
+              <><Sparkles size={18} /> Generate Notes</>
+            )}
           </button>
         </form>
 

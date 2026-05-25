@@ -94,7 +94,7 @@ function MainApp() {
               {currentUser?.displayName || 'Guest Student'}
             </div>
             <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {currentUser?.email || 'guest@tanios.ai'}
+              {currentUser?.email || (currentUser?.isGuest ? 'guest@tanios.ai' : 'student@tanios.ai')}
             </div>
           </div>
           {currentUser?.isGuest ? (
