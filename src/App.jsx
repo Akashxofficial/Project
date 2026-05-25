@@ -6,7 +6,6 @@ import {
   LogOut, Bookmark, Menu, X
 } from 'lucide-react';
 import { useAuth } from './context/AuthContext';
-import { logout } from './lib/firebase';
 
 import Home from './pages/Home';
 import Chat from './pages/Chat';
@@ -29,7 +28,7 @@ const navItems = [
 
 // ── Inner app — handles primary navigation & layouts ──────────────────────────
 function MainApp() {
-  const { currentUser, setShowLoginModal } = useAuth();
+  const { currentUser, setShowLoginModal, logout } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
 

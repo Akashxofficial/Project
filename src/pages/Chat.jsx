@@ -26,13 +26,14 @@ const saveGuestSessions = (sessions) => {
 // ── Component ────────────────────────────────────────────────────────────────
 export default function Chat() {
   const { currentUser, incrementGuestUsage, getRemainingQuota, QUOTA } = useAuth();
-  const isGuest = currentUser?.isGuest;
+  const isGuest = !currentUser || currentUser.isGuest || currentUser.email === 'guest@tanios.ai';
   const userId = currentUser?.uid || currentUser?.email || 'guest';
   const remaining = getRemainingQuota?.() ?? (isGuest ? QUOTA?.guest : QUOTA?.loggedIn);
   const limit = isGuest ? QUOTA?.guest : QUOTA?.loggedIn;
 
   // Session list & active session
   const [sessions, setSessions] = useState([]);           // [{ id, title, messages }]
+  const [sessionsLoaded, setSessionsLoaded] = useState(false);
   const [activeId, setActiveId] = useState(null);
 
   // Current chat messages (mirrors the active session's messages)
@@ -65,10 +66,11 @@ export default function Chat() {
         setActiveId(saved[0].id);
         setMessages(saved[0].messages || [WELCOME_MSG]);
       }
+      setSessionsLoaded(true);
     })();
     // On mobile default sidebar closed
     if (window.innerWidth < 768) setSidebarOpen(false);
-  }, [userId]);
+  }, [userId, isGuest]);
 
   // ── Auto-scroll ─────────────────────────────────────────────────────────
   useEffect(() => {
@@ -77,43 +79,69 @@ export default function Chat() {
 
   // ── Sync messages → sessions state ─────────────────────────────────────
   const syncSession = useCallback((sessionId, updatedMessages, title) => {
-    setSessions(prev => {
-      const exists = prev.find(s => s.id === sessionId);
-      let next;
-      if (exists) {
-        next = prev.map(s => s.id === sessionId ? { ...s, messages: updatedMessages, title: title || s.title } : s);
-      } else {
-        next = [{ id: sessionId, title: title || 'New Chat', messages: updatedMessages }, ...prev];
-      }
-      // Persist
-      if (isGuest) {
-        saveGuestSessions(next);
-      } else {
-        saveChatSession(userId, sessionId, title || exists?.title || 'New Chat', updatedMessages);
-      }
-      return next;
-    });
+    // Read directly from physical storage to bypass any React state timing delays
+    const currentSessions = isGuest 
+      ? loadGuestSessions() 
+      : (() => {
+          try {
+            return JSON.parse(localStorage.getItem(`fallback_chats_${userId}`) || '[]');
+          } catch { return []; }
+        })();
+
+    const exists = currentSessions.find(s => s.id === sessionId);
+    let nextSessions;
+    const finalTitle = title || (exists ? exists.title : 'New Chat');
+    
+    if (exists) {
+      nextSessions = currentSessions.map(s => s.id === sessionId ? { ...s, messages: updatedMessages, title: finalTitle } : s);
+    } else {
+      nextSessions = [{ id: sessionId, title: finalTitle, messages: updatedMessages }, ...currentSessions];
+    }
+    
+    setSessions(nextSessions);
+
+    // Persist immediately
+    if (isGuest) {
+      saveGuestSessions(nextSessions);
+    } else {
+      saveChatSession(userId, sessionId, finalTitle, updatedMessages);
+    }
   }, [isGuest, userId]);
 
   // ── Start a new chat session ────────────────────────────────────────────
   const startNewChat = useCallback(() => {
     const newId = genId();
     const newSession = { id: newId, title: 'New Chat', messages: [WELCOME_MSG] };
-    setSessions(prev => {
-      const next = [newSession, ...prev];
-      if (isGuest) saveGuestSessions(next);
-      return next;
-    });
+    
+    const currentSessions = isGuest 
+      ? loadGuestSessions() 
+      : (() => {
+          try {
+            return JSON.parse(localStorage.getItem(`fallback_chats_${userId}`) || '[]');
+          } catch { return []; }
+        })();
+
+    const nextSessions = [newSession, ...currentSessions];
+    setSessions(nextSessions);
+    
+    if (isGuest) {
+      saveGuestSessions(nextSessions);
+    } else {
+      saveChatSession(userId, newId, 'New Chat', [WELCOME_MSG]);
+    }
+    
     setActiveId(newId);
+    localStorage.setItem('tanios_active_chat_id', newId);
     setMessages([WELCOME_MSG]);
     setInput('');
     if (window.innerWidth < 768) setSidebarOpen(false);
     setTimeout(() => inputRef.current?.focus(), 100);
-  }, [isGuest]);
+  }, [isGuest, userId]);
 
   // ── Switch to a session ──────────────────────────────────────────────────
   const switchSession = useCallback((session) => {
     setActiveId(session.id);
+    localStorage.setItem('tanios_active_chat_id', session.id);
     setMessages(session.messages || [WELCOME_MSG]);
     setInput('');
     if (window.innerWidth < 768) setSidebarOpen(false);
@@ -123,47 +151,69 @@ export default function Chat() {
   // ── Delete a session ─────────────────────────────────────────────────────
   const removeSession = useCallback((e, sessionId) => {
     e.stopPropagation();
-    setSessions(prev => {
-      const next = prev.filter(s => s.id !== sessionId);
-      if (isGuest) saveGuestSessions(next);
-      else deleteChatSession(sessionId);
-      return next;
-    });
+    
+    const currentSessions = isGuest 
+      ? loadGuestSessions() 
+      : (() => {
+          try {
+            return JSON.parse(localStorage.getItem(`fallback_chats_${userId}`) || '[]');
+          } catch { return []; }
+        })();
+
+    const nextSessions = currentSessions.filter(s => s.id !== sessionId);
+    setSessions(nextSessions);
+    
+    if (isGuest) {
+      saveGuestSessions(nextSessions);
+    } else {
+      deleteChatSession(sessionId);
+      try {
+        const fbKey = `fallback_chats_${userId}`;
+        localStorage.setItem(fbKey, JSON.stringify(nextSessions));
+      } catch (err) {
+        console.warn("Cleanup fallback storage failed:", err);
+      }
+    }
+    
     if (activeId === sessionId) {
       setActiveId(null);
+      localStorage.removeItem('tanios_active_chat_id');
       setMessages([WELCOME_MSG]);
     }
-  }, [activeId, isGuest]);
+  }, [activeId, isGuest, userId]);
 
   // ── Send message ─────────────────────────────────────────────────────────
-  const handleSend = useCallback(async (e) => {
+  const handleSend = useCallback(async (e, customText) => {
     e?.preventDefault();
-    if (!input.trim() || isLoading) return;
+    const textToSend = (customText || input).trim();
+    if (!textToSend || isLoading) return;
 
     // Guest limit gate
     if (!incrementGuestUsage()) return;
 
-    const userText = input.trim();
     setInput('');
     setIsLoading(true);
     setStatusMsg('thinking');
 
     // Ensure we have an active session
     const sessionId = activeId || genId();
-    if (!activeId) setActiveId(sessionId);
+    if (!activeId) {
+      setActiveId(sessionId);
+      localStorage.setItem('tanios_active_chat_id', sessionId);
+    }
 
-    const userMsg = { id: Date.now(), role: 'user', text: userText };
+    const userMsg = { id: Date.now(), role: 'user', text: textToSend };
     const updatedWithUser = [...messages, userMsg];
     setMessages(updatedWithUser);
 
     // Derive title from first user question (max 45 chars)
     const currentSession = sessions.find(s => s.id === sessionId);
     const isFirstMsg = !currentSession || currentSession.title === 'New Chat';
-    const title = isFirstMsg ? userText.slice(0, 45) + (userText.length > 45 ? '…' : '') : undefined;
+    const title = isFirstMsg ? textToSend.slice(0, 45) + (textToSend.length > 45 ? '…' : '') : undefined;
 
     // Fire AI (pass recent history for memory!)
     const historyCtx = messages.filter(m => m.id !== 'welcome').slice(-6);
-    const prompt = generateDoubtPrompt(userText, historyCtx);
+    const prompt = generateDoubtPrompt(textToSend, historyCtx);
     const result = await generateAIContent(prompt, (msg) => setStatusMsg(msg || ''));
 
     setIsLoading(false);
@@ -180,8 +230,32 @@ export default function Chat() {
     setMessages(finalMessages);
     syncSession(sessionId, finalMessages, title);
 
+    // Reward +10 XP for solving doubts!
+    try {
+      const currentXP = parseInt(localStorage.getItem('tanios_xp') || '120', 10);
+      localStorage.setItem('tanios_xp', (currentXP + 10).toString());
+      window.dispatchEvent(new Event('tanios_xp_update'));
+    } catch (e) {
+      console.warn(e);
+    }
+
     setTimeout(() => inputRef.current?.focus(), 100);
   }, [input, isLoading, activeId, messages, sessions, incrementGuestUsage, syncSession]);
+
+  // ── Prefilled URL query prompt support ───────────────────────────────────
+  useEffect(() => {
+    const queryParams = new URLSearchParams(window.location.search);
+    const promptParam = queryParams.get('prompt');
+    if (promptParam && sessionsLoaded && !isLoading) {
+      // Clear URL parameter so it doesn't repeat on refresh
+      window.history.replaceState({}, document.title, window.location.pathname);
+      
+      // Auto-trigger send!
+      setTimeout(() => {
+        handleSend(null, promptParam);
+      }, 300);
+    }
+  }, [sessionsLoaded, isLoading, handleSend]);
 
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }

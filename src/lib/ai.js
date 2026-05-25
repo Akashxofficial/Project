@@ -162,3 +162,73 @@ Number of questions: ${count}.
 Difficulty: ${difficulty}.
 Provide the test cleanly formatted. Do NOT provide the answers immediately. Provide the answers at the very end under a "Answer Key" section.`;
 };
+
+export const generateExamRoadmapPrompt = (board, grade, subject, days) => {
+  return `You are TaniOS AI, an elite board exam counselor and expert teacher built specifically for Indian school students.
+Create an extremely comprehensive, practical, and highly detailed Board Exam study roadmap for:
+- Board: ${board}
+- Class/Grade: ${grade}
+- Subject: ${subject}
+- Days Remaining: ${days} Days
+
+Provide a professional study plan in beautiful Markdown:
+1. **Critical High-Weightage Chapters**: Identify the chapters that carry the maximum marks in this board's history for this subject.
+2. **Day-by-Day Revision Timeline**: Create a structured target sheet for the next ${days} days, dividing the syllabus into actionable daily tasks.
+3. **Most Repeated Board Questions / Hot Topics**: List the top 5 most frequently repeated concepts or questions in past 10 years of ${board} exams for this subject.
+4. **Consistency & Psychology Advice**: Give 3 quick elite exam-crushing tips specifically for an Indian student facing pressure.
+
+Use beautiful bolding, list formatting, and a structured layout so it feels extremely professional, realistic, and highly motivating. Use a friendly, encouraging companion tone!`;
+};
+
+export const generateOneClickPrompt = (type, topic, grade) => {
+  let promptText = "";
+  if (type === "Explain Easy") {
+    promptText = `Explain the academic topic/concept "${topic}" for Class ${grade} students in the simplest way possible.
+Use simple, creative, real-world analogies (like food, cricket, or daily items) that make the concept immediately understandable.
+Avoid complicated academic jargon initially; explain it like I'm 10 years old, then connect it to the official board concept.`;
+  } else if (type === "Important Questions") {
+    promptText = `Generate the top 5 highly important, marks-yielding questions on the topic "${topic}" for Class ${grade} exams.
+For each question:
+1. State the question clearly.
+2. Provide a premium, full-marks model answer written in CBSE/State-board marking scheme style.
+3. Add a quick "Topper Tip" on what examiners look for in this specific answer.`;
+  } else if (type === "Board Questions") {
+    promptText = `Provide the top 3 authentic, most-repeated past board exam questions (CBSE/RBSE style) on the topic "${topic}" for Class ${grade}.
+For each question:
+1. Mention which years it was asked (e.g., CBSE 2018, 2022, RBSE 2019).
+2. Give a step-by-step model answer.
+3. Highlight critical keywords that are MANDATORY to secure full marks.`;
+  } else if (type === "Revision Sheet") {
+    promptText = `Create a sleek, high-density 1-page Revision Sheet for the topic/chapter "${topic}" for Class ${grade}.
+Include:
+- Key terms and their exact, formal definitions.
+- All important formulas, chemical equations, or major dates in a neat Markdown table.
+- A "Don't Make This Mistake" warning box listing common student errors in exams for this topic.`;
+  } else if (type === "Mind Map") {
+    promptText = `Create a structured text-based Mind Map / Hierarchical Flow Diagram for the topic "${topic}" for Class ${grade}.
+Use clean text indentations, arrows (->), and structured bullet points to represent:
+- The central core concept.
+- Main branches (subtopics).
+- Sub-branches (key points, definitions, and examples).
+Make it highly visual using emoji headers and clear hierarchy so a student can scan and memorize it in 30 seconds.`;
+  } else if (type === "5-Minute Study") {
+    promptText = `Provide a hyper-focused, super fast "5-Minute study guide" on "${topic}" for Class ${grade}.
+Break it down into:
+- The absolute core definition (1 sentence).
+- 3 bullet points containing the only things you MUST know.
+- 1 quick mnemonic device or trick to memorize this concept forever.
+Make it extremely crisp, engaging, and fast.`;
+  } else {
+    promptText = `Provide a comprehensive, high-quality study resource on "${topic}" for Class ${grade}. Use formatting, bold headers, and easy explanations.`;
+  }
+
+  return `You are TaniOS AI, an elite personal teacher built for Indian students.
+Role: Generate the following specific resource type: "${type}"
+Topic: "${topic}"
+Target Audience: Class ${grade} students (CBSE/RBSE board).
+
+Here are the specific instructions for your output:
+${promptText}
+
+Always use markdown tables, list layouts, clear spacing, and bullet points to make the output feel extremely premium, legible, and visual. Write in an encouraging, high-dopamine, supportive tone!`;
+};
