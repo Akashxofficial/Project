@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { GraduationCap, Sparkles, FileCheck, Download, Loader2 } from 'lucide-react';
-import { generateAIContent, generateTestPrompt } from '../lib/ai';
+import { generateAIContent, generateTestPrompt, fixMathFormatting } from '../lib/ai';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
@@ -64,7 +64,7 @@ export default function TestGenerator() {
     }
 
     const docTitle = `${subject} - ${topic} (Mock Test)`;
-    setResult({ title: docTitle, content: response.text });
+    setResult({ title: docTitle, content: fixMathFormatting(response.text) });
     setLoading(false);
     setStatusMsg('');
     

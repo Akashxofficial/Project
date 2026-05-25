@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { BookOpen, Zap, Target, Loader2 } from 'lucide-react';
-import { generateAIContent, generateRevisionPrompt } from '../lib/ai';
+import { generateAIContent, generateRevisionPrompt, fixMathFormatting } from '../lib/ai';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
@@ -59,7 +59,7 @@ export default function Revision() {
     }
 
     const docTitle = `${time}-Minute Recap: ${chapter}`;
-    setResult({ title: docTitle, content: response.text });
+    setResult({ title: docTitle, content: fixMathFormatting(response.text) });
     setLoading(false);
     setStatusMsg('');
     

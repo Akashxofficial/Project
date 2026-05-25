@@ -6,39 +6,146 @@ import { limiter } from './rateLimiter';
 const API_ENDPOINT = "/api/generate";
 
 /**
- * Post-processor: fixes AI output that contains math NOT wrapped in LaTeX.
- * Acts as a safety net when the AI ignores the $...$ instruction.
- * Converts Unicode super/subscripts and common bare equations to LaTeX.
+ * AGGRESSIVE post-processor: fixes AI output where math is NOT in LaTeX.
+ * Handles:
+ *  - Unicode super/subscripts (v², H₂O)
+ *  - Bare equations (F=ma, V=IR) not wrapped in $...$
+ *  - Unicode Greek letters (θ, μ, π, Φ, etc.)
+ *  - Proportionality symbol ∝ → \propto
+ *  - Stacked visual fractions the AI produces across multiple lines
+ *  - Removes duplicate "visual rendering" lines Gemini creates
  */
 export function fixMathFormatting(text) {
   if (!text) return text;
 
   let result = text;
 
-  // 1. Convert Unicode superscripts → LaTeX (e.g. v² → $v^2$, x³ → $x^3$)
-  //    But ONLY when they appear outside existing $...$ blocks
-  const unicodeSuperMap = { '²': '^2', '³': '^3', '¹': '^1', '⁴': '^4', '⁰': '^0', '⁵': '^5', '⁶': '^6', '⁷': '^7', '⁸': '^8', '⁹': '^9' };
-  const unicodeSubMap = { '₀': '_0', '₁': '_1', '₂': '_2', '₃': '_3', '₄': '_4', '₅': '_5', '₆': '_6', '₇': '_7', '₈': '_8', '₉': '_9' };
+  // ── Unicode Maps ──────────────────────────────────────────────────────
+  const superMap = { '²': '^2', '³': '^3', '¹': '^1', '⁴': '^4', '⁰': '^0', '⁵': '^5', '⁶': '^6', '⁷': '^7', '⁸': '^8', '⁹': '^9', '⁻': '^-', '⁺': '^+' };
+  const subMap = { '₀': '_0', '₁': '_1', '₂': '_2', '₃': '_3', '₄': '_4', '₅': '_5', '₆': '_6', '₇': '_7', '₈': '_8', '₉': '_9' };
+  const greekMap = { 'θ': '\\theta', 'Θ': '\\Theta', 'μ': '\\mu', 'π': '\\pi', 'Φ': '\\Phi', 'φ': '\\phi', 'ρ': '\\rho', 'α': '\\alpha', 'β': '\\beta', 'γ': '\\gamma', 'Δ': '\\Delta', 'δ': '\\delta', 'λ': '\\lambda', 'ω': '\\omega', 'Ω': '\\Omega', 'ε': '\\epsilon', 'σ': '\\sigma', 'τ': '\\tau', 'η': '\\eta' };
 
-  // Replace unicode super/subscripts within math-looking contexts
-  result = result.replace(/[a-zA-Z0-9][²³¹⁴⁰⁵⁶⁷⁸⁹₀₁₂₃₄₅₆₇₈₉]+/g, (match) => {
-    // If already inside $...$, leave it
+  // Helper: check if a position is inside an existing $...$ block
+  function isInsideDollar(str, pos) {
+    let count = 0;
+    for (let i = 0; i < pos; i++) {
+      if (str[i] === '$' && (i === 0 || str[i-1] !== '\\')) count++;
+    }
+    return count % 2 === 1;
+  }
+
+  // ── 1. Remove Gemini's "visual stacked math" duplicates ────────────────
+  // Gemini often outputs something like:
+  //   F = m a      (visual rendering using spaced chars)
+  //   F=ma         (compact version on next line)
+  // Or multi-line stacked fractions like:
+  //   B=
+  //   2πr
+  //   μ₀I
+  // We clean these by removing lines that are ONLY single letters/symbols/numbers
+  // that appear to be stacked visual math (not inside code blocks or tables)
+  const lines = result.split('\n');
+  const cleanedLines = [];
+  let i = 0;
+  while (i < lines.length) {
+    const line = lines[i].trim();
+    
+    // Skip lines that are just a single math symbol/letter/operator on their own
+    // (these are stacked visual fractions from Gemini)
+    // But preserve: real content lines, headings, list items, table rows, etc.
+    const isStackedMathLine = /^[A-Za-z0-9=+\-×÷∝∞≈≠≤≥±∓√∫∑∏∂∇⟨⟩θμπΦφρΔδλωαβγεσΩτη₀₁₂₃₄₅₆₇₈₉²³¹⁴⁰⁵⁶⁷⁸⁹⁻⁺.,\s/()]{1,6}$/.test(line)
+      && !/^[#\-*>|]/.test(line) // not heading/list/blockquote/table
+      && !/^\d+\./.test(line)     // not numbered list
+      && line.length > 0
+      && line.length <= 6
+      && !/^(Where|Note|If|The|In|A|B|C|D|E|F|G|or|and|so|to|is|it|of|at|on|by|no|do|an|as|we|he|if)$/i.test(line); // not English words
+
+    if (isStackedMathLine) {
+      // Look ahead: if next 1-3 lines are ALSO short stacked math, skip all of them
+      // This is a visual fraction block
+      let j = i;
+      while (j < lines.length && /^[A-Za-z0-9=+\-×÷∝∞.,\s/()θμπΦρΔλωαβ₀₁₂₃₄₅₆₇₈₉²³]{1,8}$/.test(lines[j].trim()) && lines[j].trim().length > 0 && lines[j].trim().length <= 8) {
+        j++;
+      }
+      // If we skipped 2+ consecutive short lines, they were a stacked fraction → skip them
+      if (j - i >= 2) {
+        i = j;
+        continue;
+      }
+    }
+    
+    cleanedLines.push(lines[i]);
+    i++;
+  }
+  result = cleanedLines.join('\n');
+
+  // ── 2. Fix Unicode super/subscripts → LaTeX ────────────────────────────
+  // e.g. v² → $v^2$, t² → $t^2$, H₂O → $H_2O$, 10⁻⁷ → $10^{-7}$
+  result = result.replace(/[a-zA-Z0-9][²³¹⁴⁰⁵⁶⁷⁸⁹⁻⁺₀₁₂₃₄₅₆₇₈₉]+/g, (match, offset) => {
+    if (isInsideDollar(result, offset)) return match;
     let fixed = match;
-    Object.entries(unicodeSuperMap).forEach(([u, l]) => { fixed = fixed.replaceAll(u, l); });
-    Object.entries(unicodeSubMap).forEach(([u, l]) => { fixed = fixed.replaceAll(u, l); });
-    if (fixed !== match) return `$${fixed}$`;
-    return match;
-  });
-
-  // 2. Fix standalone Unicode chemical formulas like H₂SO₄, CO₂, H₂O
-  result = result.replace(/\b([A-Z][a-z]?)([₀₁₂₃₄₅₆₇₈₉]+)([A-Z][a-z]?)?([₀₁₂₃₄₅₆₇₈₉]*)/g, (match) => {
-    if (match.match(/[₀₁₂₃₄₅₆₇₈₉]/)) {
-      let fixed = match;
-      Object.entries(unicodeSubMap).forEach(([u, l]) => { fixed = fixed.replaceAll(u, l); });
+    Object.entries(superMap).forEach(([u, l]) => { fixed = fixed.replaceAll(u, l); });
+    Object.entries(subMap).forEach(([u, l]) => { fixed = fixed.replaceAll(u, l); });
+    if (fixed !== match) {
+      // Wrap multi-char exponents in braces: ^-7 → ^{-7}
+      fixed = fixed.replace(/\^([+-]?\d{2,})/g, '^{$1}');
       return `$${fixed}$`;
     }
     return match;
   });
+
+  // ── 3. Wrap bare equations in $...$ ────────────────────────────────────
+  // Match patterns like: F=ma, V=IR, P=VI, s=ut+½at², E=mc², v²=u²+2as
+  // These are single-variable equations on their own or after ":" or "="
+  result = result.replace(/(?:^|(?<=[:,\s]))([A-Za-z](?:_\{?\w+\}?)?)\s*=\s*([A-Za-z0-9\s+\-*/^_{}\\().]+?)(?=$|[,.]?\s|[,.]?$)/gm, (match, lhs, rhs, offset) => {
+    if (isInsideDollar(result, offset)) return match;
+    // Only wrap if the RHS looks like math (has letters/numbers/operators, not English words)
+    const trimmedRhs = rhs.trim();
+    if (trimmedRhs.length < 1 || trimmedRhs.length > 40) return match;
+    // Skip if RHS looks like English text (has spaces between words of 3+ chars)
+    if (/[a-z]{3,}\s+[a-z]{3,}/i.test(trimmedRhs)) return match;
+    // Skip if already has $ in it
+    if (match.includes('$')) return match;
+    return ` $${lhs.trim()} = ${trimmedRhs}$ `;
+  });
+
+  // ── 4. Fix proportionality: B∝I/r → $B \propto \frac{I}{r}$ ──────────
+  result = result.replace(/([A-Za-z])\s*∝\s*([A-Za-z0-9/\\^_{}() ]+)/g, (match, lhs, rhs, offset) => {
+    if (isInsideDollar(result, offset)) return match;
+    let fixedRhs = rhs.trim();
+    // Convert simple a/b to \frac{a}{b}
+    if (/^(\w+)\s*\/\s*(\w+)$/.test(fixedRhs)) {
+      fixedRhs = fixedRhs.replace(/^(\w+)\s*\/\s*(\w+)$/, '\\frac{$1}{$2}');
+    }
+    return `$${lhs} \\propto ${fixedRhs}$`;
+  });
+
+  // ── 5. Replace Unicode Greek letters with LaTeX equivalents ────────────
+  // Only when they appear in math-like context (near = or $ or other math symbols)
+  const greekRegex = new RegExp(`([${Object.keys(greekMap).join('')}])`, 'g');
+  result = result.replace(greekRegex, (match, letter, offset) => {
+    if (isInsideDollar(result, offset)) {
+      // Already inside $ block → just replace the unicode with LaTeX command
+      return greekMap[letter] || match;
+    }
+    // Outside $ → only wrap if it's clearly in a math context
+    // Check surrounding chars
+    const before = result[offset - 1] || '';
+    const after = result[offset + 1] || '';
+    const mathContext = /[=+\-*/^_0-9()$\\]/.test(before) || /[=+\-*/^_0-9()$\\]/.test(after);
+    if (mathContext) {
+      return `$${greekMap[letter]}$`;
+    }
+    return match; // leave alone if it's in prose (e.g. "the angle θ is...")
+  });
+
+  // ── 6. Fix $$...$$ that have content on same line ─────────────────────
+  // Ensure $$ blocks are on their own lines for proper KaTeX block rendering
+  result = result.replace(/([^\n])\$\$([^$]+)\$\$([^\n])/g, '$1\n$$$$2$$\n$3');
+
+  // ── 7. Clean up any double-wrapped $$...$$ from our replacements ──────
+  result = result.replace(/\$\$\$/g, '$$');
+  result = result.replace(/\$\s*\$/g, '');
 
   return result;
 }
