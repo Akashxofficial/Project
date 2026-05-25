@@ -50,7 +50,7 @@ export const saveDocument = async (userId, type, title, content) => {
     console.warn("Mock DB Save: ", { type, title });
     return true;
   }
-  
+
   try {
     const docRef = await addDoc(collection(db, "saved_materials"), {
       userId,
@@ -128,7 +128,7 @@ export const saveChatSession = async (userId, sessionId, title, messages) => {
     if (sessionIndex >= 0) existing[sessionIndex] = sessionObj;
     else existing.push(sessionObj);
     localStorage.setItem(fbKey, JSON.stringify(existing));
-  } catch(err) {
+  } catch (err) {
     console.error("Local storage save failed", err);
   }
 
@@ -147,15 +147,28 @@ export const saveChatSession = async (userId, sessionId, title, messages) => {
 };
 
 export const getUserChatSessions = async (userId) => {
-  if (!import.meta.env.VITE_FIREBASE_API_KEY || import.meta.env.VITE_FIREBASE_API_KEY === 'dummy-api-key') return [];
-  
   const sessions = [];
-  try {
-    const q = query(collection(db, "chat_sessions"), where("userId", "==", userId));
-    const snap = await getDocs(q);
-    snap.forEach(d => sessions.push({ id: d.id, ...d.data() }));
-  } catch (e) {
-    console.warn("⚠️ Firestore fetch failed, relying on local fallback:", e.message);
+
+  if (import.meta.env.VITE_FIREBASE_API_KEY && import.meta.env.VITE_FIREBASE_API_KEY !== 'dummy-api-key') {
+    try {
+      const fetchPromise = (async () => {
+        const q = query(collection(db, "chat_sessions"), where("userId", "==", userId));
+        const snap = await getDocs(q);
+        const results = [];
+        snap.forEach(d => results.push({ id: d.id, ...d.data() }));
+        return results;
+      })();
+
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Timeout")), 100)
+      );
+
+      // Race Firestore query against a 1.5s timeout
+      const fetched = await Promise.race([fetchPromise, timeoutPromise]);
+      fetched.forEach(s => sessions.push(s));
+    } catch (e) {
+      console.warn("⚠️ Firestore fetch failed or timed out, relying on local fallback:", e.message);
+    }
   }
 
   // Merge with Robust Fallback
@@ -167,7 +180,9 @@ export const getUserChatSessions = async (userId) => {
         sessions.push(fs);
       }
     });
-  } catch(err) {}
+  } catch (err) {
+    console.error("Local storage fallback retrieve failed:", err);
+  }
 
   // Sort client-side — no composite index needed
   sessions.sort((a, b) => {

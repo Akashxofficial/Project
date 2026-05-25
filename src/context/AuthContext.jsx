@@ -36,35 +36,95 @@ const incrementUsageCount = (userId) => {
 
 // ── Component ───────────────────────────────────────────────────────────────
 export function AuthProvider({ children }) {
-  const [currentUser, setCurrentUser] = useState(null);
+  const [currentUser, setCurrentUser] = useState(() => {
+    try {
+      const persisted = localStorage.getItem('tanios_user');
+      return persisted ? JSON.parse(persisted) : null;
+    } catch {
+      return null;
+    }
+  });
   const [loading, setLoading] = useState(true);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showQuotaModal, setShowQuotaModal] = useState(false);
 
   useEffect(() => {
+    let unsubscribe = () => {};
+
+    // Load initial user state from local storage as offline-first fallback
+    let persistedUser = null;
+    try {
+      const persisted = localStorage.getItem('tanios_user');
+      if (persisted) persistedUser = JSON.parse(persisted);
+    } catch (e) {
+      console.warn(e);
+    }
+
     if (import.meta.env.VITE_FIREBASE_API_KEY) {
-      const unsubscribe = onAuthStateChanged(auth, (user) => {
-        setCurrentUser(user || GUEST_USER);
+      unsubscribe = onAuthStateChanged(auth, (user) => {
+        if (user) {
+          const userObj = {
+            displayName: user.displayName,
+            email: user.email,
+            photoURL: user.photoURL,
+            uid: user.uid,
+            isGuest: false
+          };
+          setCurrentUser(userObj);
+          localStorage.setItem('tanios_user', JSON.stringify(userObj));
+        } else {
+          // If we had a mock logged-in user, keep it persistent across refresh
+          if (persistedUser && !persistedUser.isGuest) {
+            setCurrentUser(persistedUser);
+          } else {
+            setCurrentUser(GUEST_USER);
+            localStorage.setItem('tanios_user', JSON.stringify(GUEST_USER));
+          }
+        }
         setLoading(false);
       });
-      return unsubscribe;
     } else {
-      setCurrentUser(GUEST_USER);
+      if (persistedUser) {
+        setCurrentUser(persistedUser);
+      } else {
+        setCurrentUser(GUEST_USER);
+        localStorage.setItem('tanios_user', JSON.stringify(GUEST_USER));
+      }
       setLoading(false);
     }
+
+    return () => unsubscribe();
   }, []);
 
   const login = async () => {
     try {
       const user = await loginWithGoogle();
       if (user) {
-        setCurrentUser(user);
+        const userObj = {
+          displayName: user.displayName || "Student",
+          email: user.email || "student@demo.com",
+          photoURL: user.photoURL || "",
+          uid: user.uid || user.email || "student_demo_id", // Support fallback uid for mock login
+          isGuest: false
+        };
+        setCurrentUser(userObj);
+        localStorage.setItem('tanios_user', JSON.stringify(userObj));
         setShowLoginModal(false);
         setShowQuotaModal(false);
       }
     } catch (error) {
       console.error("Login failed:", error);
     }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      console.error("Signout failed:", error);
+    }
+    setCurrentUser(GUEST_USER);
+    localStorage.setItem('tanios_user', JSON.stringify(GUEST_USER));
   };
 
   // Returns true if allowed, false if blocked
@@ -104,6 +164,7 @@ export function AuthProvider({ children }) {
     showQuotaModal,
     setShowQuotaModal,
     login,
+    logout: handleLogout,
     incrementGuestUsage,
     getRemainingQuota,
     QUOTA,
