@@ -2,6 +2,45 @@
 
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
+// Simple in-memory sliding window rate limiter
+const ipRequests = new Map();
+const LIMIT_WINDOW_MS = 60000; // 1 minute
+const MAX_REQUESTS_PER_WINDOW = 10; // Max 10 requests per minute per IP
+
+function isIpAllowed(ip) {
+  const now = Date.now();
+  
+  // Prune old entries occasionally to keep memory usage low
+  if (ipRequests.size > 2000) {
+    for (const [key, times] of ipRequests.entries()) {
+      const fresh = times.filter(t => now - t < LIMIT_WINDOW_MS);
+      if (fresh.length === 0) {
+        ipRequests.delete(key);
+      } else {
+        ipRequests.set(key, fresh);
+      }
+    }
+  }
+
+  if (!ipRequests.has(ip)) {
+    ipRequests.set(ip, [now]);
+    return { allowed: true };
+  }
+  
+  let timestamps = ipRequests.get(ip);
+  timestamps = timestamps.filter(t => now - t < LIMIT_WINDOW_MS);
+  
+  if (timestamps.length >= MAX_REQUESTS_PER_WINDOW) {
+    const oldest = timestamps[0];
+    const retryAfter = Math.ceil((oldest + LIMIT_WINDOW_MS - now) / 1000);
+    return { allowed: false, retryAfter };
+  }
+  
+  timestamps.push(now);
+  ipRequests.set(ip, timestamps);
+  return { allowed: true };
+}
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -18,6 +57,20 @@ export default async function handler(req, res) {
 
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  // IP-based rate limiting to prevent Gemini API token exhaustion from message spamming
+  const rawIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown-ip';
+  const ip = rawIp.split(',')[0].trim();
+  
+  const rateLimitResult = isIpAllowed(ip);
+  if (!rateLimitResult.allowed) {
+    console.warn(`[RATE LIMIT] Blocked IP: ${ip}. Retry after: ${rateLimitResult.retryAfter}s`);
+    return res.status(429).json({
+      error: `Slow down! You are sending requests too fast. Please wait ${rateLimitResult.retryAfter} seconds before asking another doubt.`,
+      code: 'USER_RATE_LIMIT',
+      retryDelaySecs: rateLimitResult.retryAfter
+    });
   }
 
   try {
@@ -104,25 +157,25 @@ export default async function handler(req, res) {
 
     if (error.name === 'AbortError') {
       return res.status(504).json({
-        error: 'Request timeout',
+        error: 'Request took too long. Please try again.',
         code: 'TIMEOUT',
         diagnostics: { keysFound: apiKeys.length, maskedKeys }
       });
     }
 
     // Detect permanent key exhaustion (Daily limit 1500 reached / Billing block)
-    const errText = error.message.toLowerCase();
+    const errText = error?.message?.toLowerCase() || "";
     if (errText.includes('exceeded your current quota') || errText.includes('billing') || errText.includes('check your plan')) {
       return res.status(403).json({
-        error: '⚠️ Google Gemini daily free limit has been 100% exhausted. Please create a new free API Key in Google AI Studio and update your .env file.',
+        error: 'TaniOS AI is experiencing temporary high load. Please try again in a few seconds.',
         code: 'QUOTA_EXHAUSTED',
         diagnostics: { keysFound: apiKeys.length, maskedKeys, lastError: error.message.split('\n')[0] }
       });
     }
 
-    if (error.status === 429 || error.message.includes('429') || error.message.toLowerCase().includes('quota')) {
+    if (error.status === 429 || error?.message?.includes('429') || errText.includes('quota')) {
       // Parse Google's retryDelay hint (e.g. "retryDelay":"31s") from the error message
-      const delayMatch = error.message.match(/retryDelay.*?(\d+)/);
+      const delayMatch = error.message ? error.message.match(/retryDelay.*?(\d+)/) : null;
       const retryDelaySecs = delayMatch ? parseInt(delayMatch[1]) + 2 : 35;
 
       return res.status(429).json({
@@ -132,15 +185,15 @@ export default async function handler(req, res) {
         diagnostics: {
           keysFoundInEnv: apiKeys.length,
           maskedKeys,
-          lastError: error.message.split('\n')[0]
+          lastError: error.message ? error.message.split('\n')[0] : 'Quota exceeded'
         }
       });
     }
 
     return res.status(500).json({
-      error: error.message || 'An error occurred during AI execution',
+      error: 'TaniOS AI is experiencing temporary high load. Please try again in a few seconds.',
       code: 'INTERNAL_ERROR',
-      diagnostics: { keysFound: apiKeys.length, maskedKeys }
+      diagnostics: { keysFound: apiKeys.length, maskedKeys, lastError: error.message || 'An error occurred during AI execution' }
     });
   }
 }

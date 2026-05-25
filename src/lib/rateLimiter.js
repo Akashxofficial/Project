@@ -38,4 +38,4 @@ class RateLimiter {
     }
 }
 
-export const limiter = new RateLimiter(20, 60000);
+export const limiter = new RateLimiter(10, 60000);
