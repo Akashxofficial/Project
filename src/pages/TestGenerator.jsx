@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { GraduationCap, Sparkles, FileCheck, Download } from 'lucide-react';
+import { GraduationCap, Sparkles, FileCheck, Download, Loader2 } from 'lucide-react';
 import { generateAIContent, generateTestPrompt } from '../lib/ai';
 import ReactMarkdown from 'react-markdown';
 import { jsPDF } from 'jspdf';
@@ -124,8 +124,15 @@ export default function TestGenerator() {
               <option value="Hard (Application based)">Hard (Application based)</option>
             </select>
           </div>
-          <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '1rem', backgroundColor: '#f43f5e' }} disabled={loading || !subject || !topic}>
-            {loading ? (statusMsg && statusMsg !== 'thinking' ? statusMsg : 'Creating Test...') : <><Sparkles size={18} /> Generate Test</>}
+          <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '1rem', backgroundColor: '#f43f5e', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }} disabled={loading || !subject || !topic}>
+            {loading ? (
+              <>
+                <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} />
+                {statusMsg && statusMsg !== 'thinking' ? statusMsg : 'Creating Test...'}
+              </>
+            ) : (
+              <><Sparkles size={18} /> Generate Test</>
+            )}
           </button>
         </form>
 

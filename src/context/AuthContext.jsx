@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { auth, loginWithGoogle } from '../lib/firebase';
+import { auth, loginWithGoogle, logout } from '../lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 
 const AuthContext = createContext();
@@ -39,7 +39,15 @@ export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(() => {
     try {
       const persisted = localStorage.getItem('tanios_user');
-      return persisted ? JSON.parse(persisted) : null;
+      if (persisted) {
+        const parsed = JSON.parse(persisted);
+        // Sanitize corrupted mock guest or demo email if student is actually logged in
+        if ((parsed.email === 'guest@tanios.ai' || parsed.email === 'student@demo.com') && !parsed.isGuest) {
+          parsed.email = ''; 
+        }
+        return parsed;
+      }
+      return null;
     } catch {
       return null;
     }
@@ -55,7 +63,14 @@ export function AuthProvider({ children }) {
     let persistedUser = null;
     try {
       const persisted = localStorage.getItem('tanios_user');
-      if (persisted) persistedUser = JSON.parse(persisted);
+      if (persisted) {
+        persistedUser = JSON.parse(persisted);
+        // Sanitize corrupted mock guest or demo email if student is actually logged in
+        if ((persistedUser.email === 'guest@tanios.ai' || persistedUser.email === 'student@demo.com') && !persistedUser.isGuest) {
+          persistedUser.email = '';
+          localStorage.setItem('tanios_user', JSON.stringify(persistedUser));
+        }
+      }
     } catch (e) {
       console.warn(e);
     }
@@ -64,9 +79,9 @@ export function AuthProvider({ children }) {
       unsubscribe = onAuthStateChanged(auth, (user) => {
         if (user) {
           const userObj = {
-            displayName: user.displayName,
-            email: user.email,
-            photoURL: user.photoURL,
+            displayName: user.displayName || "Student",
+            email: user.email || user.providerData?.[0]?.email || "",
+            photoURL: user.photoURL || "",
             uid: user.uid,
             isGuest: false
           };
@@ -102,7 +117,7 @@ export function AuthProvider({ children }) {
       if (user) {
         const userObj = {
           displayName: user.displayName || "Student",
-          email: user.email || "student@demo.com",
+          email: user.email || user.providerData?.[0]?.email || "",
           photoURL: user.photoURL || "",
           uid: user.uid || user.email || "student_demo_id", // Support fallback uid for mock login
           isGuest: false

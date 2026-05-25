@@ -20,6 +20,9 @@ export const db = getFirestore(app);
 
 // Auth Providers
 const googleProvider = new GoogleAuthProvider();
+googleProvider.setCustomParameters({
+  prompt: 'select_account'
+});
 
 export const loginWithGoogle = async () => {
   try {
@@ -160,7 +163,7 @@ export const getUserChatSessions = async (userId) => {
       })();
 
       const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error("Timeout")), 1500)
+        setTimeout(() => reject(new Error("Timeout")), 100)
       );
 
       // Race Firestore query against a 1.5s timeout

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Send, Sparkles, User, Clock, Plus, Trash2, MessageSquare, PanelLeftOpen, PanelLeftClose } from 'lucide-react';
+import { Send, Sparkles, User, Clock, Plus, Trash2, MessageSquare, PanelLeftOpen, PanelLeftClose, Loader2 } from 'lucide-react';
 import { generateAIContent, generateDoubtPrompt } from '../lib/ai';
 import ReactMarkdown from 'react-markdown';
 import { useAuth } from '../context/AuthContext';
@@ -407,7 +407,7 @@ export default function Chat() {
                   background: isThinking ? 'var(--primary-light)' : 'rgba(245,158,11,0.15)',
                   color: isThinking ? 'var(--primary)' : '#f59e0b'
                 }}>
-                  {isThinking ? <Sparkles size={16} /> : <Clock size={16} />}
+                  {isThinking ? <Sparkles size={16} style={{ animation: 'spin 2s linear infinite' }} /> : <Clock size={16} />}
                 </div>
                 <div className="message-content" style={{
                   padding: '0.875rem 1.25rem', opacity: 0.9,
@@ -455,7 +455,7 @@ export default function Chat() {
                 disabled={!input.trim() || isLoading}
                 title={isLoading ? 'Processing...' : 'Send message'}
               >
-                <Send size={15} />
+                {isLoading ? <Loader2 size={15} style={{ animation: 'spin 1s linear infinite' }} /> : <Send size={15} />}
               </button>
             </form>
             <p style={{

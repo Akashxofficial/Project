@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BookOpen, Zap, Target } from 'lucide-react';
+import { BookOpen, Zap, Target, Loader2 } from 'lucide-react';
 import { generateAIContent, generateRevisionPrompt } from '../lib/ai';
 import ReactMarkdown from 'react-markdown';
 import { saveDocument } from '../lib/firebase';
@@ -93,8 +93,15 @@ export default function Revision() {
               <option value="60">1 Hour (Deep Dive)</option>
             </select>
           </div>
-          <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '1rem', backgroundColor: '#10b981' }} disabled={loading || !subject || !chapter}>
-            {loading ? (statusMsg && statusMsg !== 'thinking' ? statusMsg : 'Analyzing...') : <><Zap size={18} /> Start Revision</>}
+          <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '1rem', backgroundColor: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }} disabled={loading || !subject || !chapter}>
+            {loading ? (
+              <>
+                <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} />
+                {statusMsg && statusMsg !== 'thinking' ? statusMsg : 'Analyzing...'}
+              </>
+            ) : (
+              <><Zap size={18} /> Start Revision</>
+            )}
           </button>
         </form>
 
