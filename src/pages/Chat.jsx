@@ -491,7 +491,7 @@ export default function Chat() {
           {/* ── MESSAGES ── */}
           <div className="chat-messages">
             {/* Toggle sidebar button */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+            <div className="chat-top-toggle" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
               <button
                 onClick={() => setSidebarOpen(o => !o)}
                 style={{
@@ -584,6 +584,16 @@ export default function Chat() {
 
           {/* ── INPUT AREA ── */}
           <div className="chat-input-area">
+
+            {/* 📱 Floating Chat History toggle for mobile — always visible near input */}
+            <button
+              className="chat-history-fab"
+              onClick={() => setSidebarOpen(o => !o)}
+              title={sidebarOpen ? 'Hide history' : 'Chat History'}
+            >
+              {sidebarOpen ? <PanelLeftClose size={18} /> : <PanelLeftOpen size={18} />}
+            </button>
+
             {/* Hidden file input for attachment */}
             <input
               ref={fileInputRef}
@@ -713,7 +723,41 @@ export default function Chat() {
           0%, 60%, 100% { transform: scale(1); opacity: 0.4; }
           30% { transform: scale(1.4); opacity: 1; }
         }
+
+        /* Floating history FAB — hidden on desktop, shown on mobile */
+        .chat-history-fab {
+          display: none;
+          position: absolute;
+          top: -48px;
+          left: 0.75rem;
+          z-index: 100;
+          width: 36px;
+          height: 36px;
+          border-radius: 50%;
+          border: 1px solid var(--border);
+          background: var(--bg-secondary);
+          color: var(--text-secondary);
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+          backdrop-filter: blur(10px);
+          -webkit-backdrop-filter: blur(10px);
+          transition: all 0.2s ease;
+        }
+        .chat-history-fab:hover {
+          background: var(--primary);
+          color: white;
+          border-color: var(--primary);
+        }
+
+        /* Desktop: top toggle visible, FAB hidden */
+        .chat-top-toggle { display: flex; }
+
         @media (max-width: 768px) {
+          /* Mobile: hide the top toggle, show the FAB */
+          .chat-top-toggle { display: none !important; }
+          .chat-history-fab { display: flex; }
           .chat-mobile-overlay { display: block !important; }
         }
       `}</style>
