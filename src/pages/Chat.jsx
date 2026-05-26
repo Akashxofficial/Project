@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Send, Sparkles, User, Clock, Plus, Trash2, MessageSquare, PanelLeftOpen, PanelLeftClose, Loader2 } from 'lucide-react';
+import { Send, Sparkles, User, Clock, Plus, Trash2, MessageSquare, PanelLeftOpen, PanelLeftClose, Loader2, X, Image as ImageIcon } from 'lucide-react';
 import { generateAIContent, generateAIContentStream, generateDoubtPrompt, fixMathFormatting } from '../lib/ai';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -76,8 +76,71 @@ export default function Chat() {
   const [statusMsg, setStatusMsg] = useState('');
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
+  // Multimodal Image States
+  const [selectedImage, setSelectedImage] = useState(null); // { data: string, mimeType: string, url: string, name: string }
+  const [isCompacting, setIsCompacting] = useState(false);
+
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
+  const fileInputRef = useRef(null);
+
+  // Client-side Image Compression pipeline using HTML5 Canvas
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file.');
+      return;
+    }
+
+    setIsCompacting(true);
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new window.Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 800;
+        const MAX_HEIGHT = 800;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width *= MAX_HEIGHT / height;
+            height = MAX_HEIGHT;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+
+        // Compress as JPEG at 70% quality to stay well under local storage & firestore limits!
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+        const base64Data = dataUrl.split(',')[1];
+
+        setSelectedImage({
+          data: base64Data,
+          mimeType: 'image/jpeg',
+          url: dataUrl,
+          name: file.name
+        });
+        setIsCompacting(false);
+
+        // Clear file input value so selecting the same image triggers onchange again
+        e.target.value = '';
+      };
+      img.src = event.target.result;
+    };
+    reader.readAsDataURL(file);
+  };
 
   // ── Load sessions on mount ──────────────────────────────────────────────
   useEffect(() => {
@@ -217,11 +280,14 @@ export default function Chat() {
   const handleSend = useCallback(async (e, customText) => {
     e?.preventDefault();
     const textToSend = (customText || input).trim();
-    if (!textToSend || isLoading) return;
+    if (!textToSend && !selectedImage) return;
+    if (isLoading || isCompacting) return;
 
     // Guest limit gate
     if (!incrementGuestUsage()) return;
 
+    const imageToSend = selectedImage;
+    setSelectedImage(null);
     setInput('');
     setIsLoading(true);
     setStatusMsg('thinking');
@@ -233,18 +299,24 @@ export default function Chat() {
       localStorage.setItem('tanios_active_chat_id', sessionId);
     }
 
-    const userMsg = { id: Date.now(), role: 'user', text: textToSend };
+    const finalUserText = textToSend || "Please analyze the uploaded image and solve/explain my doubt.";
+    const userMsg = {
+      id: Date.now(),
+      role: 'user',
+      text: finalUserText,
+      image: imageToSend || undefined
+    };
     const updatedWithUser = [...messages, userMsg];
     setMessages(updatedWithUser);
 
     // Derive title from first user question (max 45 chars)
     const currentSession = sessions.find(s => s.id === sessionId);
     const isFirstMsg = !currentSession || currentSession.title === 'New Chat';
-    const title = isFirstMsg ? textToSend.slice(0, 45) + (textToSend.length > 45 ? '…' : '') : undefined;
+    const title = isFirstMsg ? finalUserText.slice(0, 45) + (finalUserText.length > 45 ? '…' : '') : undefined;
 
     // Fire AI Stream (pass recent history for memory!)
     const historyCtx = messages.filter(m => m.id !== 'welcome').slice(-6);
-    const prompt = generateDoubtPrompt(textToSend, historyCtx);
+    const prompt = generateDoubtPrompt(finalUserText, historyCtx);
 
     // Retrieve active textbook RAG reference context
     const ragContext = localStorage.getItem('tanios_rag_context');
@@ -253,7 +325,7 @@ export default function Chat() {
     let promptWithContext = prompt;
     if (ragContext) {
       console.log(`[RAG] Injecting textbook context from: ${ragFilename}`);
-      promptWithContext = `[LOCAL SYLLABUS REFERENCE: The following is parsed content from the student's active textbook "${ragFilename}":\n${ragContext.substring(0, 10000)}]\n\nBased ONLY on the reference textbook context provided above, solve the student's doubt. If the context is unrelated, solve using standard board-exam principles.\n\nStudent Doubt: ${textToSend}\n\nChat History & Instructions:\n${prompt}`;
+      promptWithContext = `[LOCAL SYLLABUS REFERENCE: The following is parsed content from the student's active textbook "${ragFilename}":\n${ragContext.substring(0, 10000)}]\n\nBased ONLY on the reference textbook context provided above, solve the student's doubt. If the context is unrelated, solve using standard board-exam principles.\n\nStudent Doubt: ${finalUserText}\n\nChat History & Instructions:\n${prompt}`;
     }
 
     const aiMsgId = Date.now() + 1;
@@ -276,7 +348,8 @@ export default function Chat() {
         streamedText = textChunk;
         setMessages(prev => prev.map(m => m.id === aiMsgId ? { ...m, text: textChunk } : m));
       },
-      (msg) => setStatusMsg(msg || '')
+      (msg) => setStatusMsg(msg || ''),
+      imageToSend
     );
 
     setIsLoading(false);
@@ -304,7 +377,7 @@ export default function Chat() {
     }
 
     setTimeout(() => inputRef.current?.focus(), 100);
-  }, [input, isLoading, activeId, messages, sessions, incrementGuestUsage, syncSession]);
+  }, [input, isLoading, isCompacting, selectedImage, activeId, messages, sessions, incrementGuestUsage, syncSession]);
 
   // ── Prefilled URL query prompt support ───────────────────────────────────
   useEffect(() => {
@@ -436,7 +509,7 @@ export default function Chat() {
               </button>
             </div>
 
-            {messages.filter(msg => msg.text && msg.text.trim() !== '').map(msg => (
+            {messages.filter(msg => (msg.text && msg.text.trim() !== '') || msg.image).map(msg => (
               <div key={msg.id} className={`message ${msg.role}`}>
                 <div className="avatar" style={msg.isError ? { background: 'rgba(239,68,68,0.15)', color: '#ef4444' } : {}}>
                   {msg.role === 'ai' ? <Sparkles size={16} /> : <User size={16} />}
@@ -462,7 +535,14 @@ export default function Chat() {
                       components={markdownComponents}
                     >{msg.text}</ReactMarkdown>
                   ) : (
-                    <span>{msg.text}</span>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      {msg.image && (
+                        <div style={{ maxWidth: '300px', borderRadius: '8px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)', marginBottom: '0.25rem' }}>
+                          <img src={msg.image.url} alt="Uploaded doubt" style={{ width: '100%', height: 'auto', display: 'block' }} />
+                        </div>
+                      )}
+                      {msg.text && <span>{msg.text}</span>}
+                    </div>
                   )}
                 </div>
               </div>
@@ -504,23 +584,113 @@ export default function Chat() {
 
           {/* ── INPUT AREA ── */}
           <div className="chat-input-area">
+            {/* Hidden file input for attachment */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleImageUpload}
+              style={{ display: 'none' }}
+            />
+
+            {/* Selected Image Floating Preview */}
+            {selectedImage && (
+              <div className="chat-image-preview-container" style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.75rem',
+                marginBottom: '0.75rem',
+                background: 'rgba(255, 255, 255, 0.03)',
+                padding: '0.5rem 0.75rem',
+                borderRadius: 'var(--radius-sm)',
+                border: '1px solid var(--border)',
+                width: 'fit-content',
+                animation: 'slideUp 0.2s ease',
+                boxShadow: 'var(--shadow-sm)',
+                backdropFilter: 'blur(10px)',
+                WebkitBackdropFilter: 'blur(10px)'
+              }}>
+                <div style={{ position: 'relative', width: '40px', height: '40px', borderRadius: '4px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)' }}>
+                  <img src={selectedImage.url} alt="preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text)', fontWeight: 600, maxWidth: '120px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {selectedImage.name}
+                  </span>
+                  <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>Ready to solve</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSelectedImage(null)}
+                  style={{
+                    background: 'rgba(239, 68, 68, 0.1)',
+                    color: '#ef4444',
+                    border: 'none',
+                    borderRadius: '50%',
+                    width: '20px',
+                    height: '20px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    marginLeft: '0.5rem',
+                    transition: 'all 0.2s'
+                  }}
+                  title="Remove image"
+                >
+                  <X size={12} />
+                </button>
+              </div>
+            )}
+
             <form onSubmit={handleSend} className="chat-input-wrapper">
+              {/* Image upload trigger button inside input */}
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isLoading || isCompacting}
+                style={{
+                  position: 'absolute',
+                  left: '0.5rem',
+                  width: '2.25rem',
+                  height: '2.25rem',
+                  borderRadius: '50%',
+                  border: 'none',
+                  background: 'none',
+                  color: 'var(--text-secondary)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  transition: 'all var(--transition)',
+                  zIndex: 2
+                }}
+                className="chat-attach-btn"
+                title="Upload image of your doubt"
+              >
+                {isCompacting ? (
+                  <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />
+                ) : (
+                  <ImageIcon size={16} />
+                )}
+              </button>
+
               <input
                 ref={inputRef}
                 type="text"
                 className="chat-input"
-                style={{ paddingLeft: '1.25rem', paddingRight: '3.25rem' }}
-                placeholder={isLoading ? 'Please wait...' : 'Ask your doubt here...'}
+                style={{ paddingLeft: '3.25rem', paddingRight: '3.25rem' }}
+                placeholder={isLoading ? 'Please wait...' : 'Ask your doubt here or upload image...'}
                 value={input}
                 onChange={e => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                disabled={isLoading}
+                disabled={isLoading || isCompacting}
                 autoFocus
               />
               <button
                 type="submit"
                 className="chat-submit"
-                disabled={!input.trim() || isLoading}
+                disabled={(!input.trim() && !selectedImage) || isLoading || isCompacting}
                 title={isLoading ? 'Processing...' : 'Send message'}
               >
                 {isLoading ? <Loader2 size={15} style={{ animation: 'spin 1s linear infinite' }} /> : <Send size={15} />}

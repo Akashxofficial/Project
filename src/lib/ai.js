@@ -159,9 +159,9 @@ export function fixMathFormatting(text) {
  * - Auto-retry with countdown on 429 quota errors
  * - onStatus callback so UI can show "Retrying in 28s..."
  */
-export const generateAIContent = async (prompt, onStatus = null) => {
+export const generateAIContent = async (prompt, onStatus = null, image = null) => {
   // ✅ CACHE CHECK - Instant answer for repeated questions
-  const cached = cache.get(prompt);
+  const cached = image ? null : cache.get(prompt);
   if (cached) {
     console.log("📦 Cache hit!");
     return { text: cached, fromCache: true };
@@ -194,7 +194,7 @@ export const generateAIContent = async (prompt, onStatus = null) => {
       const response = await fetch(API_ENDPOINT, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt }),
+        body: JSON.stringify({ prompt, image }),
         signal: controller.signal,
       });
 
@@ -248,7 +248,9 @@ export const generateAIContent = async (prompt, onStatus = null) => {
       const result = data.text;
 
       // Cache successful response
-      cache.set(prompt, result);
+      if (!image) {
+        cache.set(prompt, result);
+      }
       onStatus?.(null);
       return { text: result, model: data.model };
 
@@ -282,7 +284,7 @@ export const generateAIContent = async (prompt, onStatus = null) => {
  * Parses SSE streams line-by-line, decodes json frames,
  * applies dynamic math formatting, and triggers callbacks.
  */
-export const generateAIContentStream = async (prompt, onChunk, onStatus = null) => {
+export const generateAIContentStream = async (prompt, onChunk, onStatus = null, image = null) => {
   // Client-side rate-limiting check
   if (!limiter.isAllowed()) {
     const waitSecs = limiter.getRetryAfter();
@@ -302,7 +304,7 @@ export const generateAIContentStream = async (prompt, onChunk, onStatus = null) 
     const response = await fetch(API_ENDPOINT, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ prompt, stream: true }),
+      body: JSON.stringify({ prompt, stream: true, image }),
       signal: controller.signal,
     });
 
@@ -368,7 +370,9 @@ export const generateAIContentStream = async (prompt, onChunk, onStatus = null) 
     }
 
     // Cache successful stream output for instant repeat requests
-    cache.set(prompt, fullText);
+    if (!image) {
+      cache.set(prompt, fullText);
+    }
     onStatus?.(null);
     return { text: fixMathFormatting(fullText), success: true };
 

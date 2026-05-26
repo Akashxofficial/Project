@@ -120,46 +120,50 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { prompt, stream } = req.body;
+    const { prompt, stream, image } = req.body;
 
     if (!prompt) {
       return res.status(400).json({ error: 'Prompt is required' });
     }
 
-    // Intercept cache before making external model requests
-    const cacheKey = getCacheKey(prompt);
-    try {
-      const cachedResponse = await redis.get(cacheKey);
-      if (cachedResponse) {
-        console.log(`[Cache HIT] Returning cached result for key ${cacheKey}`);
-        if (stream === true) {
-          res.setHeader('Content-Type', 'text/event-stream');
-          res.setHeader('Cache-Control', 'no-cache');
-          res.setHeader('Connection', 'keep-alive');
-          res.flushHeaders();
+    const hasImage = image && image.data && image.mimeType;
 
-          // Stream the cached response in fast chunks to simulate stream effect
-          const words = cachedResponse.split(/(\s+)/);
-          for (const word of words) {
-            res.write(`data: ${JSON.stringify({ text: word })}\n\n`);
-            await new Promise(r => setTimeout(r, 4));
+    // Intercept cache before making external model requests
+    if (!hasImage) {
+      const cacheKey = getCacheKey(prompt);
+      try {
+        const cachedResponse = await redis.get(cacheKey);
+        if (cachedResponse) {
+          console.log(`[Cache HIT] Returning cached result for key ${cacheKey}`);
+          if (stream === true) {
+            res.setHeader('Content-Type', 'text/event-stream');
+            res.setHeader('Cache-Control', 'no-cache');
+            res.setHeader('Connection', 'keep-alive');
+            res.flushHeaders();
+
+            // Stream the cached response in fast chunks to simulate stream effect
+            const words = cachedResponse.split(/(\s+)/);
+            for (const word of words) {
+              res.write(`data: ${JSON.stringify({ text: word })}\n\n`);
+              await new Promise(r => setTimeout(r, 4));
+            }
+            res.write("data: [DONE]\n\n");
+            res.end();
+            return;
+          } else {
+            return res.status(200).json({
+              success: true,
+              text: cachedResponse,
+              cached: true,
+              model: "cached-inference"
+            });
           }
-          res.write("data: [DONE]\n\n");
-          res.end();
-          return;
-        } else {
-          return res.status(200).json({
-            success: true,
-            text: cachedResponse,
-            cached: true,
-            model: "cached-inference"
-          });
         }
-      }
-    } catch (cacheErr) {
-      console.error("[Cache Error] Failed reading cache:", cacheErr);
-      if (process.env.SENTRY_DSN) {
-        SentryNode.captureException(cacheErr);
+      } catch (cacheErr) {
+        console.error("[Cache Error] Failed reading cache:", cacheErr);
+        if (process.env.SENTRY_DSN) {
+          SentryNode.captureException(cacheErr);
+        }
       }
     }
 
@@ -191,10 +195,21 @@ export default async function handler(req, res) {
           const isLastKey = i === apiKeys.length - 1;
           const timeoutDuration = isLastKey ? 50000 : (modelName === "gemini-2.5-flash" ? 20000 : 35000);
           
+          const promptParts = [];
+          if (hasImage) {
+            promptParts.push({
+              inlineData: {
+                data: image.data,
+                mimeType: image.mimeType
+              }
+            });
+          }
+          promptParts.push(prompt);
+
           if (stream === true) {
             console.log(`[API] ✅ Attempting stream connection for Key index ${i} using model ${modelName}...`);
             
-            const streamPromise = model.generateContentStream(prompt);
+            const streamPromise = model.generateContentStream(promptParts);
             const timeoutPromise = new Promise((_, reject) =>
               setTimeout(() => reject(new Error("TimeoutError")), timeoutDuration)
             );
@@ -229,18 +244,21 @@ export default async function handler(req, res) {
             chosenModel = modelName;
 
             // Save to cache asynchronously
-            try {
-              await redis.set(cacheKey, responseText, { ex: 86400 });
-              console.log(`[Cache Hydrated] Saved streamed result to cache for key ${cacheKey}`);
-            } catch (cacheErr) {
-              console.error("[Cache Error] Failed writing cache:", cacheErr);
+            if (!hasImage) {
+              try {
+                const cacheKey = getCacheKey(prompt);
+                await redis.set(cacheKey, responseText, { ex: 86400 });
+                console.log(`[Cache Hydrated] Saved streamed result to cache for key ${cacheKey}`);
+              } catch (cacheErr) {
+                console.error("[Cache Error] Failed writing cache:", cacheErr);
+              }
             }
             return;
           }
 
           // Race the generation promise against a fast timeout to prevent serverless hanging
           const generatePromise = (async () => {
-            const result = await model.generateContent(prompt);
+            const result = await model.generateContent(promptParts);
             const response = await result.response;
             return response.text();
           })();
@@ -289,13 +307,16 @@ export default async function handler(req, res) {
     console.log(`[API] ✅ Success!`);
     
     // Save to Upstash Redis cache asynchronously
-    try {
-      await redis.set(cacheKey, responseText, { ex: 86400 });
-      console.log(`[Cache Hydrated] Saved result to cache for key ${cacheKey}`);
-    } catch (cacheErr) {
-      console.error("[Cache Error] Failed writing cache:", cacheErr);
-      if (process.env.SENTRY_DSN) {
-        SentryNode.captureException(cacheErr);
+    if (!hasImage) {
+      try {
+        const cacheKey = getCacheKey(prompt);
+        await redis.set(cacheKey, responseText, { ex: 86400 });
+        console.log(`[Cache Hydrated] Saved result to cache for key ${cacheKey}`);
+      } catch (cacheErr) {
+        console.error("[Cache Error] Failed writing cache:", cacheErr);
+        if (process.env.SENTRY_DSN) {
+          SentryNode.captureException(cacheErr);
+        }
       }
     }
 

@@ -48,75 +48,147 @@ export const logout = async () => {
 };
 
 // Firestore Database Helpers
-export const saveDocument = async (userId, type, title, content) => {
+export const saveDocument = async (userId, type, title, content, docId = null) => {
+  const resolvedDocId = docId || `doc_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  const timestamp = Date.now();
+
+  // Always save to localStorage immediately for instant UI reliability (offline-first fallback)
+  try {
+    const fbKey = `fallback_documents_${userId}`;
+    const existing = JSON.parse(localStorage.getItem(fbKey) || '[]');
+    const docIndex = existing.findIndex(d => d.id === resolvedDocId);
+    const docObj = { id: resolvedDocId, userId, type, title, content, createdAt: timestamp };
+    if (docIndex >= 0) existing[docIndex] = docObj;
+    else existing.push(docObj);
+    localStorage.setItem(fbKey, JSON.stringify(existing));
+    console.log("💾 Document saved locally:", resolvedDocId);
+  } catch (err) {
+    console.error("Local storage save failed", err);
+  }
+
+  // Then attempt Firestore sync in background
   if (!import.meta.env.VITE_FIREBASE_API_KEY || import.meta.env.VITE_FIREBASE_API_KEY === 'dummy-api-key') {
-    console.warn("Mock DB Save: ", { type, title });
-    return true;
+    return resolvedDocId;
   }
 
   try {
-    const docRef = await addDoc(collection(db, "saved_materials"), {
+    await setDoc(doc(db, "saved_materials", resolvedDocId), {
       userId,
       type, // 'note', 'revision', 'timetable', 'test'
       title,
       content,
       createdAt: serverTimestamp()
-    });
-    console.log("✅ Document saved:", docRef.id);
-    return docRef.id;
+    }, { merge: true });
+    console.log("✅ Document saved to Firestore:", resolvedDocId);
+    return resolvedDocId;
   } catch (e) {
     console.error("❌ Error saving document to Firestore:", e.code, e.message);
-    return null;
+    return resolvedDocId;
   }
 };
 
 export const getUserDocuments = async (userId) => {
-  if (!import.meta.env.VITE_FIREBASE_API_KEY || import.meta.env.VITE_FIREBASE_API_KEY === 'dummy-api-key') {
-    // Return mock data for UI testing
-    return [
-      { id: '1', type: 'note', title: 'Structure of Atom - Short Notes', content: '# Sample Notes\nThis is mock content.', createdAt: { toDate: () => new Date() } },
-      { id: '2', type: 'test', title: 'Biology - Cell Structure (Mock Test)', content: '# Sample Test\nQ1. What is a cell?', createdAt: { toDate: () => new Date() } }
-    ];
-  }
+  const documents = [];
 
-  try {
-    // Try with orderBy first (requires Firestore composite index)
-    const q = query(
-      collection(db, "saved_materials"),
-      where("userId", "==", userId),
-      orderBy("createdAt", "desc")
-    );
-    const querySnapshot = await getDocs(q);
-    const docs = [];
-    querySnapshot.forEach((doc) => {
-      docs.push({ id: doc.id, ...doc.data() });
-    });
-    return docs;
-  } catch (e) {
-    console.warn("⚠️ Ordered query failed (index may be missing), trying without orderBy:", e.message);
-    // Fallback: query without orderBy — works without composite index
+  if (import.meta.env.VITE_FIREBASE_API_KEY && import.meta.env.VITE_FIREBASE_API_KEY !== 'dummy-api-key') {
     try {
-      const q2 = query(
-        collection(db, "saved_materials"),
-        where("userId", "==", userId)
+      const fetchPromise = (async () => {
+        // Try with orderBy first (requires Firestore composite index)
+        const q = query(
+          collection(db, "saved_materials"),
+          where("userId", "==", userId),
+          orderBy("createdAt", "desc")
+        );
+        const querySnapshot = await getDocs(q);
+        const docs = [];
+        querySnapshot.forEach((doc) => {
+          docs.push({ id: doc.id, ...doc.data() });
+        });
+        return docs;
+      })();
+
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Timeout")), 1500)
       );
-      const querySnapshot2 = await getDocs(q2);
-      const docs = [];
-      querySnapshot2.forEach((doc) => {
-        docs.push({ id: doc.id, ...doc.data() });
-      });
-      // Sort client-side by createdAt descending
-      docs.sort((a, b) => {
-        const ta = a.createdAt?.toDate?.() || new Date(0);
-        const tb = b.createdAt?.toDate?.() || new Date(0);
-        return tb - ta;
-      });
-      return docs;
-    } catch (e2) {
-      console.error("❌ Error getting documents:", e2.code, e2.message);
-      return [];
+
+      // Race Firestore query against a 1.5s timeout
+      const fetched = await Promise.race([fetchPromise, timeoutPromise]);
+      fetched.forEach(d => documents.push(d));
+    } catch (e) {
+      console.warn("⚠️ Ordered query failed or timed out, trying without orderBy:", e.message);
+      // Fallback: query without orderBy — works without composite index
+      try {
+        const fetchPromise2 = (async () => {
+          const q2 = query(
+            collection(db, "saved_materials"),
+            where("userId", "==", userId)
+          );
+          const querySnapshot2 = await getDocs(q2);
+          const docs = [];
+          querySnapshot2.forEach((doc) => {
+            docs.push({ id: doc.id, ...doc.data() });
+          });
+          return docs;
+        })();
+        const timeoutPromise2 = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("Timeout")), 1500)
+        );
+        const fetched2 = await Promise.race([fetchPromise2, timeoutPromise2]);
+        fetched2.forEach(d => {
+          if (!documents.find(existing => existing.id === d.id)) {
+            documents.push(d);
+          }
+        });
+      } catch (e2) {
+        console.error("❌ Error getting documents from Firestore:", e2.code, e2.message);
+      }
     }
   }
+
+  // Merge with Robust Fallback (Local Storage)
+  try {
+    const fbKey = `fallback_documents_${userId}`;
+    const fallbackDocs = JSON.parse(localStorage.getItem(fbKey) || '[]');
+    fallbackDocs.forEach(fd => {
+      if (!documents.find(d => d.id === fd.id)) {
+        // Recreate the toDate function so that `.toDate()` doesn't crash on client side!
+        const docWithTimestamp = {
+          ...fd,
+          createdAt: {
+            toDate: () => new Date(fd.createdAt || Date.now())
+          }
+        };
+        documents.push(docWithTimestamp);
+      }
+    });
+  } catch (err) {
+    console.error("Local storage fallback retrieve failed:", err);
+  }
+
+  // Map toDate on any document fetched from Firestore that doesn't have it
+  documents.forEach(doc => {
+    if (doc.createdAt && typeof doc.createdAt.toDate !== 'function') {
+      const originalCreatedAt = doc.createdAt;
+      const seconds = originalCreatedAt.seconds || originalCreatedAt._seconds;
+      const dateVal = seconds ? new Date(seconds * 1000) : new Date(originalCreatedAt);
+      doc.createdAt = {
+        toDate: () => dateVal
+      };
+    } else if (!doc.createdAt) {
+      doc.createdAt = {
+        toDate: () => new Date()
+      };
+    }
+  });
+
+  // Sort client-side by createdAt descending
+  documents.sort((a, b) => {
+    const ta = a.createdAt?.toDate?.() || new Date(0);
+    const tb = b.createdAt?.toDate?.() || new Date(0);
+    return tb - ta;
+  });
+
+  return documents;
 };
 
 // ── Chat Session Helpers ────────────────────────────────────────────────────

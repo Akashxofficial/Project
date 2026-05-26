@@ -1208,6 +1208,12 @@ h3 { font-size: 1.15rem; }
 
 /* Tablet: 768px */
 @media (max-width: 768px) {
+  /* Prevent ANY horizontal scroll at page level */
+  html, body {
+    overflow-x: hidden !important;
+    max-width: 100vw !important;
+  }
+
   :root { --sidebar-w: 0px; }
 
   .sidebar {
@@ -1222,7 +1228,12 @@ h3 { font-size: 1.15rem; }
 
   .hamburger { display: flex; }
 
-  .main-content { margin-left: 0; }
+  .main-content {
+    margin-left: 0;
+    overflow-x: hidden;
+    width: 100%;
+    max-width: 100vw;
+  }
 
   /* Show TaniOS AI logo in header on mobile */
   .mobile-logo { display: flex; }
@@ -1230,6 +1241,14 @@ h3 { font-size: 1.15rem; }
   .page-content {
     padding: 1rem 0.875rem;
     overflow-x: hidden;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  /* All direct children of page-content constrained */
+  .page-content > * {
+    max-width: 100%;
+    box-sizing: border-box;
   }
 
   .hero-section { padding: 2rem 1rem; }
@@ -1245,6 +1264,9 @@ h3 { font-size: 1.15rem; }
   .generated-content {
     padding: 1rem;
     font-size: 0.9rem;
+    max-width: 100%;
+    overflow-x: hidden;
+    word-break: break-word;
   }
 
   /* Forms: stack select fields on tablet */
@@ -1262,24 +1284,55 @@ h3 { font-size: 1.15rem; }
   .message { max-width: 92%; }
 
   /* Card padding tighter */
-  .card { padding: 1.1rem; }
+  .card {
+    padding: 1.1rem;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
+  }
 
   h2 { font-size: 1.25rem; }
   h3 { font-size: 1rem; }
+
+  /* Fix inline flex rows that can overflow */
+  .header {
+    padding: 0 0.875rem;
+  }
+
+  /* Prevent any inline-styled flex containers from overflowing */
+  [style*="display: flex"], [style*="display:flex"] {
+    max-width: 100%;
+    flex-shrink: 1;
+  }
 }
 
 /* Mobile: 480px */
 @media (max-width: 480px) {
+  html, body {
+    overflow-x: hidden !important;
+    max-width: 100vw !important;
+  }
+
   .grid-cards { grid-template-columns: 1fr; }
 
   .hero-title { font-size: 1.6rem; }
   .hero-subtitle { font-size: 0.875rem; }
 
-  .card { padding: 1rem; }
+  .card {
+    padding: 1rem;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
 
   .message { max-width: 95%; }
 
-  .btn { padding: 0.55rem 0.875rem; font-size: 0.85rem; }
+  .btn {
+    padding: 0.55rem 0.875rem;
+    font-size: 0.85rem;
+    white-space: normal;
+    text-align: center;
+  }
 
   h2 { font-size: 1.15rem; }
 
@@ -1287,16 +1340,26 @@ h3 { font-size: 1.15rem; }
   .input-field, select.input-field {
     font-size: 0.875rem;
     padding: 0.65rem 0.875rem;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
   }
 
   /* Page content even tighter */
-  .page-content { padding: 0.875rem 0.75rem; }
+  .page-content {
+    padding: 0.875rem 0.75rem;
+    overflow-x: hidden;
+  }
 
   /* Reduce gap in sections */
   .generated-content {
     padding: 0.875rem;
     font-size: 0.875rem;
     margin-top: 1rem;
+    max-width: 100%;
+    overflow-x: hidden;
+    word-break: break-word;
+    overflow-wrap: break-word;
   }
 
   /* Chat input smaller */
@@ -1307,10 +1370,13 @@ h3 { font-size: 1.15rem; }
 
   /* Tighter header and sub-elements */
   .header {
-    padding: 0 0.875rem;
+    padding: 0 0.75rem;
   }
   .header-left { gap: 0.5rem; }
   .header-right { gap: 0.5rem; }
+
+  /* Force all images to stay within their container */
+  img { max-width: 100% !important; height: auto !important; }
 }
 
 /* Extra Small Mobile: 360px */
@@ -1322,13 +1388,49 @@ h3 { font-size: 1.15rem; }
   .header-right { gap: 0.35rem; }
 }
 
-/* Micro Mobile / Extremely Narrow Viewport: 320px */
-@media (max-width: 320px) {
+/* Micro Mobile / Extremely Narrow Viewport: 350px */
+@media (max-width: 350px) {
   .mobile-logo-text {
     display: none;
   }
   .mobile-logo {
     gap: 0;
+  }
+}
+
+/* ─── GLOBAL MOBILE OVERFLOW GUARD ───────────────────────────────────────────── */
+/* Targeted: only page-level containers, not generic * which breaks grids */
+html {
+  overflow-x: hidden;
+}
+
+img, video, canvas, iframe {
+  max-width: 100%;
+  height: auto;
+}
+
+/* ─── MOBILE RESPONSIVE PAGES ─────────────────────────────────────────────────── */
+/* Make generator-layout always single-column on small mobile */
+@media (max-width: 600px) {
+  .generator-layout,
+  .generator-layout.has-result {
+    grid-template-columns: 1fr !important;
+    gap: 1rem !important;
+  }
+
+  /* Exam board form: 1 col */
+  .exam-form-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Profile setup grid: 1 col */
+  .profile-setup-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* home grid always 1col on small screens */
+  .home-grid {
+    grid-template-columns: 1fr !important;
   }
 }
 
@@ -1691,5 +1793,26 @@ h3 { font-size: 1.15rem; }
 @keyframes scaleUp {
   from { transform: scale(0.9); opacity: 0; }
   to { transform: scale(1); opacity: 1; }
+}
+
+/* Responsive Scaling for loader card on extra small mobile screens */
+@media (max-width: 380px) {
+  .global-ai-loader-card {
+    padding: 1.75rem 1.25rem;
+    max-width: 300px;
+  }
+  .global-ai-loader-card h3 {
+    font-size: 1.15rem;
+  }
+  .global-ai-loader-card p {
+    font-size: 0.8rem;
+    margin-bottom: 1.5rem;
+    line-height: 1.5;
+  }
+  .global-ai-loader-icon-wrapper {
+    width: 3.5rem;
+    height: 3.5rem;
+    margin-bottom: 1rem;
+  }
 }
 
