@@ -909,6 +909,9 @@ export default function Home() {
               }} className="btn btn-primary">
                 <Target size={16} /> Complete Daily Mission
               </button>
+              <Link to="/chat" className="btn btn-primary" style={{ background: 'linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%)', border: 'none', color: 'white', boxShadow: '0 4px 15px rgba(139, 92, 246, 0.3)' }}>
+                <MessageSquare size={16} /> AI Doubt Solver
+              </Link>
               <Link to="/notes" className="btn btn-secondary">
                 <FileText size={16} /> Generate AI Notes
               </Link>
@@ -917,6 +920,7 @@ export default function Home() {
 
           {/* Exam Countdown banner — real-time sync with Indian board exam dates */}
           {(() => {
+            if (!profileSetupDone) return null;
             // ── REAL INDIAN BOARD EXAM DATE DATABASE ──
             // These are approximate official start dates. Updated yearly.
             const EXAM_DATES = {
