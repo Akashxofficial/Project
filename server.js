@@ -3,8 +3,8 @@ import handler from './api/generate.js';
 
 const app = express();
 
-// Parse JSON request bodies
-app.use(express.json());
+// Parse JSON request bodies with larger limit for images
+app.use(express.json({ limit: '10mb' }));
 
 // Map POST /api/generate directly to Vercel handler
 app.post('/api/generate', handler);

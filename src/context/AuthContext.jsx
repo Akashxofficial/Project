@@ -138,6 +138,23 @@ export function AuthProvider({ children }) {
     } catch (error) {
       console.error("Signout failed:", error);
     }
+
+    // ── WIPE ALL STUDY DATA ON LOGOUT ──────────────────────────────────────
+    // Every key owned by TaniOS study system is cleared so the next
+    // login/profile-setup starts with a completely blank slate.
+    const taniosKeys = [
+      'tanios_xp',
+      'tanios_streak',
+      'tanios_streak_day',
+      'tanios_consistency',
+      'tanios_badges',
+      'tanios_weaknesses',
+      'tanios_missions',
+      'tanios_profile',
+    ];
+    taniosKeys.forEach(key => localStorage.removeItem(key));
+    // ────────────────────────────────────────────────────────────────────────
+
     setCurrentUser(GUEST_USER);
     localStorage.setItem('tanios_user', JSON.stringify(GUEST_USER));
   };
