@@ -1,6 +1,52 @@
 // api/generate.js
 
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { Redis } from "@upstash/redis";
+import * as SentryNode from "@sentry/node";
+
+// Initialize Sentry Node SDK
+if (process.env.SENTRY_DSN) {
+  SentryNode.init({
+    dsn: process.env.SENTRY_DSN,
+    tracesSampleRate: 1.0,
+  });
+  console.log("🚀 [Sentry] Node Serverless Monitoring active.");
+} else {
+  console.log("ℹ️ [Sentry] Node DSN not configured. Server monitoring bypassed.");
+}
+
+// Initialize Upstash Redis with robust in-memory mock fallback
+let redis;
+if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
+  redis = new Redis({
+    url: process.env.UPSTASH_REDIS_REST_URL,
+    token: process.env.UPSTASH_REDIS_REST_TOKEN,
+  });
+  console.log("🚀 [Cache] Upstash Redis Client Initialized.");
+} else {
+  const mockStore = new Map();
+  redis = {
+    get: async (key) => mockStore.get(key) || null,
+    set: async (key, value, options) => {
+      mockStore.set(key, value);
+      if (options?.ex) {
+        setTimeout(() => mockStore.delete(key), options.ex * 1000);
+      }
+      return "OK";
+    }
+  };
+  console.log("ℹ️ [Cache] Upstash REST credentials missing. Active Local Memory Cache.");
+}
+
+function getCacheKey(prompt) {
+  let hash = 0;
+  for (let i = 0; i < prompt.length; i++) {
+    hash = (hash << 5) - hash + prompt.charCodeAt(i);
+    hash |= 0; 
+  }
+  return `tanios_cache_${Math.abs(hash)}`;
+}
+
 
 // Simple in-memory sliding window rate limiter
 const ipRequests = new Map();
@@ -74,10 +120,47 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { prompt } = req.body;
+    const { prompt, stream } = req.body;
 
     if (!prompt) {
       return res.status(400).json({ error: 'Prompt is required' });
+    }
+
+    // Intercept cache before making external model requests
+    const cacheKey = getCacheKey(prompt);
+    try {
+      const cachedResponse = await redis.get(cacheKey);
+      if (cachedResponse) {
+        console.log(`[Cache HIT] Returning cached result for key ${cacheKey}`);
+        if (stream === true) {
+          res.setHeader('Content-Type', 'text/event-stream');
+          res.setHeader('Cache-Control', 'no-cache');
+          res.setHeader('Connection', 'keep-alive');
+          res.flushHeaders();
+
+          // Stream the cached response in fast chunks to simulate stream effect
+          const words = cachedResponse.split(/(\s+)/);
+          for (const word of words) {
+            res.write(`data: ${JSON.stringify({ text: word })}\n\n`);
+            await new Promise(r => setTimeout(r, 4));
+          }
+          res.write("data: [DONE]\n\n");
+          res.end();
+          return;
+        } else {
+          return res.status(200).json({
+            success: true,
+            text: cachedResponse,
+            cached: true,
+            model: "cached-inference"
+          });
+        }
+      }
+    } catch (cacheErr) {
+      console.error("[Cache Error] Failed reading cache:", cacheErr);
+      if (process.env.SENTRY_DSN) {
+        SentryNode.captureException(cacheErr);
+      }
     }
 
     const rawKeys = process.env.GEMINI_API_KEYS || process.env.GEMINI_API_KEY;
@@ -106,6 +189,36 @@ export default async function handler(req, res) {
           console.log(`[API] Attempting with Key index ${i} using model ${modelName}...`);
           const model = genAI.getGenerativeModel({ model: modelName });
           
+          if (stream === true) {
+            console.log(`[API] ✅ Initiating stream for Key index ${i} using model ${modelName}...`);
+            res.setHeader('Content-Type', 'text/event-stream');
+            res.setHeader('Cache-Control', 'no-cache');
+            res.setHeader('Connection', 'keep-alive');
+            res.flushHeaders();
+
+            const resultStream = await model.generateContentStream(prompt);
+            let compiledText = "";
+            for await (const chunk of resultStream.stream) {
+              const chunkText = chunk.text();
+              compiledText += chunkText;
+              res.write(`data: ${JSON.stringify({ text: chunkText })}\n\n`);
+            }
+            res.write("data: [DONE]\n\n");
+            res.end();
+
+            responseText = compiledText;
+            chosenModel = modelName;
+
+            // Save to cache asynchronously
+            try {
+              await redis.set(cacheKey, responseText, { ex: 86400 });
+              console.log(`[Cache Hydrated] Saved streamed result to cache for key ${cacheKey}`);
+            } catch (cacheErr) {
+              console.error("[Cache Error] Failed writing cache:", cacheErr);
+            }
+            return;
+          }
+
           // Race the generation promise against a 15-second timeout to prevent serverless hanging
           const generatePromise = (async () => {
             const result = await model.generateContent(prompt);
@@ -149,6 +262,18 @@ export default async function handler(req, res) {
     }
 
     console.log(`[API] ✅ Success!`);
+    
+    // Save to Upstash Redis cache asynchronously
+    try {
+      await redis.set(cacheKey, responseText, { ex: 86400 });
+      console.log(`[Cache Hydrated] Saved result to cache for key ${cacheKey}`);
+    } catch (cacheErr) {
+      console.error("[Cache Error] Failed writing cache:", cacheErr);
+      if (process.env.SENTRY_DSN) {
+        SentryNode.captureException(cacheErr);
+      }
+    }
+
     return res.status(200).json({
       success: true,
       text: responseText,
@@ -157,6 +282,9 @@ export default async function handler(req, res) {
 
   } catch (error) {
     console.error('[API] Final Failure:', error.message);
+    if (process.env.SENTRY_DSN) {
+      SentryNode.captureException(error);
+    }
 
     const rawKeys = process.env.GEMINI_API_KEYS || process.env.GEMINI_API_KEY || "";
     const apiKeys = rawKeys.split(/[\s,;\n]+/).map(k => k.trim()).filter(Boolean);
