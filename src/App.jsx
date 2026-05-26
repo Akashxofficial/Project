@@ -179,16 +179,10 @@ function MainApp() {
 
           {/* ── Mobile Logo (center) — hidden on desktop ── */}
           <div className="mobile-logo">
-            <div style={{
-              width: '1.5rem', height: '1.5rem',
-              background: 'linear-gradient(135deg, var(--primary), var(--accent))',
-              borderRadius: '6px',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              flexShrink: 0
-            }}>
+            <div className="mobile-logo-icon">
               <Sparkles size={12} color="white" />
             </div>
-            <span style={{ fontWeight: 800, fontSize: '1rem' }}>
+            <span className="mobile-logo-text">
               TaniOS <span className="text-gradient">AI</span>
             </span>
           </div>
