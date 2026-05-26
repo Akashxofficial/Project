@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from './context/AuthContext';
 
+
 import Home from './pages/Home';
 import Chat from './pages/Chat';
 import Notes from './pages/Notes';
@@ -231,6 +232,7 @@ function MainApp() {
 function App() {
   const { showLoginModal, setShowLoginModal, showQuotaModal, setShowQuotaModal, login, loading, QUOTA } = useAuth();
 
+
   if (loading) {
     return (
       <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)' }}>
@@ -320,6 +322,7 @@ function App() {
           </div>
         </div>
       )}
+
     </>
   );
 }

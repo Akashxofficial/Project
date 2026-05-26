@@ -5,6 +5,8 @@ import { limiter } from './rateLimiter';
 
 const API_ENDPOINT = "/api/generate";
 
+
+
 /**
  * AGGRESSIVE post-processor: fixes AI output where math is NOT in LaTeX.
  * Handles:
@@ -294,11 +296,17 @@ export const generateAIContentStream = async (prompt, onChunk, onStatus = null) 
 
   try {
     onStatus?.("thinking");
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 45000);
+
     const response = await fetch(API_ENDPOINT, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ prompt, stream: true }),
+      signal: controller.signal,
     });
+
+    clearTimeout(timeoutId);
 
     if (!response.ok) {
       const errData = await response.json().catch(() => ({}));
@@ -367,6 +375,13 @@ export const generateAIContentStream = async (prompt, onChunk, onStatus = null) 
   } catch (err) {
     console.error("Streaming Fetch Failure:", err);
     onStatus?.(null);
+    if (err.name === "AbortError") {
+      return {
+        text: null,
+        error: "timeout",
+        message: "⚠️ Request took too long. Please try again."
+      };
+    }
     return {
       text: null,
       error: "network_error",

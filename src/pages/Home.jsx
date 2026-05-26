@@ -1333,6 +1333,22 @@ export default function Home() {
 
       </div>
 
+      {/* ── Glassmorphic AI Loader Overlay (Specifically for Board Roadmap Mode) ── */}
+      {examLoading && (
+        <div className="global-ai-loader-overlay">
+          <div className="global-ai-loader-card">
+            <div className="global-ai-loader-glow-orb"></div>
+            <div className="global-ai-loader-icon-wrapper">
+              <Sparkles className="global-ai-loader-icon" size={32} />
+            </div>
+            <h3>TaniOS AI is crafting...</h3>
+            <p>Please wait a moment while the AI compiles high-yield study materials for you.</p>
+            <div className="global-ai-loader-bar">
+              <div className="global-ai-loader-bar-fill"></div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

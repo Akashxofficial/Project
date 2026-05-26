@@ -188,23 +188,42 @@ export default async function handler(req, res) {
         try {
           console.log(`[API] Attempting with Key index ${i} using model ${modelName}...`);
           const model = genAI.getGenerativeModel({ model: modelName });
+          const isLastKey = i === apiKeys.length - 1;
+          const timeoutDuration = isLastKey ? 50000 : (modelName === "gemini-2.5-flash" ? 20000 : 35000);
           
           if (stream === true) {
-            console.log(`[API] ✅ Initiating stream for Key index ${i} using model ${modelName}...`);
-            res.setHeader('Content-Type', 'text/event-stream');
-            res.setHeader('Cache-Control', 'no-cache');
-            res.setHeader('Connection', 'keep-alive');
-            res.flushHeaders();
-
-            const resultStream = await model.generateContentStream(prompt);
-            let compiledText = "";
-            for await (const chunk of resultStream.stream) {
-              const chunkText = chunk.text();
-              compiledText += chunkText;
-              res.write(`data: ${JSON.stringify({ text: chunkText })}\n\n`);
+            console.log(`[API] ✅ Attempting stream connection for Key index ${i} using model ${modelName}...`);
+            
+            const streamPromise = model.generateContentStream(prompt);
+            const timeoutPromise = new Promise((_, reject) =>
+              setTimeout(() => reject(new Error("TimeoutError")), timeoutDuration)
+            );
+            
+            const resultStream = await Promise.race([streamPromise, timeoutPromise]);
+            
+            // Set headers only after handshake succeeds, preventing double-header crashes on rotatory fallback
+            if (!res.headersSent) {
+              res.setHeader('Content-Type', 'text/event-stream');
+              res.setHeader('Cache-Control', 'no-cache');
+              res.setHeader('Connection', 'keep-alive');
+              res.flushHeaders();
             }
-            res.write("data: [DONE]\n\n");
-            res.end();
+
+            let compiledText = "";
+            try {
+              for await (const chunk of resultStream.stream) {
+                const chunkText = chunk.text();
+                compiledText += chunkText;
+                res.write(`data: ${JSON.stringify({ text: chunkText })}\n\n`);
+              }
+              res.write("data: [DONE]\n\n");
+              res.end();
+            } catch (streamIterErr) {
+              console.error(`[API] Stream execution failed mid-stream for Key ${i}:`, streamIterErr);
+              res.write(`data: ${JSON.stringify({ error: "Stream interrupted due to temporary network issues." })}\n\n`);
+              res.end();
+              return; // End request cleanly
+            }
 
             responseText = compiledText;
             chosenModel = modelName;
@@ -219,7 +238,7 @@ export default async function handler(req, res) {
             return;
           }
 
-          // Race the generation promise against a 15-second timeout to prevent serverless hanging
+          // Race the generation promise against a fast timeout to prevent serverless hanging
           const generatePromise = (async () => {
             const result = await model.generateContent(prompt);
             const response = await result.response;
@@ -227,7 +246,7 @@ export default async function handler(req, res) {
           })();
 
           const timeoutPromise = new Promise((_, reject) =>
-            setTimeout(() => reject(new Error("TimeoutError")), 35000)
+            setTimeout(() => reject(new Error("TimeoutError")), timeoutDuration)
           );
 
           responseText = await Promise.race([generatePromise, timeoutPromise]);
@@ -237,17 +256,23 @@ export default async function handler(req, res) {
           console.warn(`[API] Key ${i} with model ${modelName} failed:`, err.message);
           lastError = err;
           
-          // Key-wide exhaustion, rate limits, server/service overload (503/500/429/quota/billing), or TimeoutError.
-          // Break immediately to rotate to the next key instead of sending failing calls repeatedly.
           const errMsg = err.message?.toLowerCase() || '';
-          const isOverloaded = err.status === 503 || err.status === 429 || errMsg.includes('503') || errMsg.includes('429') || errMsg.includes('quota') || errMsg.includes('billing') || errMsg.includes('limit') || errMsg.includes('overloaded') || errMsg.includes('demand');
           
-          if (err.message === "TimeoutError" || isOverloaded) {
-            console.warn(`[API] Key ${i} failed or is overloaded (503/429/Timeout). Breaking model loop to try next key...`);
-            break;
+          // ── Key Quota / Expiry Block: Requires rotating to the next key immediately ──
+          const isQuotaExceeded = err.status === 429 || 
+                                  errMsg.includes('429') || 
+                                  errMsg.includes('quota') || 
+                                  errMsg.includes('billing') || 
+                                  errMsg.includes('api key not valid') ||
+                                  errMsg.includes('key_invalid');
+          
+          if (isQuotaExceeded) {
+            console.warn(`[API] Key ${i} quota exceeded or invalid. Rotating to next key...`);
+            break; // Break model loop, try next API key
           } else {
-            // Model specific error (e.g. model not found), continue trying the next model on the same key
-            continue;
+            // Server error (500/503), Timeout, or model-specific issue: Try the next model (e.g., gemini-2.5-pro) on the same key!
+            console.warn(`[API] Model ${modelName} failed (500/503/Timeout). Trying alternative model...`);
+            continue; 
           }
         }
       }
