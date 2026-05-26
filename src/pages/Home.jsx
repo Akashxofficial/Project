@@ -865,23 +865,42 @@ export default function Home() {
               TaniOS studies <strong>with</strong> you, not just answers questions. Track your weaknesses, crush daily targets, and score board topper grades!
             </p>
             
-            {/* Dynamic context alert box representing alive dashboard */}
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.75rem',
-              background: 'rgba(255,255,255,0.06)',
-              padding: '0.75rem 1rem',
-              borderRadius: 'var(--radius-sm)',
-              borderLeft: '4px solid var(--accent)',
-              fontSize: '0.85rem',
-              marginBottom: '1rem'
-            }}>
-              <AlertCircle size={16} color="var(--accent)" />
-              <span style={{ color: 'var(--text)' }}>
-                💡 <strong>Companion Update:</strong> You missed Biology study yesterday. We have a <strong>15-minute quick revision</strong> queued for you below. Let's conquer it!
-              </span>
-            </div>
+            {/* Dynamic context alert box — syncs with student's profile subjects */}
+            {(() => {
+              // Pick a subject from the student's profile to make the message relevant
+              const today = new Date();
+              const subjectPool = profileSubjects.length > 0 ? profileSubjects : ['your subjects'];
+              const pickedSubject = subjectPool[today.getDate() % subjectPool.length];
+              const completedToday = missions.filter(m => m.type !== 'login' && m.done).length;
+              const totalNonLogin = missions.filter(m => m.type !== 'login').length;
+
+              let alertMsg;
+              let alertColor = 'var(--accent)';
+              if (!profileSetupDone) {
+                alertMsg = <>💡 <strong>Getting Started:</strong> Set up your study profile below to unlock <strong>personalized daily missions</strong> and start earning XP!</>;
+              } else if (totalNonLogin > 0 && completedToday === totalNonLogin) {
+                alertMsg = <>🎉 <strong>All Done!</strong> You crushed every mission today! Come back tomorrow for fresh {pickedSubject} challenges.</>;
+                alertColor = 'var(--success)';
+              } else {
+                alertMsg = <>💡 <strong>Companion Update:</strong> You have <strong>{totalNonLogin - completedToday} {pickedSubject} task{totalNonLogin - completedToday !== 1 ? 's' : ''}</strong> pending today. Complete them to build your streak!</>;
+              }
+              return (
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.75rem',
+                  background: 'rgba(255,255,255,0.06)',
+                  padding: '0.75rem 1rem',
+                  borderRadius: 'var(--radius-sm)',
+                  borderLeft: `4px solid ${alertColor}`,
+                  fontSize: '0.85rem',
+                  marginBottom: '1rem'
+                }}>
+                  <AlertCircle size={16} color={alertColor} style={{ flexShrink: 0 }} />
+                  <span style={{ color: 'var(--text)' }}>{alertMsg}</span>
+                </div>
+              );
+            })()}
 
             <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
               <button onClick={() => {
@@ -896,26 +915,77 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Exam Countdown banner specifically for Board Target */}
-          <div className="countdown-box" style={{
-            background: 'rgba(0,0,0,0.15)',
-            border: '1px solid rgba(255,255,255,0.06)',
-            borderRadius: '12px',
-            padding: '1rem',
-            textAlign: 'center',
-            minWidth: '150px',
-            flexShrink: 0
-          }}>
-            <span style={{ fontSize: '0.7rem', textTransform: 'uppercase', tracking: '0.05em', color: 'var(--text-secondary)' }}>
-              Board Target 2026
-            </span>
-            <div style={{ fontSize: '1.75rem', fontWeight: 900, color: 'var(--accent)', margin: '0.25rem 0' }}>
-              15 Days
-            </div>
-            <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
-              Countdown to Class 10 Mock Exam
-            </span>
-          </div>
+          {/* Exam Countdown banner — real-time sync with Indian board exam dates */}
+          {(() => {
+            // ── REAL INDIAN BOARD EXAM DATE DATABASE ──
+            // These are approximate official start dates. Updated yearly.
+            const EXAM_DATES = {
+              CBSE: {
+                '10': { month: 1, day: 15, label: 'CBSE Class 10 Board Exam' },   // ~Feb 15
+                '12': { month: 1, day: 15, label: 'CBSE Class 12 Board Exam' },   // ~Feb 15
+                '8':  { month: 2, day: 1,  label: 'Class 8 Annual Exam' },         // ~March 1
+                '9':  { month: 2, day: 1,  label: 'Class 9 Annual Exam' },         // ~March 1
+                '11': { month: 2, day: 1,  label: 'Class 11 Annual Exam' },        // ~March 1
+              },
+              RBSE: {
+                '10': { month: 2, day: 5,  label: 'RBSE Class 10 Board Exam' },   // ~March 5
+                '12': { month: 2, day: 5,  label: 'RBSE Class 12 Board Exam' },   // ~March 5
+                '8':  { month: 2, day: 10, label: 'Class 8 Annual Exam' },         // ~March 10
+                '9':  { month: 2, day: 10, label: 'Class 9 Annual Exam' },         // ~March 10
+                '11': { month: 2, day: 10, label: 'Class 11 Annual Exam' },        // ~March 10
+              },
+            };
+
+            const board = profileBoard || 'CBSE';
+            // Extract just the number from profileClass (could be "10", "10th", "Class 10" etc)
+            const classNum = (profileClass || '10').toString().replace(/\D/g, '') || '10';
+            const examInfo = EXAM_DATES[board]?.[classNum] || EXAM_DATES['CBSE']['10'];
+
+            const now = new Date();
+            // Build the target exam date — Indian academic year ends in Feb-March
+            // If we're past April, the next exam is in the following calendar year
+            let examYear = now.getFullYear();
+            const examDate = new Date(examYear, examInfo.month, examInfo.day);
+            // If the exam date has already passed this year, target next year
+            if (examDate <= now) {
+              examYear += 1;
+              examDate.setFullYear(examYear);
+            }
+
+            const diffMs = examDate - now;
+            const diffDays = Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+
+            // Color based on urgency
+            let countdownColor = 'var(--accent)';
+            if (diffDays <= 7) countdownColor = '#ef4444';        // red — exam week!
+            else if (diffDays <= 30) countdownColor = '#f59e0b';  // amber — 1 month
+            else if (diffDays <= 90) countdownColor = 'var(--accent)'; // normal
+
+            return (
+              <div className="countdown-box" style={{
+                background: 'rgba(0,0,0,0.15)',
+                border: '1px solid rgba(255,255,255,0.06)',
+                borderRadius: '12px',
+                padding: '1rem',
+                textAlign: 'center',
+                minWidth: '150px',
+                flexShrink: 0,
+              }}>
+                <span style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>
+                  {board} Target {examYear}
+                </span>
+                <div style={{ fontSize: '1.75rem', fontWeight: 900, color: countdownColor, margin: '0.25rem 0' }}>
+                  {diffDays} Day{diffDays !== 1 ? 's' : ''}
+                </div>
+                <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', lineHeight: 1.3, display: 'block' }}>
+                  {examInfo.label}
+                </span>
+                <span style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', opacity: 0.6, marginTop: '0.25rem', display: 'block' }}>
+                  {examDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                </span>
+              </div>
+            );
+          })()}
         </div>
       </div>
 
@@ -1452,27 +1522,66 @@ export default function Home() {
               </span>
             </div>
 
-            {/* C. Consistency Score with 7-Day Matrix */}
+            {/* C. Consistency Score with real-time 7-Day Matrix */}
             <div style={{ borderTop: '1px solid var(--border)', paddingTop: '1rem', marginBottom: '1rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
                 <span style={{ fontSize: '0.8rem', fontWeight: 600 }}>Consistency Score</span>
                 <strong style={{ color: 'var(--success)', fontSize: '0.88rem' }}>{consistency}%</strong>
               </div>
               <div style={{ display: 'flex', gap: '6px', justifyContent: 'space-between' }}>
-                {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, i) => (
-                  <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px' }}>
-                    <div style={{
-                      width: '16px', height: '16px',
-                      borderRadius: '50%',
-                      background: i < 5 ? 'var(--success)' : 'rgba(255,255,255,0.06)',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: '8px', color: '#fff', fontWeight: 900
-                    }}>
-                      {i < 5 ? '✓' : ''}
+                {(() => {
+                  // Build last 7 days ending with today, using real dates
+                  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+                  const today = new Date();
+                  const days = [];
+                  for (let i = 6; i >= 0; i--) {
+                    const d = new Date(today);
+                    d.setDate(today.getDate() - i);
+                    days.push({
+                      label: dayNames[d.getDay()],
+                      date: d.getDate(),
+                      isToday: i === 0,
+                      // A day is "active" if it falls within the current streak window
+                      // streak=3 means today + 2 previous days were active
+                      isActive: streak > 0 && i < streak,
+                    });
+                  }
+                  return days.map((day, idx) => (
+                    <div key={idx} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px' }}>
+                      <div style={{
+                        width: day.isToday ? '20px' : '16px',
+                        height: day.isToday ? '20px' : '16px',
+                        borderRadius: '50%',
+                        background: day.isActive
+                          ? 'var(--success)'
+                          : day.isToday
+                            ? 'rgba(99, 102, 241, 0.3)'
+                            : 'rgba(255,255,255,0.06)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: '8px', color: '#fff', fontWeight: 900,
+                        border: day.isToday ? '2px solid var(--primary)' : 'none',
+                        transition: 'all 0.2s ease',
+                      }}>
+                        {day.isActive ? '✓' : ''}
+                      </div>
+                      <span style={{
+                        fontSize: '0.6rem',
+                        color: day.isToday ? 'var(--primary)' : 'var(--text-secondary)',
+                        fontWeight: day.isToday ? 700 : 400,
+                      }}>
+                        {day.label}
+                      </span>
+                      <span style={{
+                        fontSize: '0.55rem',
+                        color: day.isToday ? 'var(--text)' : 'var(--text-secondary)',
+                        fontWeight: day.isToday ? 600 : 400,
+                        opacity: 0.7,
+                      }}>
+                        {day.date}
+                      </span>
                     </div>
-                    <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>{day}</span>
-                  </div>
-                ))}
+                  ));
+                })()}
               </div>
             </div>
 
