@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Send, Sparkles, User, Clock, Plus, Trash2, MessageSquare, PanelLeftOpen, PanelLeftClose, Loader2 } from 'lucide-react';
-import { generateAIContent, generateDoubtPrompt, fixMathFormatting } from '../lib/ai';
+import { generateAIContent, generateAIContentStream, generateDoubtPrompt, fixMathFormatting } from '../lib/ai';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
@@ -242,22 +242,55 @@ export default function Chat() {
     const isFirstMsg = !currentSession || currentSession.title === 'New Chat';
     const title = isFirstMsg ? textToSend.slice(0, 45) + (textToSend.length > 45 ? '…' : '') : undefined;
 
-    // Fire AI (pass recent history for memory!)
+    // Fire AI Stream (pass recent history for memory!)
     const historyCtx = messages.filter(m => m.id !== 'welcome').slice(-6);
     const prompt = generateDoubtPrompt(textToSend, historyCtx);
-    const result = await generateAIContent(prompt, (msg) => setStatusMsg(msg || ''));
+
+    // Retrieve active textbook RAG reference context
+    const ragContext = localStorage.getItem('tanios_rag_context');
+    const ragFilename = localStorage.getItem('tanios_rag_filename') || 'Textbook';
+    
+    let promptWithContext = prompt;
+    if (ragContext) {
+      console.log(`[RAG] Injecting textbook context from: ${ragFilename}`);
+      promptWithContext = `[LOCAL SYLLABUS REFERENCE: The following is parsed content from the student's active textbook "${ragFilename}":\n${ragContext.substring(0, 10000)}]\n\nBased ONLY on the reference textbook context provided above, solve the student's doubt. If the context is unrelated, solve using standard board-exam principles.\n\nStudent Doubt: ${textToSend}\n\nChat History & Instructions:\n${prompt}`;
+    }
+
+    const aiMsgId = Date.now() + 1;
+    const aiMsgPlaceholder = {
+      id: aiMsgId,
+      role: 'ai',
+      text: '',
+      isStreaming: true
+    };
+    
+    // Mount user message and the empty AI placeholder to kick off the stream render
+    const updatedWithUserAndAi = [...updatedWithUser, aiMsgPlaceholder];
+    setMessages(updatedWithUserAndAi);
+
+    let streamedText = "";
+    
+    const result = await generateAIContentStream(
+      promptWithContext,
+      (textChunk) => {
+        streamedText = textChunk;
+        setMessages(prev => prev.map(m => m.id === aiMsgId ? { ...m, text: textChunk } : m));
+      },
+      (msg) => setStatusMsg(msg || '')
+    );
 
     setIsLoading(false);
     setStatusMsg('');
 
-    const aiMsg = {
-      id: Date.now() + 1,
+    const finalAiText = streamedText || result.text || result.message || '⚠️ Something went wrong. Please try again.';
+    const finalAiMsg = {
+      id: aiMsgId,
       role: 'ai',
-      text: fixMathFormatting(result.text) || result.message || '⚠️ Something went wrong. Please try again.',
-      isError: !result.text
+      text: finalAiText,
+      isError: !streamedText && !result.text
     };
 
-    const finalMessages = [...updatedWithUser, aiMsg];
+    const finalMessages = [...updatedWithUser, finalAiMsg];
     setMessages(finalMessages);
     syncSession(sessionId, finalMessages, title);
 
@@ -403,7 +436,7 @@ export default function Chat() {
               </button>
             </div>
 
-            {messages.map(msg => (
+            {messages.filter(msg => msg.text && msg.text.trim() !== '').map(msg => (
               <div key={msg.id} className={`message ${msg.role}`}>
                 <div className="avatar" style={msg.isError ? { background: 'rgba(239,68,68,0.15)', color: '#ef4444' } : {}}>
                   {msg.role === 'ai' ? <Sparkles size={16} /> : <User size={16} />}

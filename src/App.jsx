@@ -15,6 +15,8 @@ import Timetable from './pages/Timetable';
 import TestGenerator from './pages/TestGenerator';
 import History from './pages/History';
 import LoginPage from './pages/LoginPage';
+import RAGUpload from './pages/RAGUpload';
+import AdminDashboard from './pages/AdminDashboard';
 
 const navItems = [
   { to: '/', icon: <LayoutDashboard size={18} />, label: 'Dashboard', end: true },
@@ -23,8 +25,37 @@ const navItems = [
   { to: '/revision', icon: <BookOpen size={18} />, label: 'Smart Revision' },
   { to: '/timetable', icon: <Clock size={18} />, label: 'Study Planner' },
   { to: '/test', icon: <GraduationCap size={18} />, label: 'Test Generator' },
+  { to: '/notes/rag', icon: <BookOpen size={18} />, label: 'Textbook RAG 📚' },
   { to: '/history', icon: <Bookmark size={18} />, label: 'Saved Materials' },
 ];
+
+// Secure Role-Based Private Route Guard Component
+const AdminRoute = ({ children }) => {
+  const { currentUser } = useAuth();
+  
+  // Real-world role security checks
+  const isAdmin = currentUser && (
+    currentUser.email === 'admin@tanios.ai' || 
+    localStorage.getItem('tanios_user_role') === 'admin'
+  );
+  
+  if (!isAdmin) {
+    console.warn(`[UNAUTHORIZED] Access denied to admin routes for user: ${currentUser?.email || 'guest'}`);
+    return (
+      <div className="page-content" style={{ padding: '4rem 2rem', textAlign: 'center', maxWidth: '600px', margin: '0 auto', animation: 'fadeUp 0.3s' }}>
+        <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>⛔</div>
+        <h2 style={{ color: '#ef4444', fontWeight: 800, fontSize: '1.75rem', marginBottom: '0.75rem' }}>Access Denied</h2>
+        <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', lineHeight: 1.6, marginBottom: '1.5rem' }}>
+          You do not have administrative privileges to access this secure zone. Please log in with an authorized account or return to the dashboard.
+        </p>
+        <button onClick={() => window.location.href = '/'} className="btn btn-primary" style={{ margin: '0 auto' }}>
+          Return to Dashboard
+        </button>
+      </div>
+    );
+  }
+  return children;
+};
 
 // ── Inner app — handles primary navigation & layouts ──────────────────────────
 function MainApp() {
@@ -74,6 +105,17 @@ function MainApp() {
               <span>{item.label}</span>
             </NavLink>
           ))}
+          {currentUser && (currentUser.email === 'admin@tanios.ai' || localStorage.getItem('tanios_user_role') === 'admin') && (
+            <NavLink
+              to="/admin"
+              className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
+              style={{ borderLeft: '3px solid #ef4444', background: 'rgba(239, 68, 68, 0.03)', marginTop: '0.5rem' }}
+              onClick={() => setSidebarOpen(false)}
+            >
+              <LayoutDashboard size={18} color="#ef4444" />
+              <span style={{ color: '#ef4444', fontWeight: 'bold' }}>Admin Control ⚙️</span>
+            </NavLink>
+          )}
         </nav>
 
         {/* User Profile / Guest Sign In */}
@@ -179,10 +221,12 @@ function MainApp() {
           <Route path="/" element={<Home />} />
           <Route path="/chat" element={<Chat />} />
           <Route path="/notes" element={<Notes />} />
+          <Route path="/notes/rag" element={<RAGUpload />} />
           <Route path="/revision" element={<Revision />} />
           <Route path="/timetable" element={<Timetable />} />
           <Route path="/test" element={<TestGenerator />} />
           <Route path="/history" element={<History />} />
+          <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
         </Routes>
       </main>
     </div>

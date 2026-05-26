@@ -1,0 +1,779 @@
+%PDF-1.3
+%ºß¬à
+3 0 obj
+<</Type /Page
+/Parent 1 0 R
+/Resources 2 0 R
+/MediaBox [0 0 595.2799999999999727 841.8899999999999864]
+/Contents 4 0 R
+>>
+endobj
+4 0 obj
+<<
+/Length 8495
+>>
+stream
+0.5670000000000001 w
+0 G
+BT
+/F2 22 Tf
+25.2999999999999972 TL
+0.118 0.161 0.231 rg
+56.6929133858267775 785.1970866141732586 Td
+(TaniOS Enterprise Architecture Guide) Tj
+ET
+BT
+/F3 11 Tf
+12.6499999999999986 TL
+0.392 0.455 0.545 rg
+56.6929133858267775 751.1813385826771992 Td
+(Full-Stack Technical Specification & Scaling Blueprint | Class-leading AI Learning Platform) Tj
+ET
+0.89 0.91 0.94 RG
+2.8346456692913389 w
+56.6929133858267775 722.8348818897637784 m
+538.5870866141731312 722.8348818897637784 l
+S
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0.588 g
+56.6929133858267775 28.3464566929134207 Td
+(TaniOS Enterprise Architecture Specification Guide) Tj
+ET
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0.588 g
+510.2406299212597673 28.3464566929134207 Td
+(Page 1) Tj
+ET
+BT
+/F2 14 Tf
+16.0999999999999979 TL
+0.388 0.4 0.945 rg
+56.6929133858267775 688.819133858267719 Td
+(1. SYSTEM CONTEXT & SERVERLESS TOPOLOGY) Tj
+ET
+0.89 0.91 0.94 RG
+1.4173228346456694 w
+56.6929133858267775 683.1498425196849666 m
+538.5870866141731312 683.1498425196849666 l
+S
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.278 0.333 0.412 rg
+56.6929133858267775 666.1419685039369369 Td
+(TaniOS is built upon an ultra-modern Serverless & BaaS \(Backend-as-a-Service\) topology. Traditional VM servers) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.278 0.333 0.412 rg
+56.6929133858267775 650.5514173228345953 Td
+(require perpetual configuration, OS patching, load balancers, and constant database optimization. In contrast,) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.278 0.333 0.412 rg
+56.6929133858267775 634.9608661417322537 Td
+(TaniOS handles core authentication and standard read/write operations securely by talking directly to Firebase) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.278 0.333 0.412 rg
+56.6929133858267775 619.3703149606299121 Td
+(BaaS, and delegates high-intensity AI operations to Vercel Serverless cloud runtime execution.) Tj
+ET
+BT
+/F2 11 Tf
+12.6499999999999986 TL
+0.2 0.255 0.333 rg
+56.6929133858267775 598.1104724409448181 Td
+(Structural Roles:) Tj
+ET
+BT
+/F2 9.5 Tf
+10.9249999999999989 TL
+0.2 0.255 0.333 rg
+62.3622047244094517 581.1025984251967884 Td
+(•  Vite React Client:) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.278 0.333 0.412 rg
+146.7222047244094369 581.1025984251967884 Td
+(Renders highly responsive interactive frontends, synchronizes streaks, compiles learning) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.278 0.333 0.412 rg
+158.0607874015747711 565.5120472440944468 Td
+(weaknesses, post-processes math formulas into mathematical LaTeX, and tracks client state.) Tj
+ET
+BT
+/F2 9.5 Tf
+10.9249999999999989 TL
+0.2 0.255 0.333 rg
+62.3622047244094517 545.6695275590550409 Td
+(•  Vercel Serverless Gateways:) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.278 0.333 0.412 rg
+194.2222047244094369 545.6695275590550409 Td
+(An on-demand API gateway inside 'api/generate.js'. Contains strict IP sliding) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.278 0.333 0.412 rg
+205.5607874015747711 530.0789763779526993 Td
+(window rate limit monitors, handles keys/model parameters rotation dynamically if) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.278 0.333 0.412 rg
+205.5607874015747711 514.4884251968503577 Td
+(a key quota runs out, races prompts against a 35-second abort timer, and) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.278 0.333 0.412 rg
+205.5607874015747711 498.8978740157479592 Td
+(normalizes serverless exceptions.) Tj
+ET
+BT
+/F2 9.5 Tf
+10.9249999999999989 TL
+0.2 0.255 0.333 rg
+62.3622047244094517 479.0553543307086102 Td
+(•  Firebase Infrastructure BaaS:) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.278 0.333 0.412 rg
+196.9772047244094608 479.0553543307086102 Td
+(Provides secure out-of-the-box user management, stores chat history collections,) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.278 0.333 0.412 rg
+208.315787401574795 463.4648031496062686 Td
+(and processes client requests securely through Firestore database rules without) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.278 0.333 0.412 rg
+208.315787401574795 447.8742519685038701 Td
+(any intermediate backend API code.) Tj
+ET
+BT
+/F2 14 Tf
+16.0999999999999979 TL
+0.388 0.4 0.945 rg
+56.6929133858267775 416.69314960629913 Td
+(2. FRONTEND LIFECYCLE & UTILITIES) Tj
+ET
+0.89 0.91 0.94 RG
+1.4173228346456694 w
+56.6929133858267775 411.0238582677164914 m
+538.5870866141731312 411.0238582677164914 l
+S
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.278 0.333 0.412 rg
+56.6929133858267775 394.0159842519684616 Td
+(The client application functions as a compiled Single-Page Application \(SPA\) maximizing state isolation. Standard) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.278 0.333 0.412 rg
+56.6929133858267775 378.4254330708660632 Td
+(directories contain isolated utilities that guard performance:) Tj
+ET
+BT
+/F2 9.5 Tf
+10.9249999999999989 TL
+0.2 0.255 0.333 rg
+62.3622047244094517 357.1655905511810261 Td
+(•  rateLimiter.js:) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.278 0.333 0.412 rg
+130.382204724409462 357.1655905511810261 Td
+(Enforces client-side request pooling. Restricts local triggers to a max of 10 calls per minute in real) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.278 0.333 0.412 rg
+141.7207874015747961 341.5750393700786844 Td
+(time, preventing duplicate button clicks or loops from hitting the cloud endpoint.) Tj
+ET
+BT
+/F2 9.5 Tf
+10.9249999999999989 TL
+0.2 0.255 0.333 rg
+62.3622047244094517 321.7325196850392786 Td
+(•  ai.js:) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.278 0.333 0.412 rg
+93.1422047244094529 321.7325196850392786 Td
+(Acts as the unified interface to the server backend. Packages inputs and manages the state of the) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.278 0.333 0.412 rg
+104.4807874015748155 306.1419685039369369 Td
+(generator outputs. Integrates fixMathFormatting\(\) which uses regular expression patterns to dynamically) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.278 0.333 0.412 rg
+104.4807874015748155 290.5514173228345953 Td
+(rewrite raw unicode characters, fractions, and Greek notation into clean LaTeX strings for KaTeX) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.278 0.333 0.412 rg
+104.4807874015748155 274.9608661417322537 Td
+(components.) Tj
+ET
+BT
+/F2 9.5 Tf
+10.9249999999999989 TL
+0.2 0.255 0.333 rg
+62.3622047244094517 255.1183464566928478 Td
+(•  AuthContext.js:) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.278 0.333 0.412 rg
+137.7922047244094585 255.1183464566928478 Td
+(A React context wrapping the app directory. Handles student states, tokens, guest-mode) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.278 0.333 0.412 rg
+149.1307874015747927 239.5277952755905062 Td
+(checks, and hydrates dashboard XP states securely on reload.) Tj
+ET
+BT
+/F2 14 Tf
+16.0999999999999979 TL
+0.388 0.4 0.945 rg
+56.6929133858267775 208.3466929133857093 Td
+(3. BACKEND GATEWAY SPECIFICATION \(api/generate.js\)) Tj
+ET
+0.89 0.91 0.94 RG
+1.4173228346456694 w
+56.6929133858267775 202.6774015748030706 m
+538.5870866141731312 202.6774015748030706 l
+S
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.278 0.333 0.412 rg
+56.6929133858267775 185.6695275590550409 Td
+(The server functions as a highly scalable cloud function. Key modules include:) Tj
+ET
+BT
+/F2 9.5 Tf
+10.9249999999999989 TL
+0.2 0.255 0.333 rg
+62.3622047244094517 164.4096850393699469 Td
+(•  IP Sliding Window Rate Limiter:) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.278 0.333 0.412 rg
+205.9072047244094676 164.4096850393699469 Td
+(Saves timestamps per unique remote IP address. Automatically purges dead) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.278 0.333 0.412 rg
+217.2457874015748303 148.8191338582676053 Td
+(tracking records when active maps exceed 2000 entries to guarantee zero) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.278 0.333 0.412 rg
+217.2457874015748303 133.2285826771652637 Td
+(serverless memory overhead. Rejects spammers with a clear 429 status code.) Tj
+ET
+BT
+/F2 9.5 Tf
+10.9249999999999989 TL
+0.2 0.255 0.333 rg
+62.3622047244094517 113.3860629921258578 Td
+(•  Rotating API Keys & Models Pipeline:) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.278 0.333 0.412 rg
+231.0822047244095643 113.3860629921258578 Td
+(Parses GEMINI_API_KEYS dynamically. If a key triggers a 429 rate limit,) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.278 0.333 0.412 rg
+242.4207874015749269 97.7955118110235162 Td
+(503 service overload, quota exhaustion, or timing out, it rotates to the) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.278 0.333 0.412 rg
+242.4207874015749269 82.2049606299211746 Td
+(next key index in real time. It also falls back gracefully from) Tj
+ET
+endstream
+endobj
+5 0 obj
+<</Type /Page
+/Parent 1 0 R
+/Resources 2 0 R
+/MediaBox [0 0 595.2799999999999727 841.8899999999999864]
+/Contents 6 0 R
+>>
+endobj
+6 0 obj
+<<
+/Length 4442
+>>
+stream
+1.4173228346456694 w
+0.89 0.91 0.94 RG
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0.588 g
+56.6929133858267775 28.3464566929134207 Td
+(TaniOS Enterprise Architecture Specification Guide) Tj
+ET
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0.588 g
+510.2406299212597673 28.3464566929134207 Td
+(Page 2) Tj
+ET
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0.588 g
+242.4207874015749269 785.1970866141732586 Td
+(gemini-2.5-flash to gemini-2.5-pro to maximize availability.) Tj
+ET
+BT
+/F2 9.5 Tf
+10.9249999999999989 TL
+0.2 0.255 0.333 rg
+62.3622047244094517 765.3545669291338527 Td
+(•  Timeout Guard:) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.278 0.333 0.412 rg
+139.3122047244094404 765.3545669291338527 Td
+(Employs Promise.race\(\) running a strict 35s timer. Aborts calls if the AI model hangs,) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.278 0.333 0.412 rg
+150.650787401574803 749.7640157480315111 Td
+(preserving serverless execution limits and rotating the call instantly.) Tj
+ET
+BT
+/F2 9.5 Tf
+10.9249999999999989 TL
+0.2 0.255 0.333 rg
+62.3622047244094517 729.9214960629921052 Td
+(•  Error Normalizer:) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.278 0.333 0.412 rg
+145.4872047244094517 729.9214960629921052 Td
+(Transforms scary tracebacks into supportive student messages, keeping full crash analytics) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.278 0.333 0.412 rg
+156.8257874015748143 714.3309448818897636 Td
+(packed inside an invisible private diagnostics response object for developer logging.) Tj
+ET
+BT
+/F2 14 Tf
+16.0999999999999979 TL
+0.388 0.4 0.945 rg
+56.6929133858267775 683.1498425196850803 Td
+(4. DATABASE SEGREGATION & RULES) Tj
+ET
+0.89 0.91 0.94 RG
+1.4173228346456694 w
+56.6929133858267775 677.480551181102328 m
+538.5870866141731312 677.480551181102328 l
+S
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.278 0.333 0.412 rg
+56.6929133858267775 660.4726771653542983 Td
+(Security is enforced at the database layer using strict Firestore Security Rules. User records, chat histories, note) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.278 0.333 0.412 rg
+56.6929133858267775 644.8821259842519567 Td
+(collections, and custom timetable sheets are securely locked down to prevent cross-tenant access. Students can) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.278 0.333 0.412 rg
+56.6929133858267775 629.291574803149615 Td
+(only read or write directories where firestore credentials exactly match their authenticated UID context.) Tj
+ET
+BT
+/F2 14 Tf
+16.0999999999999979 TL
+0.388 0.4 0.945 rg
+56.6929133858267775 596.69314960629913 Td
+(5. PRODUCTION SCALING PLAN) Tj
+ET
+0.89 0.91 0.94 RG
+1.4173228346456694 w
+56.6929133858267775 591.0238582677164914 m
+538.5870866141731312 591.0238582677164914 l
+S
+BT
+/F2 9.5 Tf
+10.9249999999999989 TL
+0.2 0.255 0.333 rg
+62.3622047244094517 574.0159842519684616 Td
+(•  Phase 1: Present:) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.278 0.333 0.412 rg
+148.7172047244094415 574.0159842519684616 Td
+(Firebase BaaS coupled with Vercel API. Infinite auto-scaling with $0 idle monthly) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.278 0.333 0.412 rg
+160.0557874015747757 558.42543307086612 Td
+(maintenance costs.) Tj
+ET
+BT
+/F2 9.5 Tf
+10.9249999999999989 TL
+0.2 0.255 0.333 rg
+62.3622047244094517 538.5829133858267141 Td
+(•  Phase 2: High Scale:) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.278 0.333 0.412 rg
+161.8272047244094551 538.5829133858267141 Td
+(Integrate Upstash Redis Caching on serverless calls to intercept redundant popular) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.278 0.333 0.412 rg
+173.1657874015748177 522.9923622047243725 Td
+(inquiries, reducing API tokens. Migrate functions to Vercel V8 Edge Runtimes to) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.278 0.333 0.412 rg
+173.1657874015748177 507.4018110236219741 Td
+(completely eliminate serverless cold starts.) Tj
+ET
+BT
+/F2 9.5 Tf
+10.9249999999999989 TL
+0.2 0.255 0.333 rg
+62.3622047244094517 487.559291338582625 Td
+(•  Phase 3: Mature Enterprise:) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.278 0.333 0.412 rg
+191.1822047244094733 487.559291338582625 Td
+(Migrate serverless node logic into dedicated Dockerized Express microservices) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.278 0.333 0.412 rg
+202.5207874015748359 471.9687401574802834 Td
+(running on AWS ECS or GCP Cloud Run, connecting directly to robust relational) Tj
+ET
+BT
+/F1 9.5 Tf
+10.9249999999999989 TL
+0.278 0.333 0.412 rg
+202.5207874015748359 456.378188976377885 Td
+(PostgreSQL database instances.) Tj
+ET
+endstream
+endobj
+1 0 obj
+<</Type /Pages
+/Kids [3 0 R 5 0 R ]
+/Count 2
+>>
+endobj
+7 0 obj
+<<
+/Type /Font
+/BaseFont /Helvetica
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+8 0 obj
+<<
+/Type /Font
+/BaseFont /Helvetica-Bold
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+9 0 obj
+<<
+/Type /Font
+/BaseFont /Helvetica-Oblique
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+10 0 obj
+<<
+/Type /Font
+/BaseFont /Helvetica-BoldOblique
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+11 0 obj
+<<
+/Type /Font
+/BaseFont /Courier
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+12 0 obj
+<<
+/Type /Font
+/BaseFont /Courier-Bold
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+13 0 obj
+<<
+/Type /Font
+/BaseFont /Courier-Oblique
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+14 0 obj
+<<
+/Type /Font
+/BaseFont /Courier-BoldOblique
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+15 0 obj
+<<
+/Type /Font
+/BaseFont /Times-Roman
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+16 0 obj
+<<
+/Type /Font
+/BaseFont /Times-Bold
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+17 0 obj
+<<
+/Type /Font
+/BaseFont /Times-Italic
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+18 0 obj
+<<
+/Type /Font
+/BaseFont /Times-BoldItalic
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+19 0 obj
+<<
+/Type /Font
+/BaseFont /ZapfDingbats
+/Subtype /Type1
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+20 0 obj
+<<
+/Type /Font
+/BaseFont /Symbol
+/Subtype /Type1
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+2 0 obj
+<<
+/ProcSet [/PDF /Text /ImageB /ImageC /ImageI]
+/Font <<
+/F1 7 0 R
+/F2 8 0 R
+/F3 9 0 R
+/F4 10 0 R
+/F5 11 0 R
+/F6 12 0 R
+/F7 13 0 R
+/F8 14 0 R
+/F9 15 0 R
+/F10 16 0 R
+/F11 17 0 R
+/F12 18 0 R
+/F13 19 0 R
+/F14 20 0 R
+>>
+/XObject <<
+>>
+>>
+endobj
+21 0 obj
+<<
+/Producer (jsPDF 4.2.1)
+/CreationDate (D:20260526101205+05'30')
+>>
+endobj
+22 0 obj
+<<
+/Type /Catalog
+/Pages 1 0 R
+/OpenAction [3 0 R /FitH null]
+/PageLayout /OneColumn
+>>
+endobj
+xref
+0 23
+0000000000 65535 f 
+0000013330 00000 n 
+0000015155 00000 n 
+0000000015 00000 n 
+0000000152 00000 n 
+0000008699 00000 n 
+0000008836 00000 n 
+0000013393 00000 n 
+0000013518 00000 n 
+0000013648 00000 n 
+0000013781 00000 n 
+0000013919 00000 n 
+0000014043 00000 n 
+0000014172 00000 n 
+0000014304 00000 n 
+0000014440 00000 n 
+0000014568 00000 n 
+0000014695 00000 n 
+0000014824 00000 n 
+0000014957 00000 n 
+0000015059 00000 n 
+0000015405 00000 n 
+0000015491 00000 n 
+trailer
+<<
+/Size 23
+/Root 22 0 R
+/Info 21 0 R
+/ID [ <85236BA6589E05CB4F25B1EDBB96F685> <85236BA6589E05CB4F25B1EDBB96F685> ]
+>>
+startxref
+15595
+%%EOF

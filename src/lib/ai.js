@@ -275,6 +275,106 @@ export const generateAIContent = async (prompt, onStatus = null) => {
   }
 };
 
+/**
+ * Advanced Client Streaming Consumer:
+ * Parses SSE streams line-by-line, decodes json frames,
+ * applies dynamic math formatting, and triggers callbacks.
+ */
+export const generateAIContentStream = async (prompt, onChunk, onStatus = null) => {
+  // Client-side rate-limiting check
+  if (!limiter.isAllowed()) {
+    const waitSecs = limiter.getRetryAfter();
+    onStatus?.(null);
+    return {
+      text: null,
+      error: "rate_limit",
+      message: `Slow down! You are asking doubts too fast. Please wait ${waitSecs} seconds before asking another doubt.`
+    };
+  }
+
+  try {
+    onStatus?.("thinking");
+    const response = await fetch(API_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt, stream: true }),
+    });
+
+    if (!response.ok) {
+      const errData = await response.json().catch(() => ({}));
+      onStatus?.(null);
+      return {
+        text: null,
+        error: errData.code || "server_error",
+        message: errData.error || "TaniOS AI server is busy. Please try again."
+      };
+    }
+
+    onStatus?.("generating");
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+    let fullText = "";
+
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n");
+      buffer = lines.pop(); // Hold partial line in buffer
+
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed || !trimmed.startsWith("data: ")) continue;
+
+        const jsonStr = trimmed.substring(6);
+        if (jsonStr === "[DONE]") {
+          break;
+        }
+
+        try {
+          const data = JSON.parse(jsonStr);
+          if (data.text) {
+            fullText += data.text;
+            onChunk?.(fixMathFormatting(fullText));
+          }
+        } catch (e) {
+          console.warn("Could not parse stream JSON chunk:", jsonStr);
+        }
+      }
+    }
+
+    // Process leftover buffer
+    if (buffer.trim().startsWith("data: ")) {
+      const jsonStr = buffer.trim().substring(6);
+      if (jsonStr !== "[DONE]") {
+        try {
+          const data = JSON.parse(jsonStr);
+          if (data.text) {
+            fullText += data.text;
+            onChunk?.(fixMathFormatting(fullText));
+          }
+        } catch (e) {}
+      }
+    }
+
+    // Cache successful stream output for instant repeat requests
+    cache.set(prompt, fullText);
+    onStatus?.(null);
+    return { text: fixMathFormatting(fullText), success: true };
+
+  } catch (err) {
+    console.error("Streaming Fetch Failure:", err);
+    onStatus?.(null);
+    return {
+      text: null,
+      error: "network_error",
+      message: "⚠️ Connection failed. Please check your network."
+    };
+  }
+};
+
 export const generateDoubtPrompt = (question, history = []) => {
   const historyText = history.length > 0 
     ? `\n\nPrevious conversation context:\n${history.map(m => `${m.role === 'user' ? 'Student' : 'AI Teacher'}: ${m.text}`).join('\n')}\n`
