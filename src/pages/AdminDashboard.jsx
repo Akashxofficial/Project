@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { LayoutDashboard, Key, ShieldAlert, Users, Settings, Activity, Sparkles, RefreshCw, CheckCircle, AlertTriangle } from 'lucide-react';
+import { LayoutDashboard, Key, ShieldAlert, Users, Settings, Activity, Sparkles, RefreshCw, CheckCircle, AlertTriangle, CreditCard, ClipboardList } from 'lucide-react';
+import { db, getActivities } from '../lib/firebase';
+import { collection, getDocs, query, orderBy, doc, updateDoc, setDoc } from 'firebase/firestore';
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('diagnostics');
@@ -49,6 +51,126 @@ export default function AdminDashboard() {
       setLoading(false);
       alert("🔄 API Key Rotation successfully executed! Evaluated keys health successfully.");
     }, 800);
+  };
+
+  // ── Subscription Queue State & Methods ──────────────────────────────────────
+  const [requests, setRequests] = useState([]);
+  const [fetchingReqs, setFetchingReqs] = useState(false);
+
+  // ── Platform Activity State ──
+  const [platformActivities, setPlatformActivities] = useState([]);
+  const [fetchingActivities, setFetchingActivities] = useState(false);
+
+  const fetchPlatformActivities = async () => {
+    setFetchingActivities(true);
+    try {
+      const data = await getActivities();
+      setPlatformActivities(data);
+    } catch (e) {
+      console.warn("Failed to fetch activities:", e);
+    }
+    setFetchingActivities(false);
+  };
+
+  const fetchRequests = async () => {
+    setFetchingReqs(true);
+    try {
+      if (import.meta.env.VITE_FIREBASE_API_KEY && import.meta.env.VITE_FIREBASE_API_KEY !== 'dummy-api-key') {
+        const q = query(collection(db, "payment_requests"), orderBy("createdAt", "desc"));
+        const snap = await getDocs(q);
+        const list = [];
+        snap.forEach(docSnap => {
+          list.push({ id: docSnap.id, ...docSnap.data() });
+        });
+        setRequests(list);
+      } else {
+        // Fallback offline mock payment logs
+        const localLogs = [
+          { id: 'pay_1', userName: 'Akash Sharma', userEmail: 'akash@tanios.ai', utr: '627192837416', amount: 199, status: 'pending', createdAt: new Date() },
+          { id: 'pay_2', userName: 'Rajesh Kumar', userEmail: 'rajesh@rediff.com', utr: '817293847291', amount: 199, status: 'approved', createdAt: new Date(Date.now() - 3600000) }
+        ];
+        setRequests(localLogs);
+      }
+    } catch (e) {
+      console.warn("Error fetching subscriptions:", e);
+      // Fallback
+      setRequests([
+        { id: 'pay_1', userName: 'Akash Sharma', userEmail: 'akash@tanios.ai', utr: '627192837416', amount: 199, status: 'pending', createdAt: new Date() }
+      ]);
+    }
+    setFetchingReqs(false);
+  };
+
+  useEffect(() => {
+    if (activeTab === 'subscriptions') {
+      fetchRequests();
+    } else if (activeTab === 'activities') {
+      fetchPlatformActivities();
+    }
+  }, [activeTab]);
+
+  const handleApprove = async (req) => {
+    if (!window.confirm(`Are you sure you want to APPROVE UTR ${req.utr} for ${req.userName}?`)) return;
+
+    try {
+      if (import.meta.env.VITE_FIREBASE_API_KEY && import.meta.env.VITE_FIREBASE_API_KEY !== 'dummy-api-key') {
+        // 1. Update payment_request document status to 'approved'
+        await updateDoc(doc(db, "payment_requests", req.id), {
+          status: 'approved',
+          updatedAt: new Date()
+        });
+
+        // 2. Update user profile document to set subscription Active
+        await setDoc(doc(db, "users", req.userId), {
+          subscriptionActive: true,
+          subscriptionStatus: 'active',
+          subscriptionPlan: 'Pro AI Member',
+          subscriptionAmount: req.amount,
+          subscriptionUtr: req.utr,
+          subscriptionActivatedAt: new Date()
+        }, { merge: true });
+        
+        alert("✅ Subscription approved and successfully activated for " + req.userName + "!");
+      } else {
+        // Simulating approval offline
+        setRequests(prev => prev.map(item => item.id === req.id ? { ...item, status: 'approved' } : item));
+        alert("💻 [Offline Sandbox Mode] Approved subscription locally for " + req.userName + "!");
+      }
+      fetchRequests();
+    } catch (e) {
+      console.error("Approval error:", e);
+      alert("❌ Error processing approval: " + e.message);
+    }
+  };
+
+  const handleReject = async (req) => {
+    if (!window.confirm(`Are you sure you want to REJECT UTR ${req.utr} for ${req.userName}?`)) return;
+
+    try {
+      if (import.meta.env.VITE_FIREBASE_API_KEY && import.meta.env.VITE_FIREBASE_API_KEY !== 'dummy-api-key') {
+        // 1. Update payment_request document status to 'rejected'
+        await updateDoc(doc(db, "payment_requests", req.id), {
+          status: 'rejected',
+          updatedAt: new Date()
+        });
+
+        // 2. Set user status to none/rejected
+        await setDoc(doc(db, "users", req.userId), {
+          subscriptionActive: false,
+          subscriptionStatus: 'rejected',
+          subscriptionPlan: 'None (Rejected)'
+        }, { merge: true });
+        
+        alert("❌ Subscription request rejected.");
+      } else {
+        setRequests(prev => prev.map(item => item.id === req.id ? { ...item, status: 'rejected' } : item));
+        alert("💻 [Offline Sandbox Mode] Rejected locally.");
+      }
+      fetchRequests();
+    } catch (e) {
+      console.error("Rejection error:", e);
+      alert("❌ Error processing rejection: " + e.message);
+    }
   };
 
   return (
@@ -143,7 +265,7 @@ export default function AdminDashboard() {
         }
       `}</style>
 
-      <div style={{ animation: 'fadeUp 0.3s' }}>
+      <div>
         
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.5rem' }}>
@@ -203,6 +325,18 @@ export default function AdminDashboard() {
               className={`admin-nav-item ${activeTab === 'settings' ? 'active' : ''}`}
             >
               <Settings size={16} /> Configuration Overrides
+            </button>
+            <button 
+              onClick={() => setActiveTab('subscriptions')}
+              className={`admin-nav-item ${activeTab === 'subscriptions' ? 'active' : ''}`}
+            >
+              <CreditCard size={16} /> Subscription Queue 💳
+            </button>
+            <button 
+              onClick={() => setActiveTab('activities')}
+              className={`admin-nav-item ${activeTab === 'activities' ? 'active' : ''}`}
+            >
+              <ClipboardList size={16} /> Platform Activity 📡
             </button>
           </aside>
 
@@ -386,7 +520,6 @@ export default function AdminDashboard() {
                         checked={config.redisCaching} 
                         onChange={() => handleToggleConfig('redisCaching')} 
                       />
-                      <span className="slider"></span>
                     </label>
                   </div>
 
@@ -409,6 +542,152 @@ export default function AdminDashboard() {
                   </div>
 
                 </div>
+              </section>
+            )}
+
+            {/* TAB 5: SUBSCRIPTION REVIEW QUEUE */}
+            {activeTab === 'subscriptions' && (
+              <section className="card" style={{ animation: 'fadeUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) both' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+                  <div>
+                    <h3 style={{ fontSize: '1.05rem', margin: 0 }}>₹199 UPI Subscription Review Queue</h3>
+                    <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', margin: '0.15rem 0 0 0' }}>
+                      Inspect submitted bank UTR codes against your merchant UPI statement and click Approve to instantly unlock active study tools.
+                    </p>
+                  </div>
+                  <button 
+                    onClick={fetchRequests} 
+                    className="btn btn-primary" 
+                    style={{ padding: '0.4rem 0.85rem', fontSize: '0.78rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
+                    disabled={fetchingReqs}
+                  >
+                    <RefreshCw size={12} className={fetchingReqs ? 'spin' : ''} style={fetchingReqs ? { animation: 'spin 1s linear infinite' } : {}} />
+                    Refresh
+                  </button>
+                </div>
+
+                {fetchingReqs ? (
+                  <div style={{ padding: '2rem 0', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                    Loading pending payments...
+                  </div>
+                ) : requests.length === 0 ? (
+                  <div style={{ padding: '2.5rem 0', textAlign: 'center', border: '1px dashed var(--border)', borderRadius: '8px', color: 'var(--text-secondary)' }}>
+                    🚫 No subscription claims submitted yet!
+                  </div>
+                ) : (
+                  <div style={{ overflowX: 'auto' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem' }}>
+                      <thead>
+                        <tr style={{ borderBottom: '1px solid var(--border)', textAlign: 'left', color: 'var(--text-secondary)' }}>
+                          <th style={{ padding: '0.75rem 0.5rem' }}>Student Name</th>
+                          <th style={{ padding: '0.75rem 0.5rem' }}>Email Address</th>
+                          <th style={{ padding: '0.75rem 0.5rem' }}>UTR / Transaction ID</th>
+                          <th style={{ padding: '0.75rem 0.5rem' }}>Plan Amount</th>
+                          <th style={{ padding: '0.75rem 0.5rem' }}>Submitted Time</th>
+                          <th style={{ padding: '0.75rem 0.5rem' }}>Status</th>
+                          <th style={{ padding: '0.75rem 0.5rem', textAlign: 'center' }}>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {requests.map(r => (
+                          <tr key={r.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                            <td style={{ padding: '0.75rem 0.5rem', fontWeight: 700 }}>{r.userName}</td>
+                            <td style={{ padding: '0.75rem 0.5rem', color: 'var(--text-secondary)' }}>{r.userEmail}</td>
+                            <td style={{ padding: '0.75rem 0.5rem', fontFamily: 'monospace', letterSpacing: '1px', fontSize: '0.85rem', color: '#a78bfa', fontWeight: 'bold' }}>{r.utr}</td>
+                            <td style={{ padding: '0.75rem 0.5rem', fontWeight: 'bold', color: '#10b981' }}>₹{r.amount}</td>
+                            <td style={{ padding: '0.75rem 0.5rem', color: 'var(--text-secondary)' }}>
+                              {r.createdAt?.toDate ? r.createdAt.toDate().toLocaleString('en-IN') : new Date(r.createdAt || Date.now()).toLocaleString('en-IN')}
+                            </td>
+                            <td style={{ padding: '0.75rem 0.5rem' }}>
+                              <span className={`status-pill ${r.status === 'approved' ? 'active' : r.status === 'rejected' ? 'limited' : ''}`} style={r.status === 'pending' ? { background: 'rgba(245,158,11,0.08)', color: '#f59e0b' } : {}}>
+                                {r.status}
+                              </span>
+                            </td>
+                            <td style={{ padding: '0.75rem 0.5rem', display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
+                              {r.status === 'pending' ? (
+                                <>
+                                  <button 
+                                    onClick={() => handleApprove(r)}
+                                    className="btn btn-primary"
+                                    style={{ background: '#10b981', border: 'none', padding: '0.35rem 0.65rem', fontSize: '0.72rem', borderRadius: '4px' }}
+                                  >
+                                    Approve ✅
+                                  </button>
+                                  <button 
+                                    onClick={() => handleReject(r)}
+                                    className="btn btn-primary"
+                                    style={{ background: '#ef4444', border: 'none', padding: '0.35rem 0.65rem', fontSize: '0.72rem', borderRadius: '4px' }}
+                                  >
+                                    Decline ❌
+                                  </button>
+                                </>
+                              ) : (
+                                <span style={{ color: 'var(--text-secondary)', fontSize: '0.72rem' }}>Settled</span>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </section>
+            )}
+
+            {/* TAB 6: PLATFORM ACTIVITY */}
+            {activeTab === 'activities' && (
+              <section className="card">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                  <h3 style={{ fontSize: '1.05rem', margin: 0 }}>Platform Activity Logs</h3>
+                  <button onClick={fetchPlatformActivities} className="btn btn-primary" style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <RefreshCw size={14} className={fetchingActivities ? 'spin' : ''} style={fetchingActivities ? { animation: 'spin 1s linear infinite' } : {}} /> Refresh
+                  </button>
+                </div>
+                
+                {fetchingActivities ? (
+                  <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>Loading activities...</div>
+                ) : platformActivities.length === 0 ? (
+                  <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>No activity logs found.</div>
+                ) : (
+                  <div style={{ overflowX: 'auto' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+                      <thead>
+                        <tr style={{ borderBottom: '1px solid var(--border)', textAlign: 'left', color: 'var(--text-secondary)' }}>
+                          <th style={{ padding: '0.75rem 0.5rem', width: '140px' }}>Timestamp</th>
+                          <th style={{ padding: '0.75rem 0.5rem', width: '180px' }}>User</th>
+                          <th style={{ padding: '0.75rem 0.5rem', width: '140px' }}>Action</th>
+                          <th style={{ padding: '0.75rem 0.5rem' }}>Details</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {platformActivities.map((act) => {
+                          const dateObj = act.createdAt?.toDate ? act.createdAt.toDate() : new Date(act.createdAt || 0);
+                          const formattedDate = dateObj.toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+                          return (
+                            <tr key={act.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                              <td style={{ padding: '0.75rem 0.5rem', color: 'var(--text-secondary)' }}>{formattedDate}</td>
+                              <td style={{ padding: '0.75rem 0.5rem', fontWeight: 600 }}>{act.userName}</td>
+                              <td style={{ padding: '0.75rem 0.5rem' }}>
+                                <span style={{
+                                  background: 'rgba(99, 102, 241, 0.1)',
+                                  color: 'var(--primary)',
+                                  padding: '0.2rem 0.5rem',
+                                  borderRadius: '4px',
+                                  fontSize: '0.75rem',
+                                  fontWeight: 'bold',
+                                  textTransform: 'uppercase'
+                                }}>
+                                  {act.action.replace('_', ' ')}
+                                </span>
+                              </td>
+                              <td style={{ padding: '0.75rem 0.5rem', color: 'var(--text-secondary)' }}>{act.details}</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </section>
             )}
 

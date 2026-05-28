@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { auth, loginWithGoogle, logout } from '../lib/firebase';
+import { auth, db, loginWithGoogle, logout, logActivity } from '../lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
+import { doc, onSnapshot } from 'firebase/firestore';
 
 const AuthContext = createContext();
 
@@ -14,7 +15,8 @@ const GUEST_USER = {
 // ── Daily quota config ──────────────────────────────────────────────────────
 const QUOTA = {
   guest: 3,       // 3 free calls/day for guests → push them to sign up
-  loggedIn: 20,   // 20 calls/day for free logged-in users → very generous
+  freeTrial: 3,   // 3 free calls for unsubscribed logged-in students → push to subscribe
+  pro: 20         // 20 calls/day for subscribed Pro members!
 };
 
 const getQuotaKey = (userId) => `quota_${userId}_${new Date().toDateString()}`;
@@ -55,6 +57,14 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showQuotaModal, setShowQuotaModal] = useState(false);
+  const [subscription, setSubscription] = useState(() => {
+    try {
+      const persisted = localStorage.getItem('tanios_subscription');
+      return persisted ? JSON.parse(persisted) : { active: false, status: 'none' };
+    } catch {
+      return { active: false, status: 'none' };
+    }
+  });
 
   useEffect(() => {
     let unsubscribe = () => {};
@@ -111,6 +121,51 @@ export function AuthProvider({ children }) {
     return () => unsubscribe();
   }, []);
 
+  // ── Sync User Subscription Status in Real-Time ──────────────────────────────
+  useEffect(() => {
+    if (!currentUser || currentUser.isGuest) {
+      setSubscription({ active: false, status: 'none' });
+      try { localStorage.removeItem('tanios_subscription'); } catch {}
+      return;
+    }
+
+    // Load local storage fallback first
+    try {
+      const persisted = localStorage.getItem('tanios_subscription');
+      if (persisted) {
+        setSubscription(JSON.parse(persisted));
+      }
+    } catch (err) {}
+
+    // Firestore sync
+    if (import.meta.env.VITE_FIREBASE_API_KEY && import.meta.env.VITE_FIREBASE_API_KEY !== 'dummy-api-key') {
+      const userDocRef = doc(db, "users", currentUser.uid || currentUser.email);
+      const unsubscribe = onSnapshot(userDocRef, (docSnap) => {
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          const subObj = {
+            active: data.subscriptionActive || false,
+            status: data.subscriptionStatus || 'none',
+            plan: data.subscriptionPlan || '',
+            amount: data.subscriptionAmount || 0,
+            utr: data.subscriptionUtr || '',
+            activatedAt: data.subscriptionActivatedAt || null
+          };
+          setSubscription(subObj);
+          localStorage.setItem('tanios_subscription', JSON.stringify(subObj));
+        } else {
+          // Document does not exist or was deleted. Securely wipe local status to prevent hijacking!
+          const inactiveSub = { active: false, status: 'none' };
+          setSubscription(inactiveSub);
+          localStorage.removeItem('tanios_subscription');
+        }
+      }, (err) => {
+        console.warn("⚠️ Firestore subscription listener bypassed:", err.message);
+      });
+      return () => unsubscribe();
+    }
+  }, [currentUser]);
+
   const login = async () => {
     try {
       const user = await loginWithGoogle();
@@ -126,6 +181,7 @@ export function AuthProvider({ children }) {
         localStorage.setItem('tanios_user', JSON.stringify(userObj));
         setShowLoginModal(false);
         setShowQuotaModal(false);
+        logActivity(userObj.uid, userObj.displayName || userObj.email || 'Student', 'login', 'User authenticated via modal').catch(console.warn);
       }
     } catch (error) {
       console.error("Login failed:", error);
@@ -151,8 +207,10 @@ export function AuthProvider({ children }) {
       'tanios_weaknesses',
       'tanios_missions',
       'tanios_profile',
+      'tanios_subscription',
     ];
     taniosKeys.forEach(key => localStorage.removeItem(key));
+    setSubscription({ active: false, status: 'none' });
     // ────────────────────────────────────────────────────────────────────────
 
     setCurrentUser(GUEST_USER);
@@ -163,15 +221,29 @@ export function AuthProvider({ children }) {
   const incrementGuestUsage = () => {
     const userId = currentUser?.uid || currentUser?.email || 'guest';
     const isGuest = currentUser?.isGuest;
-    const limit = isGuest ? QUOTA.guest : QUOTA.loggedIn;
+    const isPro = subscription?.active;
+
+    // 1. Pro Member Daily Limit (20 requests per day)
+    if (isPro) {
+      const proUsed = getUsageCount(userId);
+      if (proUsed >= QUOTA.pro) {
+        setShowQuotaModal(true); // Show daily limit exhausted modal!
+        return false;
+      }
+      incrementUsageCount(userId);
+      return true;
+    }
+
+    // 2. Unsubscribed Guest / Free Trial (3 requests limit)
+    const limit = isGuest ? QUOTA.guest : QUOTA.freeTrial;
     const used = getUsageCount(userId);
 
     if (used >= limit) {
-      // Show different modal depending on guest vs logged-in
       if (isGuest) {
         setShowLoginModal(true);   // push to sign up
       } else {
-        setShowQuotaModal(true);   // show daily limit message
+        // Automatically redirect to subscribe checkout page
+        window.location.href = '/subscribe';
       }
       return false;
     }
@@ -182,7 +254,14 @@ export function AuthProvider({ children }) {
   const getRemainingQuota = () => {
     const userId = currentUser?.uid || currentUser?.email || 'guest';
     const isGuest = currentUser?.isGuest;
-    const limit = isGuest ? QUOTA.guest : QUOTA.loggedIn;
+    const isPro = subscription?.active;
+
+    if (isPro) {
+      const used = getUsageCount(userId);
+      return Math.max(0, QUOTA.pro - used);
+    }
+
+    const limit = isGuest ? QUOTA.guest : QUOTA.freeTrial;
     const used = getUsageCount(userId);
     return Math.max(0, limit - used);
   };
@@ -200,6 +279,8 @@ export function AuthProvider({ children }) {
     incrementGuestUsage,
     getRemainingQuota,
     QUOTA,
+    subscription,
+    setSubscription,
   };
 
   return (

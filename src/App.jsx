@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Routes, Route, NavLink, useLocation } from 'react-router-dom';
+import { Routes, Route, NavLink, useLocation, useNavigate, Navigate } from 'react-router-dom';
 import {
   BookOpen, MessageSquare, Clock, FileText,
   GraduationCap, LayoutDashboard, User, Sparkles,
@@ -18,6 +18,7 @@ import History from './pages/History';
 import LoginPage from './pages/LoginPage';
 import RAGUpload from './pages/RAGUpload';
 import AdminDashboard from './pages/AdminDashboard';
+import Subscribe from './pages/Subscribe';
 
 const navItems = [
   { to: '/', icon: <LayoutDashboard size={18} />, label: 'Dashboard', end: true },
@@ -30,6 +31,34 @@ const navItems = [
   { to: '/history', icon: <Bookmark size={18} />, label: 'Saved Materials' },
 ];
 
+// Secure Subscription Guard Component
+const SubscriptionRoute = ({ children }) => {
+  const { currentUser, subscription } = useAuth();
+
+  // Admins bypass subscription checks
+  const isAdmin = currentUser && (
+    currentUser.email === 'admin@tanios.ai' || 
+    currentUser.email === 'akashxofficial.in@gmail.com' || 
+    localStorage.getItem('tanios_user_role') === 'admin'
+  );
+
+  if (isAdmin) return children;
+
+  // Signed in or guest, but subscription is inactive
+  if (!subscription || !subscription.active) {
+    const userId = currentUser?.uid || currentUser?.email || 'guest';
+    const quotaKey = `quota_${userId}_${new Date().toDateString()}`;
+    const used = parseInt(localStorage.getItem(quotaKey) || '0', 10);
+
+    // Block access only after exceeding the 3-request free trial limit!
+    if (used >= 3) {
+      return <Navigate to="/subscribe" replace />;
+    }
+  }
+
+  return children;
+};
+
 // Secure Role-Based Private Route Guard Component
 const AdminRoute = ({ children }) => {
   const { currentUser } = useAuth();
@@ -37,6 +66,7 @@ const AdminRoute = ({ children }) => {
   // Real-world role security checks
   const isAdmin = currentUser && (
     currentUser.email === 'admin@tanios.ai' || 
+    currentUser.email === 'akashxofficial.in@gmail.com' || 
     localStorage.getItem('tanios_user_role') === 'admin'
   );
   
@@ -60,9 +90,10 @@ const AdminRoute = ({ children }) => {
 
 // ── Inner app — handles primary navigation & layouts ──────────────────────────
 function MainApp() {
-  const { currentUser, setShowLoginModal, logout } = useAuth();
+  const { currentUser, setShowLoginModal, logout, subscription } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     setSidebarOpen(false);
@@ -106,7 +137,11 @@ function MainApp() {
               <span>{item.label}</span>
             </NavLink>
           ))}
-          {currentUser && (currentUser.email === 'admin@tanios.ai' || localStorage.getItem('tanios_user_role') === 'admin') && (
+          {currentUser && (
+            currentUser.email === 'admin@tanios.ai' || 
+            currentUser.email === 'akashxofficial.in@gmail.com' || 
+            localStorage.getItem('tanios_user_role') === 'admin'
+          ) && (
             <NavLink
               to="/admin"
               className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
@@ -118,6 +153,48 @@ function MainApp() {
             </NavLink>
           )}
         </nav>
+
+        {/* Dynamic Premium Upgrade Sidebar Card */}
+        {currentUser && !currentUser.isGuest && (
+          <div 
+            onClick={() => { navigate('/subscribe'); setSidebarOpen(false); }}
+            style={{
+              background: subscription?.active 
+                ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.06), rgba(5, 150, 105, 0.08))'
+                : 'linear-gradient(135deg, rgba(108, 99, 255, 0.1), rgba(167, 139, 250, 0.15))',
+              border: subscription?.active
+                ? '1px solid rgba(16, 185, 129, 0.25)'
+                : '1px solid rgba(108, 99, 255, 0.25)',
+              borderRadius: '12px',
+              padding: '0.85rem',
+              margin: '1.25rem 0.5rem 0.5rem 0.5rem',
+              textAlign: 'center',
+              cursor: 'pointer',
+              boxShadow: '0 8px 20px rgba(0,0,0,0.15)',
+              transition: 'all 0.2s',
+              animation: 'fadeUp 0.3s'
+            }}
+          >
+            <div style={{ 
+              fontSize: '0.78rem', 
+              fontWeight: 800, 
+              color: subscription?.active ? '#10b981' : '#fff', 
+              marginBottom: '0.25rem', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              gap: '0.35rem' 
+            }}>
+              <Sparkles size={14} color={subscription?.active ? '#10b981' : '#a78bfa'} />
+              {subscription?.active ? 'Pro Active Member 👑' : 'Unlock TaniOS Pro ⚡'}
+            </div>
+            <p style={{ fontSize: '0.68rem', color: 'var(--text-secondary)', margin: 0 }}>
+              {subscription?.active 
+                ? 'Enjoy unlimited premium doubt solver & smart notes!' 
+                : 'Instant textbook upload & infinite doubt solver. Learn more!'}
+            </p>
+          </div>
+        )}
 
         {/* User Profile / Guest Sign In */}
         <div style={{
@@ -214,12 +291,16 @@ function MainApp() {
 
         <Routes>
           <Route path="/" element={<Home />} />
-          <Route path="/chat" element={<Chat />} />
-          <Route path="/notes" element={<Notes />} />
-          <Route path="/notes/rag" element={<RAGUpload />} />
-          <Route path="/revision" element={<Revision />} />
-          <Route path="/timetable" element={<Timetable />} />
-          <Route path="/test" element={<TestGenerator />} />
+          <Route path="/subscribe" element={<Subscribe />} />
+          
+          {/* Protected Study Tools routes under SubscriptionRoute lock */}
+          <Route path="/chat" element={<SubscriptionRoute><Chat /></SubscriptionRoute>} />
+          <Route path="/notes" element={<SubscriptionRoute><Notes /></SubscriptionRoute>} />
+          <Route path="/notes/rag" element={<SubscriptionRoute><RAGUpload /></SubscriptionRoute>} />
+          <Route path="/revision" element={<SubscriptionRoute><Revision /></SubscriptionRoute>} />
+          <Route path="/timetable" element={<SubscriptionRoute><Timetable /></SubscriptionRoute>} />
+          <Route path="/test" element={<SubscriptionRoute><TestGenerator /></SubscriptionRoute>} />
+          
           <Route path="/history" element={<History />} />
           <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
         </Routes>
@@ -230,7 +311,10 @@ function MainApp() {
 
 // ── Root app — includes dynamic login modal wrapper ──────────────────────────
 function App() {
-  const { showLoginModal, setShowLoginModal, showQuotaModal, setShowQuotaModal, login, loading, QUOTA } = useAuth();
+  // Fetch global custom notifications from auth hooks
+  const { showLoginModal, setShowLoginModal, showQuotaModal, setShowQuotaModal, login, loading, QUOTA, subscription } = useAuth();
+  const isPro = subscription?.active;
+  const activeLimit = isPro ? QUOTA?.pro : QUOTA?.freeTrial;
 
 
   if (loading) {
@@ -291,7 +375,7 @@ function App() {
               Unlock Premium AI Features! 🚀
             </h3>
             <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '2.25rem' }}>
-              Sign in with Google to get <strong style={{ color: '#fff' }}>{QUOTA.loggedIn} free AI requests/day</strong> — unlimited study plans, mock tests, notes, and your chat history saved forever!
+              Sign in with Google to get <strong style={{ color: '#fff' }}>{QUOTA?.freeTrial} free AI requests/day</strong> — unlimited study plans, mock tests, notes, and your chat history saved forever!
             </p>
             <button onClick={login} style={primaryBtn}><Sparkles size={16} /> Continue with Google</button>
             <button onClick={() => setShowLoginModal(false)} style={ghostBtn}>Keep Browsing as Guest</button>
@@ -310,7 +394,7 @@ function App() {
               Daily Limit Reached
             </h3>
             <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '0.75rem' }}>
-              You've used your <strong style={{ color: '#fff' }}>{QUOTA.loggedIn} free AI requests</strong> for today.
+              You've used your <strong style={{ color: '#fff' }}>{activeLimit} free AI requests</strong> for today.
             </p>
             <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginBottom: '2rem' }}>
               Your quota resets at <strong style={{ color: '#a78bfa' }}>midnight 🌙</strong> — come back tomorrow!
