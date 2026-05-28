@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { LayoutDashboard, Key, ShieldAlert, Users, Settings, Activity, Sparkles, RefreshCw, CheckCircle, AlertTriangle, CreditCard, ClipboardList } from 'lucide-react';
-import { db, getActivities } from '../lib/firebase';
+import { db, getActivities, getStudents } from '../lib/firebase';
 import { collection, getDocs, query, orderBy, doc, updateDoc, setDoc } from 'firebase/firestore';
 
 export default function AdminDashboard() {
@@ -33,13 +33,20 @@ export default function AdminDashboard() {
     { id: 4, mask: 'AIzaSyKw...55H9', status: 'Active', model: 'gemini-2.5-flash', successRate: 99, load: 3 }
   ]);
 
-  // Mock student accounts representing real database hydrating
-  const students = [
-    { name: 'Akash Sharma', email: 'akash@tanios.ai', level: 3, xp: 540, streak: 7, board: 'CBSE', class: '10', subjects: 'Physics, Chemistry, Maths' },
-    { name: 'Priya Patel', email: 'priya@gmail.com', level: 2, xp: 320, streak: 4, board: 'CBSE', class: '12', subjects: 'Biology, Chemistry, English' },
-    { name: 'Rajesh Kumar', email: 'rajesh@rediff.com', level: 1, xp: 180, streak: 1, board: 'RBSE', class: '10', subjects: 'Maths, Social Science' },
-    { name: 'Sneha Reddy', email: 'sneha@tanios.ai', level: 2, xp: 410, streak: 5, board: 'ICSE', class: '9', subjects: 'Physics, Computer Science' }
-  ];
+  // Real students from MongoDB — loaded when tab is active
+  const [students, setStudents] = useState([]);
+  const [fetchingStudents, setFetchingStudents] = useState(false);
+
+  const fetchStudents = async () => {
+    setFetchingStudents(true);
+    try {
+      const data = await getStudents();
+      setStudents(data);
+    } catch (e) {
+      console.warn('Failed to fetch students:', e);
+    }
+    setFetchingStudents(false);
+  };
 
   const handleToggleConfig = (field) => {
     setConfig(prev => ({ ...prev, [field]: !prev[field] }));
@@ -106,6 +113,8 @@ export default function AdminDashboard() {
       fetchRequests();
     } else if (activeTab === 'activities') {
       fetchPlatformActivities();
+    } else if (activeTab === 'students') {
+      fetchStudents();
     }
   }, [activeTab]);
 
@@ -448,36 +457,88 @@ export default function AdminDashboard() {
             {/* TAB 3: STUDENT REGISTRY DATABASE */}
             {activeTab === 'students' && (
               <section className="card">
-                <h3 style={{ fontSize: '1.05rem', margin: '0 0 1rem 0' }}>Hydrated Active Student Accounts</h3>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                  <div>
+                    <h3 style={{ fontSize: '1.05rem', margin: 0 }}>Student Registry — MongoDB Live Data</h3>
+                    <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', margin: '0.15rem 0 0 0' }}>
+                      {students.length} students registered • Real-time from MongoDB
+                    </p>
+                  </div>
+                  <button
+                    onClick={fetchStudents}
+                    className="btn btn-primary"
+                    style={{ padding: '0.4rem 0.85rem', fontSize: '0.78rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
+                    disabled={fetchingStudents}
+                  >
+                    <RefreshCw size={12} style={fetchingStudents ? { animation: 'spin 1s linear infinite' } : {}} />
+                    Refresh
+                  </button>
+                </div>
                 
+                {fetchingStudents ? (
+                  <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>Loading students from MongoDB...</div>
+                ) : students.length === 0 ? (
+                  <div style={{ padding: '2.5rem', textAlign: 'center', border: '1px dashed var(--border)', borderRadius: '8px', color: 'var(--text-secondary)' }}>
+                    🎓 No students registered yet. Students appear here after first login.
+                  </div>
+                ) : (
                 <div style={{ overflowX: 'auto' }}>
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem' }}>
                     <thead>
                       <tr style={{ borderBottom: '1px solid var(--border)', textAlign: 'left', color: 'var(--text-secondary)' }}>
-                        <th style={{ padding: '0.75rem 0.5rem' }}>Student Name</th>
-                        <th style={{ padding: '0.75rem 0.5rem' }}>Email Address</th>
-                        <th style={{ padding: '0.75rem 0.5rem' }}>Board</th>
-                        <th style={{ padding: '0.75rem 0.5rem' }}>Grade</th>
+                        <th style={{ padding: '0.75rem 0.5rem' }}>Student</th>
+                        <th style={{ padding: '0.75rem 0.5rem' }}>Email</th>
+                        <th style={{ padding: '0.75rem 0.5rem' }}>Subscription</th>
+                        <th style={{ padding: '0.75rem 0.5rem' }}>Logins</th>
+                        <th style={{ padding: '0.75rem 0.5rem' }}>Last Login</th>
+                        <th style={{ padding: '0.75rem 0.5rem' }}>Joined</th>
+                        <th style={{ padding: '0.75rem 0.5rem' }}>XP</th>
                         <th style={{ padding: '0.75rem 0.5rem' }}>Streak</th>
-                        <th style={{ padding: '0.75rem 0.5rem' }}>Gamified XP</th>
-                        <th style={{ padding: '0.75rem 0.5rem' }}>Subjects List</th>
                       </tr>
                     </thead>
                     <tbody>
                       {students.map(s => (
-                        <tr key={s.email} style={{ borderBottom: '1px solid var(--border)' }}>
-                          <td style={{ padding: '0.75rem 0.5rem', fontWeight: 700 }}>{s.name}</td>
-                          <td style={{ padding: '0.75rem 0.5rem', color: 'var(--text-secondary)' }}>{s.email}</td>
-                          <td style={{ padding: '0.75rem 0.5rem' }}>{s.board}</td>
-                          <td style={{ padding: '0.75rem 0.5rem' }}>Class {s.class}</td>
-                          <td style={{ padding: '0.75rem 0.5rem', color: '#ef4444', fontWeight: 'bold' }}>🔥 {s.streak} Days</td>
-                          <td style={{ padding: '0.75rem 0.5rem', color: 'var(--primary)', fontWeight: 'bold' }}>{s.xp} XP</td>
-                          <td style={{ padding: '0.75rem 0.5rem', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{s.subjects}</td>
+                        <tr key={s._id || s.uid} style={{ borderBottom: '1px solid var(--border)' }}>
+                          <td style={{ padding: '0.75rem 0.5rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                              {s.photoURL ? (
+                                <img src={s.photoURL} alt={s.displayName} style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover' }} />
+                              ) : (
+                                <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'rgba(99,102,241,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', fontWeight: 700, color: 'var(--primary)' }}>
+                                  {(s.displayName || s.email || 'S')[0].toUpperCase()}
+                                </div>
+                              )}
+                              <span style={{ fontWeight: 700 }}>{s.displayName || 'Student'}</span>
+                            </div>
+                          </td>
+                          <td style={{ padding: '0.75rem 0.5rem', color: 'var(--text-secondary)', fontSize: '0.78rem' }}>{s.email}</td>
+                          <td style={{ padding: '0.75rem 0.5rem' }}>
+                            <span style={{
+                              padding: '0.2rem 0.5rem',
+                              borderRadius: '4px',
+                              fontSize: '0.7rem',
+                              fontWeight: 700,
+                              background: s.subscriptionActive ? 'rgba(16,185,129,0.1)' : 'rgba(100,100,100,0.08)',
+                              color: s.subscriptionActive ? '#10b981' : 'var(--text-secondary)'
+                            }}>
+                              {s.subscriptionActive ? `✅ ${s.subscriptionPlan || 'Pro'}` : '⬜ Free'}
+                            </span>
+                          </td>
+                          <td style={{ padding: '0.75rem 0.5rem', fontWeight: 600, color: 'var(--primary)' }}>{s.loginCount || 0}x</td>
+                          <td style={{ padding: '0.75rem 0.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem' }}>
+                            {s.lastLoginAt ? new Date(s.lastLoginAt).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'Never'}
+                          </td>
+                          <td style={{ padding: '0.75rem 0.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem' }}>
+                            {s.createdAt ? new Date(s.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: '2-digit' }) : '-'}
+                          </td>
+                          <td style={{ padding: '0.75rem 0.5rem', color: 'var(--primary)', fontWeight: 'bold' }}>{s.xp || 0} XP</td>
+                          <td style={{ padding: '0.75rem 0.5rem', color: '#ef4444', fontWeight: 'bold' }}>🔥 {s.streak || 0}</td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
+                )}
               </section>
             )}
 

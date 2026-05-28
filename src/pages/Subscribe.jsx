@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { db } from '../lib/firebase';
+import { db, logActivity, trackPaymentInMongo } from '../lib/firebase';
 import { setDoc, doc, serverTimestamp } from 'firebase/firestore';
-import { logActivity } from '../lib/firebase';
 import { Sparkles, Check, Copy, CheckCircle2, ShieldCheck, CreditCard, Lock, RefreshCw, ChevronLeft, ArrowRight } from 'lucide-react';
 
 export default function Subscribe() {
@@ -273,6 +272,15 @@ export default function Subscribe() {
             'payment_submitted',
             `Completed Razorpay Payment Checkout (UTR: ${activeSub.utr})`
           );
+          
+          trackPaymentInMongo(
+            currentUser?.uid || 'guest',
+            currentUser?.email || 'Student',
+            amount,
+            activeSub.utr,
+            'success',
+            'Razorpay'
+          ).catch(console.warn);
 
           setGatewayStep(5); // Show success overlay
 
@@ -334,6 +342,15 @@ export default function Subscribe() {
         'payment_submitted',
         `Completed Sandbox Bypass Payment`
       );
+      
+      trackPaymentInMongo(
+        currentUser?.uid || 'guest',
+        currentUser?.email || 'Student',
+        amount,
+        activeSub.utr,
+        'success',
+        'Sandbox Bypass'
+      ).catch(console.warn);
 
       setSuccess(true);
       setLoading(false);

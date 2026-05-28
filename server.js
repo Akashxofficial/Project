@@ -2,15 +2,18 @@ import express from 'express';
 import handler from './api/generate.js';
 import Razorpay from 'razorpay';
 import crypto from 'crypto';
+import { connectDB, ActivityModel, StudentModel, PaymentModel } from './api/mongo.js';
 
 const app = express();
+// Connect to MongoDB
+connectDB();
 
 // Parse JSON request bodies with larger limit for images
 app.use(express.json({ limit: '10mb' }));
 
 // Enable CORS for local Vite development server
 app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', 'http://localhost:5173');
+  res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   if (req.method === 'OPTIONS') {
@@ -143,6 +146,144 @@ app.post('/api/razorpay-verify', async (req, res) => {
 
 // Map POST /api/generate directly to Vercel handler
 app.post('/api/generate', handler);
+
+// ── MongoDB Analytics Tracking API ──
+
+// Ingest activity tracking events
+app.post('/api/track/activity', async (req, res) => {
+  try {
+    const { userId, userName, action, details } = req.body;
+    
+    // Create new activity doc
+    const newActivity = new ActivityModel({
+      userId: userId || 'anonymous',
+      userName: userName || 'Guest',
+      action,
+      details
+    });
+    await newActivity.save();
+    
+    res.status(200).json({ success: true, id: newActivity._id });
+  } catch (error) {
+    console.error("❌ [MongoDB] Error tracking activity:", error);
+    res.status(500).json({ error: "Failed to track activity" });
+  }
+});
+
+// Fetch activities for Admin Panel
+app.get('/api/admin/activities', async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit) || 100;
+    const activities = await ActivityModel.find({})
+      .sort({ createdAt: -1 })
+      .limit(limit);
+      
+    // Map _id to id so it matches existing frontend expectations
+    const mapped = activities.map(a => ({
+      id: a._id.toString(),
+      userId: a.userId,
+      userName: a.userName,
+      action: a.action,
+      details: a.details,
+      createdAt: a.createdAt
+    }));
+    
+    res.status(200).json(mapped);
+  } catch (error) {
+    console.error("❌ [MongoDB] Error fetching activities:", error);
+    res.status(500).json({ error: "Failed to fetch activities" });
+  }
+});
+
+// Sync user profile (login event — increments loginCount, updates lastLoginAt)
+app.post('/api/track/user', async (req, res) => {
+  try {
+    const { uid, email, displayName, photoURL } = req.body;
+    console.log(`[MongoDB Sync] Received user sync request:`, { uid, email, displayName });
+    
+    if (!uid) {
+      console.warn(`[MongoDB Sync] Skipping user sync because uid is missing`);
+      return res.status(400).json({ error: "Missing uid" });
+    }
+
+    // Find existing student first to increment loginCount
+    const existing = await StudentModel.findOne({ uid });
+    const newLoginCount = (existing?.loginCount || 0) + 1;
+
+    const updated = await StudentModel.findOneAndUpdate(
+      { uid },
+      {
+        uid,
+        email: email || 'no-email@student.com',
+        displayName: displayName || 'Student',
+        photoURL: photoURL || '',
+        lastLoginAt: new Date(),
+        loginCount: newLoginCount,
+        updatedAt: new Date()
+      },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
+    console.log(`[MongoDB Sync] Successfully saved user to DB:`, updated.email, `| Login count: ${newLoginCount}`);
+    res.status(200).json({ success: true, user: updated });
+  } catch (error) {
+    console.error("❌ [MongoDB] Error syncing user:", error);
+    res.status(500).json({ error: "Failed to sync user", details: error.message });
+  }
+});
+
+// Track payment completion
+app.post('/api/track/payment', async (req, res) => {
+  try {
+    const { userId, userEmail, amount, utr, status, method } = req.body;
+    const newPayment = new PaymentModel({ userId, userEmail, amount, utr, status, method });
+    await newPayment.save();
+    res.status(200).json({ success: true });
+  } catch (error) {
+    console.error("❌ [MongoDB] Error tracking payment:", error);
+    res.status(500).json({ error: "Failed to track payment" });
+  }
+});
+
+// Update subscription status in MongoDB (called when admin approves/rejects)
+app.post('/api/track/subscription', async (req, res) => {
+  try {
+    const { uid, subscriptionActive, subscriptionPlan, subscriptionAmount, subscriptionUtr, subscriptionActivatedAt } = req.body;
+    if (!uid) return res.status(400).json({ error: 'Missing uid' });
+
+    const updated = await StudentModel.findOneAndUpdate(
+      { uid },
+      {
+        subscriptionActive: subscriptionActive || false,
+        subscriptionPlan: subscriptionPlan || 'Free',
+        subscriptionAmount: subscriptionAmount || 0,
+        subscriptionUtr: subscriptionUtr || '',
+        subscriptionActivatedAt: subscriptionActivatedAt ? new Date(subscriptionActivatedAt) : null,
+        updatedAt: new Date()
+      },
+      { new: true }
+    );
+    if (!updated) return res.status(404).json({ error: 'Student not found' });
+    console.log(`[MongoDB] Subscription updated for ${uid}: active=${subscriptionActive}`);
+    res.status(200).json({ success: true, user: updated });
+  } catch (error) {
+    console.error('❌ [MongoDB] Error updating subscription:', error);
+    res.status(500).json({ error: 'Failed to update subscription' });
+  }
+});
+
+// Fetch all students for Admin Panel
+app.get('/api/admin/students', async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit) || 500;
+    const students = await StudentModel.find({})
+      .sort({ lastLoginAt: -1, createdAt: -1 })
+      .limit(limit);
+    res.status(200).json(students);
+  } catch (error) {
+    console.error('❌ [MongoDB] Error fetching students:', error);
+    res.status(500).json({ error: 'Failed to fetch students' });
+  }
+});
 
 const PORT = 3001;
 app.listen(PORT, () => {

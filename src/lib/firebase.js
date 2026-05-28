@@ -2,6 +2,9 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
 import { getFirestore, collection, addDoc, query, where, getDocs, orderBy, serverTimestamp, doc, setDoc, deleteDoc } from 'firebase/firestore';
 
+// Dynamic backend URL — localhost for dev, same-origin for production (Vercel/Railway)
+const BACKEND_URL = import.meta.env.DEV ? 'http://localhost:3001' : '';
+
 // Your web app's Firebase configuration
 // Replace these with your actual Firebase config from Firebase Console
 const firebaseConfig = {
@@ -20,6 +23,7 @@ export const db = getFirestore(app);
 
 // Auth Providers
 const googleProvider = new GoogleAuthProvider();
+googleProvider.addScope('email');
 googleProvider.setCustomParameters({
   prompt: 'select_account'
 });
@@ -277,7 +281,7 @@ export const deleteChatSession = async (sessionId) => {
   }
 };
 
-// ── ACTIVITY LOGGING FOR ADMIN PANEL ──
+// ── MONGODB ACTIVITY LOGGING FOR ADMIN PANEL ──
 export const logActivity = async (userId, userName, action, details) => {
   const timestamp = Date.now();
   const activityObj = {
@@ -301,54 +305,95 @@ export const logActivity = async (userId, userName, action, details) => {
     console.warn("Local storage activity save failed:", e);
   }
 
-  // 2. Sync to Firestore if available
-  if (import.meta.env.VITE_FIREBASE_API_KEY && import.meta.env.VITE_FIREBASE_API_KEY !== 'dummy-api-key') {
-    try {
-      await setDoc(doc(db, "platform_activities", activityObj.id), {
-        ...activityObj,
-        createdAt: serverTimestamp() // override with firestore timestamp
-      });
-    } catch (e) {
-      console.error("❌ Error logging activity to Firestore:", e);
+  // 2. Sync to MongoDB Backend
+  try {
+    const response = await fetch(`${BACKEND_URL}/api/track/activity`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId: activityObj.userId,
+        userName: activityObj.userName,
+        action: activityObj.action,
+        details: activityObj.details
+      })
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
+  } catch (e) {
+    console.error("❌ Error logging activity to MongoDB:", e);
+  }
+};
+
+export const syncUserToMongo = async (uid, email, displayName, photoURL) => {
+  try {
+    await fetch(`${BACKEND_URL}/api/track/user`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ uid, email, displayName, photoURL: photoURL || '' })
+    });
+  } catch (e) {
+    console.error("❌ Error syncing user to MongoDB:", e);
+  }
+};
+
+export const trackPaymentInMongo = async (userId, userEmail, amount, utr, status, method) => {
+  try {
+    await fetch(`${BACKEND_URL}/api/track/payment`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId, userEmail, amount, utr, status, method })
+    });
+  } catch (e) {
+    console.error("❌ Error tracking payment to MongoDB:", e);
+  }
+};
+
+// Update subscription status in MongoDB
+export const trackSubscriptionInMongo = async (uid, subscriptionData) => {
+  try {
+    await fetch(`${BACKEND_URL}/api/track/subscription`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ uid, ...subscriptionData })
+    });
+  } catch (e) {
+    console.error('❌ Error updating subscription in MongoDB:', e);
   }
 };
 
 export const getActivities = async () => {
-  const activities = [];
-
-  // Try fetching from Firestore first
-  if (import.meta.env.VITE_FIREBASE_API_KEY && import.meta.env.VITE_FIREBASE_API_KEY !== 'dummy-api-key') {
-    try {
-      const q = query(collection(db, "platform_activities"), orderBy("createdAt", "desc"));
-      const querySnapshot = await getDocs(q);
-      querySnapshot.forEach((doc) => {
-        activities.push({ id: doc.id, ...doc.data() });
-      });
-      return activities;
-    } catch (e) {
-      console.warn("⚠️ Fetching from Firestore failed, attempting fallback...", e.message);
-    }
-  }
-
-  // Fallback to local storage if Firestore fails or is disabled
+  // Try fetching from MongoDB API first
   try {
-    const fallbackActivities = JSON.parse(localStorage.getItem('tanios_admin_activities') || '[]');
-    fallbackActivities.forEach(fa => {
-      if (!activities.find(a => a.id === fa.id)) {
-        activities.push(fa);
-      }
-    });
-  } catch (err) {
-    console.error("Local storage fallback retrieve failed:", err);
+    const response = await fetch(`${BACKEND_URL}/api/admin/activities?limit=100`);
+    if (response.ok) {
+      const data = await response.json();
+      return data;
+    }
+  } catch (e) {
+    console.warn("⚠️ Failed to fetch activities from MongoDB. Falling back to local storage.", e.message);
   }
 
-  // Sort strictly client-side to be safe
-  activities.sort((a, b) => {
-    const ta = a.createdAt?.toDate ? a.createdAt.toDate().getTime() : new Date(a.createdAt || 0).getTime();
-    const tb = b.createdAt?.toDate ? b.createdAt.toDate().getTime() : new Date(b.createdAt || 0).getTime();
-    return tb - ta;
-  });
+  // Fallback to local storage if API is unreachable
+  try {
+    const fbKey = 'tanios_admin_activities';
+    const existing = JSON.parse(localStorage.getItem(fbKey) || '[]');
+    return existing;
+  } catch (e) {
+    console.error("❌ Failed to fetch from local storage:", e);
+    return [];
+  }
+};
 
-  return activities;
+// Fetch all students from MongoDB for Admin Panel
+export const getStudents = async () => {
+  try {
+    const response = await fetch(`${BACKEND_URL}/api/admin/students?limit=500`);
+    if (response.ok) {
+      return await response.json();
+    }
+  } catch (e) {
+    console.warn('⚠️ Failed to fetch students from MongoDB:', e.message);
+  }
+  return [];
 };
