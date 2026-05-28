@@ -7,7 +7,7 @@ import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import 'katex/dist/katex.min.css';
 import { useAuth } from '../context/AuthContext';
-import { saveChatSession, getUserChatSessions, deleteChatSession } from '../lib/firebase';
+import { saveChatSession, getUserChatSessions, deleteChatSession, logActivity } from '../lib/firebase';
 
 // Custom renderers for beautiful markdown tables
 const markdownComponents = {
@@ -56,11 +56,13 @@ const saveGuestSessions = (sessions) => {
 
 // ── Component ────────────────────────────────────────────────────────────────
 export default function Chat() {
-  const { currentUser, incrementGuestUsage, getRemainingQuota, QUOTA } = useAuth();
+  const { currentUser, incrementGuestUsage, getRemainingQuota, QUOTA, subscription } = useAuth();
   const isGuest = !currentUser || currentUser.isGuest || currentUser.email === 'guest@tanios.ai';
   const userId = currentUser?.uid || currentUser?.email || 'guest';
-  const remaining = getRemainingQuota?.() ?? (isGuest ? QUOTA?.guest : QUOTA?.loggedIn);
-  const limit = isGuest ? QUOTA?.guest : QUOTA?.loggedIn;
+  
+  const isPro = subscription?.active;
+  const limit = isGuest ? QUOTA?.guest : (isPro ? QUOTA?.pro : QUOTA?.freeTrial);
+  const remaining = getRemainingQuota?.() ?? limit;
 
   // Session list & active session
   const [sessions, setSessions] = useState([]);           // [{ id, title, messages }]
@@ -230,7 +232,14 @@ export default function Chat() {
     setInput('');
     if (window.innerWidth < 768) setSidebarOpen(false);
     setTimeout(() => inputRef.current?.focus(), 100);
-  }, [isGuest, userId]);
+    
+    logActivity(
+      userId,
+      currentUser?.displayName || currentUser?.email || 'Student',
+      'chat_session',
+      'Started a new AI chat session'
+    ).catch(e => console.warn("Activity logging failed", e));
+  }, [isGuest, userId, currentUser]);
 
   // ── Switch to a session ──────────────────────────────────────────────────
   const switchSession = useCallback((session) => {

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Sparkles, BookOpen, MessageSquare, GraduationCap, Clock, Zap, Shield, Star } from 'lucide-react';
-import { loginWithGoogle } from '../lib/firebase';
+import { loginWithGoogle, logActivity } from '../lib/firebase';
 
 const features = [
   { icon: <MessageSquare size={18} />, label: 'AI Doubt Solver', desc: 'Ask any question, get instant answers' },
@@ -17,7 +17,10 @@ export default function LoginPage() {
     setLoading(true);
     setError('');
     try {
-      await loginWithGoogle();
+      const user = await loginWithGoogle();
+      if (user) {
+        await logActivity(user.uid || 'guest', user.displayName || user.email || 'Student', 'login', 'User authenticated into the platform');
+      }
     } catch (err) {
       console.error(err);
       setError('Sign-in failed. Please allow popups and try again.');

@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Bookmark, FileText, GraduationCap, Clock, BookOpen, AlertCircle, X, Copy, Check, Download } from 'lucide-react';
 import { getUserDocuments } from '../lib/firebase';
 import { useAuth } from '../context/AuthContext';
@@ -86,7 +87,22 @@ export default function History() {
     const pdfWidth = pdf.internal.pageSize.getWidth();
     const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
     
-    pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    let heightLeft = pdfHeight;
+    let position = 0;
+    
+    // Add first page
+    pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
+    heightLeft -= pageHeight;
+    
+    // Split into multiple pages if content exceeds standard height
+    while (heightLeft > 0) {
+      position = heightLeft - pdfHeight;
+      pdf.addPage();
+      pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
+      heightLeft -= pageHeight;
+    }
+    
     pdf.save(`${selectedDoc.title.replace(/\s+/g, '_')}.pdf`);
   };
 
@@ -186,12 +202,12 @@ export default function History() {
       )}
 
       {/* ── DOCUMENT VIEWER MODAL ── */}
-      {selectedDoc && (
+      {selectedDoc && createPortal(
         <div style={{
           position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
           backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          zIndex: 1000, padding: '1rem'
+          zIndex: 10000, padding: '1rem' // high z-index
         }} onClick={() => setSelectedDoc(null)}>
           <div style={{
             background: 'var(--bg-secondary)',
@@ -261,7 +277,8 @@ export default function History() {
             </div>
 
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Fade In Animation */}

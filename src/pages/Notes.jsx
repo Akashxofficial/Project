@@ -142,9 +142,28 @@ Keep it student-friendly, concise, and exam-focused for ${board} Class ${grade} 
   const handleDownloadPDF = async () => {
     if (!contentRef.current) return;
     const canvas = await html2canvas(contentRef.current, { scale: 2 });
+    const imgData = canvas.toDataURL('image/png');
+    
     const pdf = new jsPDF('p', 'mm', 'a4');
     const pdfWidth = pdf.internal.pageSize.getWidth();
-    pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, pdfWidth, (canvas.height * pdfWidth) / canvas.width);
+    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+    
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    let heightLeft = pdfHeight;
+    let position = 0;
+    
+    // Add first page
+    pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
+    heightLeft -= pageHeight;
+    
+    // Split into multiple pages if content exceeds standard height
+    while (heightLeft > 0) {
+      position = heightLeft - pdfHeight;
+      pdf.addPage();
+      pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
+      heightLeft -= pageHeight;
+    }
+    
     pdf.save(`${chapter.replace(/\s+/g, '_')}_Notes.pdf`);
   };
 

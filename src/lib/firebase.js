@@ -276,3 +276,79 @@ export const deleteChatSession = async (sessionId) => {
     console.error("❌ Error deleting chat session:", e.message);
   }
 };
+
+// ── ACTIVITY LOGGING FOR ADMIN PANEL ──
+export const logActivity = async (userId, userName, action, details) => {
+  const timestamp = Date.now();
+  const activityObj = {
+    id: `act_${timestamp}_${Math.random().toString(36).substr(2, 9)}`,
+    userId: userId || 'anonymous',
+    userName: userName || 'Guest',
+    action,
+    details,
+    createdAt: timestamp
+  };
+
+  // 1. Always save to local fallback for robust offline support
+  try {
+    const fbKey = 'tanios_admin_activities';
+    const existing = JSON.parse(localStorage.getItem(fbKey) || '[]');
+    existing.unshift(activityObj); // Add to top
+    // Keep max 1000 activities in local storage to prevent bloating
+    if (existing.length > 1000) existing.length = 1000;
+    localStorage.setItem(fbKey, JSON.stringify(existing));
+  } catch (e) {
+    console.warn("Local storage activity save failed:", e);
+  }
+
+  // 2. Sync to Firestore if available
+  if (import.meta.env.VITE_FIREBASE_API_KEY && import.meta.env.VITE_FIREBASE_API_KEY !== 'dummy-api-key') {
+    try {
+      await setDoc(doc(db, "platform_activities", activityObj.id), {
+        ...activityObj,
+        createdAt: serverTimestamp() // override with firestore timestamp
+      });
+    } catch (e) {
+      console.error("❌ Error logging activity to Firestore:", e);
+    }
+  }
+};
+
+export const getActivities = async () => {
+  const activities = [];
+
+  // Try fetching from Firestore first
+  if (import.meta.env.VITE_FIREBASE_API_KEY && import.meta.env.VITE_FIREBASE_API_KEY !== 'dummy-api-key') {
+    try {
+      const q = query(collection(db, "platform_activities"), orderBy("createdAt", "desc"));
+      const querySnapshot = await getDocs(q);
+      querySnapshot.forEach((doc) => {
+        activities.push({ id: doc.id, ...doc.data() });
+      });
+      return activities;
+    } catch (e) {
+      console.warn("⚠️ Fetching from Firestore failed, attempting fallback...", e.message);
+    }
+  }
+
+  // Fallback to local storage if Firestore fails or is disabled
+  try {
+    const fallbackActivities = JSON.parse(localStorage.getItem('tanios_admin_activities') || '[]');
+    fallbackActivities.forEach(fa => {
+      if (!activities.find(a => a.id === fa.id)) {
+        activities.push(fa);
+      }
+    });
+  } catch (err) {
+    console.error("Local storage fallback retrieve failed:", err);
+  }
+
+  // Sort strictly client-side to be safe
+  activities.sort((a, b) => {
+    const ta = a.createdAt?.toDate ? a.createdAt.toDate().getTime() : new Date(a.createdAt || 0).getTime();
+    const tb = b.createdAt?.toDate ? b.createdAt.toDate().getTime() : new Date(b.createdAt || 0).getTime();
+    return tb - ta;
+  });
+
+  return activities;
+};

@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
   BookOpen, MessageSquare, Clock, FileText, GraduationCap, ArrowRight,
   Flame, Star, Trophy, Award, Target, CheckCircle2, ChevronRight, 
   AlertCircle, RefreshCw, Plus, Trash2, Sparkles, Zap, Play, Copy, Check, Calendar,
-  Loader2
+  Loader2, X
 } from 'lucide-react';
 import { generateAIContent, generateExamRoadmapPrompt, generateOneClickPrompt, fixMathFormatting } from '../lib/ai';
 import ReactMarkdown from 'react-markdown';
@@ -13,7 +14,7 @@ import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import 'katex/dist/katex.min.css';
 import { useAuth } from '../context/AuthContext';
-import { saveDocument } from '../lib/firebase';
+import { saveDocument, logActivity } from '../lib/firebase';
 
 // Custom renderers for beautiful markdown tables
 const markdownComponents = {
@@ -50,7 +51,11 @@ const standardSubjects = [
   { name: 'Social Science', icon: '🌍', color: '#f59e0b' },
   { name: 'English', icon: '📝', color: '#a855f7' },
   { name: 'Hindi', icon: '✍️', color: '#ef4444' },
-  { name: 'Computer Science', icon: '💻', color: '#06b6d4' }
+  { name: 'Computer Science', icon: '💻', color: '#06b6d4' },
+  { name: 'Accountancy', icon: '📂', color: '#f43f5e' },
+  { name: 'Business Studies', icon: '💼', color: '#a855f7' },
+  { name: 'Economics', icon: '📊', color: '#f59e0b' },
+  { name: 'Informatics Practices', icon: '🖥️', color: '#06b6d4' }
 ];
 
 
@@ -85,6 +90,13 @@ export default function Home() {
 
   // ── 2. STUDY MISSIONS STATE (starts EMPTY — generated from profile) ──
   const [missions, setMissions] = useState([]);
+
+  // Interactive Daily Mission Modal states
+  const [activeMission, setActiveMission] = useState(null);
+  const [missionAnswer, setMissionAnswer] = useState(null);
+  const [missionSubmitted, setMissionSubmitted] = useState(false);
+  const [quizStep, setQuizStep] = useState(0);
+  const [quizAnswers, setQuizAnswers] = useState({});
 
   // ── 3. WEAKNESSES STATE (starts EMPTY — student adds their own) ──
   const [weaknesses, setWeaknesses] = useState([]);
@@ -264,6 +276,7 @@ export default function Home() {
         const standardList = [
           'Physics', 'Chemistry', 'Mathematics', 'Biology',
           'Social Science', 'English', 'Hindi', 'Computer Science',
+          'Economics', 'Accountancy', 'Business Studies', 'Informatics Practices',
         ];
         setSelectedSubjects(
           profile.subjects.filter(s =>
@@ -354,6 +367,8 @@ export default function Home() {
     window.addEventListener('tanios_xp_update', handleXpUpdate);
     return () => window.removeEventListener('tanios_xp_update', handleXpUpdate);
   }, []);
+
+
 
   // Award XP function with animation trigger
   const awardXp = (amount, reason) => {
@@ -845,6 +860,60 @@ export default function Home() {
             grid-template-columns: 1fr !important;
           }
         }
+
+        /* ── INTERACTIVE DAILY TARGET MODAL FULLSCREEN & RESPONSIVE STYLES ── */
+        .daily-mission-overlay {
+          position: fixed;
+          top: 0; left: 0; right: 0; bottom: 0;
+          background: rgba(10, 10, 12, 0.98);
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 10000;
+          padding: 0;
+          opacity: 1;
+          transform: none;
+          animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+          overflow-y: auto;
+        }
+        .daily-mission-card {
+          width: 100%;
+          height: 100%;
+          max-width: 100%;
+          max-height: 100%;
+          border-radius: 0;
+          background: #0c0c0e;
+          border: none;
+          box-shadow: none;
+          padding: 2rem 1.25rem;
+          position: relative;
+          display: flex;
+          flex-direction: column;
+          overflow-y: auto;
+          animation: scaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+          box-sizing: border-box;
+        }
+        @media (min-width: 769px) {
+          .daily-mission-overlay {
+            padding: 2rem;
+            background: rgba(10, 10, 12, 0.85);
+          }
+          .daily-mission-card {
+            width: 90%;
+            height: auto;
+            max-width: 850px;
+            max-height: 85vh;
+            border-radius: 20px;
+            background: rgba(20, 20, 25, 0.95);
+            border: 1px solid rgba(108, 99, 255, 0.2);
+            box-shadow: 0 25px 50px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.05);
+            padding: 2.5rem 2rem;
+            margin: auto;
+            box-sizing: border-box;
+          }
+        }
       `}</style>
 
       {/* Floating XP Alert for premium micro-feedback */}
@@ -1205,23 +1274,17 @@ export default function Home() {
                         {!mission.done && mission.type !== 'login' && (
                           <button 
                             onClick={() => {
-                              // Mark mission as done first (awards XP + streak)
-                              toggleMission(mission.id);
-                              // Then navigate / trigger the activity
-                              if (mission.type === 'concept') {
-                                navigate(`/chat?prompt=${encodeURIComponent(mission.prompt)}`);
-                              } else if (mission.type === 'revision') {
-                                setActiveOneClickTool('Revision Sheet');
-                                setOneClickTopic(mission.topic);
-                                setOneClickGrade(profileClass || '10');
-                                setOneClickResult('');
-                                // Scroll to one-click section
-                                setTimeout(() => {
-                                  document.getElementById('oneclick-section')?.scrollIntoView({ behavior: 'smooth' });
-                                }, 150);
-                              } else if (mission.type === 'quiz') {
-                                navigate(mission.link);
-                              }
+                              setMissionAnswer(null);
+                              setMissionSubmitted(false);
+                              setQuizStep(0);
+                              setQuizAnswers({});
+                              setActiveMission(mission);
+                              logActivity(
+                                currentUser?.uid || 'guest',
+                                currentUser?.displayName || currentUser?.email || 'Student',
+                                'study_session',
+                                `Started study mission: ${mission.label}`
+                              ).catch(err => console.error("Activity logging failed", err));
                             }}
                             className="btn btn-secondary" 
                             style={{ padding: '0.3rem 0.6rem', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.25rem', whiteSpace: 'nowrap' }}
@@ -1377,100 +1440,6 @@ export default function Home() {
                     </div>
                   </div>
                 )}
-              </div>
-            )}
-          </section>
-
-          {/* C. EXAM MODE ROADMAP ENGINE (BOARD COUNTDOWN SYSTEM) */}
-          <section className="card" style={{ borderLeft: '4px solid var(--accent)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-              <GraduationCap color="var(--accent)" size={20} />
-              <h2 style={{ fontSize: '1.25rem', margin: 0 }}>Active Board Exam Mode</h2>
-            </div>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '1.25rem' }}>
-              Got an upcoming board exam? Lock in your targets. The AI will instantly engineer a revision roadmap, daily high-yield topics, and repeated board questions.
-            </p>
-
-            <form onSubmit={handleGenerateRoadmap} className="exam-form-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '0.75rem', marginBottom: '1rem' }}>
-              <div>
-                <label className="input-label" style={{ fontSize: '0.7rem' }}>Select Board</label>
-                <select className="input-field" value={examBoard} onChange={e => setExamBoard(e.target.value)} style={{ padding: '0.5rem', fontSize: '0.85rem', width: '100%' }}>
-                  <option value="CBSE (Central Board)">CBSE (Central Board)</option>
-                  <option value="RBSE (Rajasthan Board)">RBSE (Rajasthan Board)</option>
-                  <option value="UP Board">UP Board (Hindi/Eng Medium)</option>
-                  <option value="Bihar Board">Bihar Board (BSEB)</option>
-                </select>
-              </div>
-              <div>
-                <label className="input-label" style={{ fontSize: '0.7rem' }}>Class</label>
-                <select className="input-field" value={examGrade} onChange={e => setExamGrade(e.target.value)} style={{ padding: '0.5rem', fontSize: '0.85rem', width: '100%' }}>
-                  <option value="Class 10">Class 10</option>
-                  <option value="Class 12">Class 12</option>
-                  <option value="Class 9">Class 9</option>
-                  <option value="Class 8">Class 8</option>
-                </select>
-              </div>
-              <div>
-                <label className="input-label" style={{ fontSize: '0.7rem' }}>Focus Subject</label>
-                <select className="input-field" value={examSubject} onChange={e => setExamSubject(e.target.value)} style={{ padding: '0.5rem', fontSize: '0.85rem', width: '100%' }}>
-                  <option value="Science">Science / Physics / Chem</option>
-                  <option value="Mathematics">Mathematics</option>
-                  <option value="Social Science">Social Science</option>
-                  <option value="English">English Core</option>
-                </select>
-              </div>
-              <div>
-                <label className="input-label" style={{ fontSize: '0.7rem' }}>Days Remaining</label>
-                <select className="input-field" value={examDays} onChange={e => setExamDays(e.target.value)} style={{ padding: '0.5rem', fontSize: '0.85rem', width: '100%' }}>
-                  <option value="15">15 Days (Sprint)</option>
-                  <option value="30">30 Days (Standard)</option>
-                  <option value="45">45 Days (Full Revision)</option>
-                </select>
-              </div>
-              <div style={{ gridColumn: '1 / -1', marginTop: '0.5rem' }}>
-                <button 
-                  type="submit" 
-                  className="btn btn-primary" 
-                  style={{ width: '100%', padding: '0.65rem', backgroundColor: 'var(--accent)', color: '#fff', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
-                  disabled={examLoading}
-                >
-                  {examLoading ? (
-                    <>
-                      <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />
-                      {examStatus && examStatus !== 'thinking' ? examStatus : 'Engineering Board Roadmap...'}
-                    </>
-                  ) : (
-                    <><Sparkles size={16} /> Generate Day-by-Day Exam Roadmap</>
-                  )}
-                </button>
-              </div>
-            </form>
-
-            {/* Display generated roadmap */}
-            {examResult && (
-              <div style={{
-                background: 'var(--bg-tertiary)',
-                borderRadius: '10px',
-                padding: '1.25rem',
-                border: '1px solid var(--border)',
-                marginTop: '1rem',
-                maxHeight: '500px',
-                overflowY: 'auto'
-              }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem' }}>
-                  <strong style={{ color: 'var(--accent)', fontSize: '0.9rem' }}>🎯 Customized Board Study Roadmap ({examBoard})</strong>
-                  <button onClick={handleCopyRoadmap} className="btn btn-secondary" style={{ padding: '0.25rem 0.5rem', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                    {roadmapCopied ? <Check size={12} color="var(--success)" /> : <Copy size={12} />}
-                    {roadmapCopied ? 'Copied Roadmap' : 'Copy Roadmap'}
-                  </button>
-                </div>
-                <div className="generated-content" style={{ fontSize: '0.88rem', lineHeight: 1.7, background: 'transparent', border: 'none', padding: 0, margin: 0, boxShadow: 'none' }}>
-                  <ReactMarkdown
-                    remarkPlugins={[remarkGfm, remarkMath]}
-                    rehypePlugins={[rehypeKatex]}
-                    components={markdownComponents}
-                  >{examResult}</ReactMarkdown>
-                </div>
               </div>
             )}
           </section>
@@ -1702,8 +1671,102 @@ export default function Home() {
 
       </div>
 
+      {/* C. EXAM MODE ROADMAP ENGINE (BOARD COUNTDOWN SYSTEM) */}
+      <section className="card" style={{ borderLeft: '4px solid var(--accent)', marginTop: '1.5rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+          <GraduationCap color="var(--accent)" size={20} />
+          <h2 style={{ fontSize: '1.25rem', margin: 0 }}>Active Board Exam Mode</h2>
+        </div>
+        <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '1.25rem' }}>
+          Got an upcoming board exam? Lock in your targets. The AI will instantly engineer a revision roadmap, daily high-yield topics, and repeated board questions.
+        </p>
+
+        <form onSubmit={handleGenerateRoadmap} className="exam-form-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '0.75rem', marginBottom: '1rem' }}>
+          <div>
+            <label className="input-label" style={{ fontSize: '0.7rem' }}>Select Board</label>
+            <select className="input-field" value={examBoard} onChange={e => setExamBoard(e.target.value)} style={{ padding: '0.5rem', fontSize: '0.85rem', width: '100%' }}>
+              <option value="CBSE (Central Board)">CBSE (Central Board)</option>
+              <option value="RBSE (Rajasthan Board)">RBSE (Rajasthan Board)</option>
+              <option value="UP Board">UP Board (Hindi/Eng Medium)</option>
+              <option value="Bihar Board">Bihar Board (BSEB)</option>
+            </select>
+          </div>
+          <div>
+            <label className="input-label" style={{ fontSize: '0.7rem' }}>Class</label>
+            <select className="input-field" value={examGrade} onChange={e => setExamGrade(e.target.value)} style={{ padding: '0.5rem', fontSize: '0.85rem', width: '100%' }}>
+              <option value="Class 10">Class 10</option>
+              <option value="Class 12">Class 12</option>
+              <option value="Class 9">Class 9</option>
+              <option value="Class 8">Class 8</option>
+            </select>
+          </div>
+          <div>
+            <label className="input-label" style={{ fontSize: '0.7rem' }}>Focus Subject</label>
+            <select className="input-field" value={examSubject} onChange={e => setExamSubject(e.target.value)} style={{ padding: '0.5rem', fontSize: '0.85rem', width: '100%' }}>
+              <option value="Science">Science / Physics / Chem</option>
+              <option value="Mathematics">Mathematics</option>
+              <option value="Social Science">Social Science</option>
+              <option value="English">English Core</option>
+            </select>
+          </div>
+          <div>
+            <label className="input-label" style={{ fontSize: '0.7rem' }}>Days Remaining</label>
+            <select className="input-field" value={examDays} onChange={e => setExamDays(e.target.value)} style={{ padding: '0.5rem', fontSize: '0.85rem', width: '100%' }}>
+              <option value="15">15 Days (Sprint)</option>
+              <option value="30">30 Days (Standard)</option>
+              <option value="45">45 Days (Full Revision)</option>
+            </select>
+          </div>
+          <div style={{ gridColumn: '1 / -1', marginTop: '0.5rem' }}>
+            <button 
+              type="submit" 
+              className="btn btn-primary" 
+              style={{ width: '100%', padding: '0.65rem', backgroundColor: 'var(--accent)', color: '#fff', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+              disabled={examLoading}
+            >
+              {examLoading ? (
+                <>
+                  <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />
+                  {examStatus && examStatus !== 'thinking' ? examStatus : 'Engineering Board Roadmap...'}
+                </>
+              ) : (
+                <><Sparkles size={16} /> Generate Day-by-Day Exam Roadmap</>
+              )}
+            </button>
+          </div>
+        </form>
+
+        {/* Display generated roadmap */}
+        {examResult && (
+          <div style={{
+            background: 'var(--bg-tertiary)',
+            borderRadius: '10px',
+            padding: '1.25rem',
+            border: '1px solid var(--border)',
+            marginTop: '1rem',
+            maxHeight: '500px',
+            overflowY: 'auto'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem' }}>
+              <strong style={{ color: 'var(--accent)', fontSize: '0.9rem' }}>🎯 Customized Board Study Roadmap ({examBoard})</strong>
+              <button onClick={handleCopyRoadmap} className="btn btn-secondary" style={{ padding: '0.25rem 0.5rem', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                {roadmapCopied ? <Check size={12} color="var(--success)" /> : <Copy size={12} />}
+                {roadmapCopied ? 'Copied Roadmap' : 'Copy Roadmap'}
+              </button>
+            </div>
+            <div className="generated-content" style={{ fontSize: '0.88rem', lineHeight: 1.7, background: 'transparent', border: 'none', padding: 0, margin: 0, boxShadow: 'none' }}>
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm, remarkMath]}
+                rehypePlugins={[rehypeKatex]}
+                components={markdownComponents}
+              >{examResult}</ReactMarkdown>
+            </div>
+          </div>
+        )}
+      </section>
+
       {/* ── Glassmorphic AI Loader Overlay (Specifically for Board Roadmap Mode) ── */}
-      {examLoading && (
+      {examLoading && createPortal(
         <div className="global-ai-loader-overlay">
           <div className="global-ai-loader-card">
             <div className="global-ai-loader-glow-orb"></div>
@@ -1716,7 +1779,457 @@ export default function Home() {
               <div className="global-ai-loader-bar-fill"></div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
+      )}
+
+      {/* ── INTERACTIVE DAILY STUDY MISSIONS MODAL ── */}
+      {activeMission && createPortal(
+        <div className="daily-mission-overlay">
+          <div className="daily-mission-card">
+            {/* Background Glow Orb */}
+            <div style={{
+              position: 'absolute', top: '-40px', right: '-40px',
+              width: '120px', height: '120px',
+              background: 'radial-gradient(circle, rgba(108, 99, 255, 0.25) 0%, rgba(108,99,255,0) 70%)',
+              borderRadius: '50%', pointerEvents: 'none'
+            }} />
+
+            {/* Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '0.75rem' }}>
+              <div>
+                <span style={{ fontSize: '0.68rem', fontWeight: 800, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '1px', display: 'block', marginBottom: '0.2rem' }}>
+                  ⚡ ACTIVE DAILY MISSION
+                </span>
+                <h4 style={{ margin: 0, color: '#fff', fontSize: '1.1rem', fontWeight: 800 }}>
+                  {activeMission.type === 'concept' && "Doubt Practice: Solve Math Concept"}
+                  {activeMission.type === 'revision' && "15-Min Revision: Physics Quick Recap"}
+                  {activeMission.type === 'quiz' && "Quick Quiz: Chemistry MCQ Test"}
+                </h4>
+              </div>
+              <button 
+                onClick={() => setActiveMission(null)}
+                style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', opacity: 0.7 }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Content Area */}
+            <div style={{ marginBottom: '1.75rem' }}>
+              
+              {/* 1. CONCEPT (Mathematics) */}
+              {activeMission.type === 'concept' && (
+                <div>
+                  <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '1.25rem' }}>
+                    💡 <strong style={{ color: '#fff' }}>AP Concept Practice:</strong> Solve this high-yield Class 10 Board exam problem to earn your XP!
+                  </p>
+
+                  <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '12px', padding: '1.25rem', marginBottom: '1.25rem' }}>
+                    <div style={{ fontSize: '0.92rem', fontWeight: 700, color: '#fff', lineHeight: 1.5 }}>
+                      Q: In an Arithmetic Progression (AP), if the common difference (<span style={{ fontFamily: 'math', fontStyle: 'italic' }}>d</span>) is −4, and the seventh term (<span style={{ fontFamily: 'math', fontStyle: 'italic' }}>a₇</span>) is 4, find the first term (<span style={{ fontFamily: 'math', fontStyle: 'italic' }}>a</span>).
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                    {[
+                      { key: 'A', value: '20', desc: 'First term a = 20' },
+                      { key: 'B', value: '24', desc: 'First term a = 24' },
+                      { key: 'C', value: '28', desc: 'First term a = 28 (Correct)' },
+                      { key: 'D', value: '32', desc: 'First term a = 32' }
+                    ].map(opt => {
+                      const isSelected = missionAnswer === opt.key;
+                      return (
+                        <button
+                          key={opt.key}
+                          onClick={() => !missionSubmitted && setMissionAnswer(opt.key)}
+                          disabled={missionSubmitted}
+                          style={{
+                            display: 'flex', alignItems: 'center', gap: '1rem',
+                            width: '100%', padding: '0.85rem 1rem',
+                            background: isSelected ? 'rgba(108, 99, 255, 0.12)' : 'rgba(255, 255, 255, 0.01)',
+                            border: isSelected ? '1px solid var(--primary)' : '1px solid rgba(255,255,255,0.05)',
+                            borderRadius: '10px', color: '#fff', textAlign: 'left',
+                            cursor: missionSubmitted ? 'default' : 'pointer',
+                            transition: 'all 0.2s'
+                          }}
+                        >
+                          <div style={{
+                            width: '24px', height: '24px', borderRadius: '50%',
+                            background: isSelected ? 'var(--primary)' : 'rgba(255,255,255,0.05)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            fontSize: '0.75rem', fontWeight: 800, color: isSelected ? '#fff' : 'var(--text-secondary)'
+                          }}>
+                            {opt.key}
+                          </div>
+                          <span style={{ fontSize: '0.88rem', fontWeight: 600 }}>{opt.desc}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {missionSubmitted && (
+                    <div style={{
+                      marginTop: '1.25rem', padding: '1rem',
+                      background: missionAnswer === 'C' ? 'rgba(16, 185, 129, 0.08)' : 'rgba(239, 68, 68, 0.08)',
+                      border: missionAnswer === 'C' ? '1px solid rgba(16, 185, 129, 0.2)' : '1px solid rgba(239, 68, 68, 0.2)',
+                      borderRadius: '10px', fontSize: '0.82rem', lineHeight: 1.5, color: 'var(--text-secondary)'
+                    }}>
+                      {missionAnswer === 'C' ? (
+                        <>
+                          🎉 <strong style={{ color: '#10b981' }}>Correct Answer!</strong> Good job! Formula: <span style={{ fontFamily: 'monospace' }}>a₇ = a + 6d</span>. Substituting the values: <span style={{ fontFamily: 'monospace' }}>4 = a + 6(−4) ⟹ 4 = a − 24 ⟹ a = 28</span>.
+                        </>
+                      ) : (
+                        <>
+                          ❌ <strong style={{ color: '#f87171' }}>Incorrect Option.</strong> Hint: Use the formula <span style={{ fontFamily: 'monospace' }}>a_n = a + (n−1)d</span>. Try calculating <span style={{ fontFamily: 'monospace' }}>a₇ = a + 6d ⟹ 4 = a − 24</span>. Select option <strong>C (28)</strong> to solve!
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* 2. REVISION (Physics) */}
+              {activeMission.type === 'revision' && (
+                <div>
+                  <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '1rem' }}>
+                    📚 Read this high-density Physics card and solve the retention question:
+                  </p>
+
+                  {/* Bullet sheet */}
+                  <div style={{
+                    background: 'linear-gradient(135deg, rgba(167, 139, 250, 0.05), rgba(108, 99, 255, 0.08))',
+                    border: '1px solid rgba(167, 139, 250, 0.15)',
+                    borderRadius: '12px', padding: '1rem 1.25rem', marginBottom: '1.25rem',
+                    fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.6
+                  }}>
+                    <strong style={{ color: '#fff', fontSize: '0.85rem', display: 'block', marginBottom: '0.5rem' }}>
+                      ⚡ Refraction & Lens Power Summary
+                    </strong>
+                    <ul style={{ paddingLeft: '1.25rem', margin: 0 }}>
+                      <li style={{ marginBottom: '0.35rem' }}><strong style={{ color: '#a78bfa' }}>Refractive Index (n):</strong> Ratio of light speeds: <span style={{ fontFamily: 'monospace' }}>n = c/v</span>.</li>
+                      <li style={{ marginBottom: '0.35rem' }}><strong style={{ color: '#a78bfa' }}>Snell\'s Law:</strong> Ratio of sines is constant: <span style={{ fontFamily: 'monospace' }}>sin i / sin r = constant = n₂/n₁</span>.</li>
+                      <li style={{ marginBottom: '0.35rem' }}><strong style={{ color: '#a78bfa' }}>Power of Lens (P):</strong> Reciprocal of focal length: <span style={{ fontFamily: 'monospace' }}>P = 1/f</span> (f must be in meters). SI Unit is Dioptre (D).</li>
+                      <li><strong style={{ color: '#a78bfa' }}>Lens Sign Conventions:</strong> Convex lenses have positive focal length (+f), Concave lenses have negative (-f).</li>
+                    </ul>
+                  </div>
+
+                  <div style={{ fontSize: '0.88rem', fontWeight: 700, color: '#fff', marginBottom: '0.75rem', lineHeight: 1.4 }}>
+                    Q: If a doctor prescribes a lens of power +2.0 D, what is its focal length and lens type?
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+                    {[
+                      { key: 'A', value: 'f = -0.5 m, Concave' },
+                      { key: 'B', value: 'f = +0.5 m, Convex (Correct)' },
+                      { key: 'C', value: 'f = +2.0 m, Convex' },
+                      { key: 'D', value: 'f = -2.0 m, Concave' }
+                    ].map(opt => {
+                      const isSelected = missionAnswer === opt.key;
+                      return (
+                        <button
+                          key={opt.key}
+                          onClick={() => !missionSubmitted && setMissionAnswer(opt.key)}
+                          disabled={missionSubmitted}
+                          style={{
+                            display: 'flex', alignItems: 'center', gap: '1rem',
+                            width: '100%', padding: '0.75rem 1rem',
+                            background: isSelected ? 'rgba(108, 99, 255, 0.12)' : 'rgba(255, 255, 255, 0.01)',
+                            border: isSelected ? '1px solid var(--primary)' : '1px solid rgba(255,255,255,0.05)',
+                            borderRadius: '10px', color: '#fff', textAlign: 'left',
+                            cursor: missionSubmitted ? 'default' : 'pointer',
+                            transition: 'all 0.2s'
+                          }}
+                        >
+                          <div style={{
+                            width: '22px', height: '22px', borderRadius: '50%',
+                            background: isSelected ? 'var(--primary)' : 'rgba(255,255,255,0.05)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            fontSize: '0.72rem', fontWeight: 800, color: isSelected ? '#fff' : 'var(--text-secondary)'
+                          }}>
+                            {opt.key}
+                          </div>
+                          <span style={{ fontSize: '0.8rem', fontWeight: 600 }}>{opt.value}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {missionSubmitted && (
+                    <div style={{
+                      marginTop: '1.25rem', padding: '1rem',
+                      background: missionAnswer === 'B' ? 'rgba(16, 185, 129, 0.08)' : 'rgba(239, 68, 68, 0.08)',
+                      border: missionAnswer === 'B' ? '1px solid rgba(16, 185, 129, 0.2)' : '1px solid rgba(239, 68, 68, 0.2)',
+                      borderRadius: '10px', fontSize: '0.82rem', lineHeight: 1.5, color: 'var(--text-secondary)'
+                    }}>
+                      {missionAnswer === 'B' ? (
+                        <>
+                          🎉 <strong style={{ color: '#10b981' }}>Correct Answer!</strong> Power is positive +2.0 D, so the lens is Convex. Focal length: <span style={{ fontFamily: 'monospace' }}>f = 1/P = 1/2.0 = 0.5 m = +0.5 m</span>.
+                        </>
+                      ) : (
+                        <>
+                          ❌ <strong style={{ color: '#f87171' }}>Wrong Answer.</strong> Remember: Power <span style={{ fontFamily: 'monospace' }}>P = 1/f ⟹ f = 1/P = 1/+2.0 = 0.5 m</span>. Positive power means a Convex lens. Select option <strong>B</strong> to proceed!
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* 3. QUIZ (Chemistry 5 Qs) */}
+              {activeMission.type === 'quiz' && (() => {
+                const quizQuestions = [
+                  {
+                    q: "Which of the following is a decomposition reaction?",
+                    opts: [
+                      { key: 'A', text: "2H₂ + O₂ ⟶ 2H₂O (Combination)" },
+                      { key: 'B', text: "CaCO₃ ⟶ CaO + CO₂ (Decomposition)" },
+                      { key: 'C', text: "Zn + CuSO₄ ⟶ ZnSO₄ + Cu (Displacement)" }
+                    ],
+                    correct: 'B'
+                  },
+                  {
+                    q: "The pH value of an acidic solution is:",
+                    opts: [
+                      { key: 'A', text: "Less than 7 (Acidic)" },
+                      { key: 'B', text: "Equal to 7 (Neutral)" },
+                      { key: 'C', text: "Greater than 7 (Basic)" }
+                    ],
+                    correct: 'A'
+                  },
+                  {
+                    q: "Which of the following metals is stored under kerosene oil to prevent accidental fires?",
+                    opts: [
+                      { key: 'A', text: "Gold" },
+                      { key: 'B', text: "Sodium" },
+                      { key: 'C', text: "Copper" }
+                    ],
+                    correct: 'B'
+                  },
+                  {
+                    q: "The functional group present in ethanol (CH₃CH₂OH) is:",
+                    opts: [
+                      { key: 'A', text: "Aldehyde (-CHO)" },
+                      { key: 'B', text: "Alcohol (-OH)" },
+                      { key: 'C', text: "Carboxylic Acid (-COOH)" }
+                    ],
+                    correct: 'B'
+                  },
+                  {
+                    q: "Bronze is a metallic alloy primarily composed of:",
+                    opts: [
+                      { key: 'A', text: "Copper and Zinc (Brass)" },
+                      { key: 'B', text: "Copper and Tin (Bronze)" },
+                      { key: 'C', text: "Lead and Tin (Solder)" }
+                    ],
+                    correct: 'B'
+                  }
+                ];
+
+                if (quizStep < 5) {
+                  const currentQ = quizQuestions[quizStep];
+                  const selectedOpt = quizAnswers[quizStep];
+                  return (
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 700 }}>
+                          Question {quizStep + 1} of 5
+                        </span>
+                        <div style={{ width: '80px', height: '4px', background: 'rgba(255,255,255,0.05)', borderRadius: '10px', overflow: 'hidden' }}>
+                          <div style={{ width: `${((quizStep + 1) / 5) * 100}%`, height: '100%', background: 'var(--primary)' }} />
+                        </div>
+                      </div>
+
+                      <div style={{ fontSize: '0.92rem', fontWeight: 700, color: '#fff', marginBottom: '1.25rem', lineHeight: 1.45 }}>
+                        {currentQ.q}
+                      </div>
+
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+                        {currentQ.opts.map(opt => {
+                          const isSelected = selectedOpt === opt.key;
+                          return (
+                            <button
+                              key={opt.key}
+                              onClick={() => setQuizAnswers(prev => ({ ...prev, [quizStep]: opt.key }))}
+                              style={{
+                                display: 'flex', alignItems: 'center', gap: '1rem',
+                                width: '100%', padding: '0.85rem 1rem',
+                                background: isSelected ? 'rgba(108, 99, 255, 0.12)' : 'rgba(255, 255, 255, 0.01)',
+                                border: isSelected ? '1px solid var(--primary)' : '1px solid rgba(255,255,255,0.05)',
+                                borderRadius: '10px', color: '#fff', textAlign: 'left',
+                                cursor: 'pointer', transition: 'all 0.2s'
+                              }}
+                            >
+                              <div style={{
+                                width: '22px', height: '22px', borderRadius: '50%',
+                                background: isSelected ? 'var(--primary)' : 'rgba(255,255,255,0.05)',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                fontSize: '0.72rem', fontWeight: 800, color: isSelected ? '#fff' : 'var(--text-secondary)'
+                              }}>
+                                {opt.key}
+                              </div>
+                              <span style={{ fontSize: '0.82rem', fontWeight: 600 }}>{opt.text}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
+                        <button
+                          onClick={() => selectedOpt && setQuizStep(s => s + 1)}
+                          disabled={!selectedOpt}
+                          className="btn btn-primary"
+                          style={{
+                            padding: '0.6rem 1.25rem', fontSize: '0.82rem', fontWeight: 700,
+                            cursor: selectedOpt ? 'pointer' : 'not-allowed', opacity: selectedOpt ? 1 : 0.5
+                          }}
+                        >
+                          {quizStep === 4 ? "Review Answers" : "Next Question ➔"}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                } else {
+                  // Final summary results
+                  let correctCount = 0;
+                  quizQuestions.forEach((q, idx) => {
+                    if (quizAnswers[idx] === q.correct) correctCount++;
+                  });
+
+                  return (
+                    <div style={{ textAlign: 'center' }}>
+                      <span style={{ fontSize: '2.5rem' }}>🏆</span>
+                      <h4 style={{ color: '#10b981', margin: '0.5rem 0', fontWeight: 800, fontSize: '1.25rem' }}>
+                        Chemistry Quiz Completed!
+                      </h4>
+                      <p style={{ margin: '0 0 1.25rem 0', fontSize: '0.88rem', color: 'var(--text-secondary)' }}>
+                        You scored <strong style={{ color: '#fff' }}>{correctCount} / 5 Correct</strong> ({correctCount * 20}% Score)
+                      </p>
+
+                      {/* Brief details checklist */}
+                      <div style={{
+                        background: 'rgba(255,255,255,0.02)',
+                        border: '1px solid rgba(255,255,255,0.05)',
+                        borderRadius: '12px', padding: '1rem',
+                        textAlign: 'left', marginBottom: '1.5rem',
+                        display: 'flex', flexDirection: 'column', gap: '0.5rem'
+                      }}>
+                        {quizQuestions.map((q, i) => {
+                          const userAns = quizAnswers[i];
+                          const isCorrect = userAns === q.correct;
+                          return (
+                            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem' }}>
+                              <span style={{ color: 'var(--text-secondary)' }}>Q{i+1}: Decomposition, Acids, Sodium, Ethanol, Bronze</span>
+                              <span style={{ color: isCorrect ? '#10b981' : '#f87171', fontWeight: 800 }}>
+                                {isCorrect ? "✓ Correct" : `✗ Wrong (Ans: ${q.correct})`}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
+                        Ready to submit and unlock <strong style={{ color: '#a78bfa' }}>+30 XP</strong>?
+                      </p>
+                    </div>
+                  );
+                }
+              })()}
+
+            </div>
+
+            {/* Modal Bottom Actions */}
+            {activeMission.type !== 'quiz' && (
+              <div style={{ display: 'flex', gap: '0.75rem', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '1.25rem' }}>
+                {!missionSubmitted ? (
+                  <button
+                    onClick={() => missionAnswer && setMissionSubmitted(true)}
+                    disabled={!missionAnswer}
+                    className="btn btn-primary"
+                    style={{
+                      flex: 1, padding: '0.8rem 1rem', fontSize: '0.88rem', fontWeight: 800,
+                      cursor: missionAnswer ? 'pointer' : 'not-allowed', opacity: missionAnswer ? 1 : 0.5
+                    }}
+                  >
+                    Check Answer
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => {
+                      if (activeMission.type === 'concept' && missionAnswer !== 'C') {
+                        // User got math wrong, hint was displayed, let them try again
+                        setMissionSubmitted(false);
+                        setMissionAnswer(null);
+                        return;
+                      }
+                      if (activeMission.type === 'revision' && missionAnswer !== 'B') {
+                        // User got physics wrong, hint was displayed, let them try again
+                        setMissionSubmitted(false);
+                        setMissionAnswer(null);
+                        return;
+                      }
+                      // Correct selection: Mark completed on dashboard!
+                      toggleMission(activeMission.id);
+                      setActiveMission(null);
+                    }}
+                    className="btn btn-primary"
+                    style={{
+                      flex: 1, padding: '0.8rem 1rem', fontSize: '0.88rem', fontWeight: 800,
+                      background: (activeMission.type === 'concept' && missionAnswer === 'C') || (activeMission.type === 'revision' && missionAnswer === 'B')
+                        ? 'linear-gradient(135deg, #10b981, #059669)'
+                        : 'linear-gradient(135deg, var(--primary), var(--accent))'
+                    }}
+                  >
+                    {(activeMission.type === 'concept' && missionAnswer === 'C') || (activeMission.type === 'revision' && missionAnswer === 'B')
+                      ? "Submit & Complete Mission"
+                      : "Try Correct Option ➔"}
+                  </button>
+                )}
+                <button
+                  onClick={() => setActiveMission(null)}
+                  style={{
+                    background: 'rgba(255,255,255,0.03)',
+                    border: '1px solid rgba(255,255,255,0.05)',
+                    color: 'var(--text-secondary)',
+                    borderRadius: '8px', padding: '0.6rem 1rem',
+                    fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer'
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
+
+            {activeMission.type === 'quiz' && quizStep === 5 && (
+              <div style={{ display: 'flex', gap: '0.75rem', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '1.25rem' }}>
+                <button
+                  onClick={() => {
+                    toggleMission(activeMission.id);
+                    setActiveMission(null);
+                  }}
+                  className="btn btn-primary"
+                  style={{ flex: 1, padding: '0.8rem 1rem', fontSize: '0.88rem', fontWeight: 800 }}
+                >
+                  Submit & Complete Mission
+                </button>
+                <button
+                  onClick={() => setActiveMission(null)}
+                  style={{
+                    background: 'rgba(255,255,255,0.03)',
+                    border: '1px solid rgba(255,255,255,0.05)',
+                    color: 'var(--text-secondary)',
+                    borderRadius: '8px', padding: '0.6rem 1rem',
+                    fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer'
+                  }}
+                >
+                  Close
+                </button>
+              </div>
+            )}
+
+          </div>
+        </div>,
+        document.body
       )}
     </div>
   );
