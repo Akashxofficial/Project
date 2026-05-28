@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { auth, db, loginWithGoogle, logout, logActivity } from '../lib/firebase';
+import { auth, db, loginWithGoogle, logout, logActivity, syncUserToMongo } from '../lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, onSnapshot } from 'firebase/firestore';
 
@@ -97,6 +97,7 @@ export function AuthProvider({ children }) {
           };
           setCurrentUser(userObj);
           localStorage.setItem('tanios_user', JSON.stringify(userObj));
+          syncUserToMongo(userObj.uid, userObj.email, userObj.displayName, userObj.photoURL).catch(console.warn);
         } else {
           // If we had a mock logged-in user, keep it persistent across refresh
           if (persistedUser && !persistedUser.isGuest) {
