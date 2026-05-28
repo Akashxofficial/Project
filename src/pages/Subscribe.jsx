@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { db, logActivity, trackPaymentInMongo } from '../lib/firebase';
+import { db, logActivity, trackPaymentInMongo, trackSubscriptionInMongo } from '../lib/firebase';
 import { setDoc, doc, serverTimestamp } from 'firebase/firestore';
 import { Sparkles, Check, Copy, CheckCircle2, ShieldCheck, CreditCard, Lock, RefreshCw, ChevronLeft, ArrowRight } from 'lucide-react';
+
+// Dynamic backend URL — localhost for dev, same-origin in production
+const BACKEND_URL = import.meta.env.DEV ? 'http://localhost:3001' : '';
 
 export default function Subscribe() {
   const { currentUser, subscription, setSubscription } = useAuth();
@@ -64,7 +67,7 @@ export default function Subscribe() {
     setCheckoutLoading(true);
     setErrorMessage('');
     try {
-      const res = await fetch('http://localhost:3001/api/razorpay-order', {
+      const res = await fetch(`${BACKEND_URL}/api/razorpay-order`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -131,6 +134,11 @@ export default function Subscribe() {
       };
 
       const rzp = new window.Razorpay(options);
+      rzp.on('payment.failed', function(response) {
+        console.error('Razorpay payment failed:', response.error);
+        setErrorMessage(`Payment failed: ${response.error.description || 'Please try again.'}`);
+        setCheckoutLoading(false);
+      });
       rzp.open();
 
     } catch (err) {
@@ -204,7 +212,7 @@ export default function Subscribe() {
 
         try {
           // Contact secure backend logic to verify signatures
-          const verifyRes = await fetch('http://localhost:3001/api/razorpay-verify', {
+          const verifyRes = await fetch(`${BACKEND_URL}/api/razorpay-verify`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -282,26 +290,27 @@ export default function Subscribe() {
             'Razorpay'
           ).catch(console.warn);
 
-          setGatewayStep(5); // Show success overlay
+          // ✅ Sync subscription to MongoDB Atlas
+          trackSubscriptionInMongo(currentUser?.uid || currentUser?.email, {
+            subscriptionActive: true,
+            subscriptionPlan: 'Pro AI Member (Razorpay)',
+            subscriptionAmount: amount,
+            subscriptionUtr: activeSub.utr,
+            subscriptionActivatedAt: new Date().toISOString()
+          }).catch(console.warn);
+
+          setGatewayStep(5);
 
           setTimeout(() => {
             navigate('/');
           }, 2200);
 
         } catch (err) {
-          console.error("Razorpay active trigger err:", err);
-          const activeSub = {
-            active: true,
-            status: 'active',
-            plan: 'Pro Member (Razorpay Sandbox Local)',
-            amount: amount,
-            utr: razorpay_payment_id || razorpay_order_id,
-            activatedAt: Date.now()
-          };
-          setSubscription(activeSub);
-          localStorage.setItem('tanios_subscription', JSON.stringify(activeSub));
-          setGatewayStep(5);
-          setTimeout(() => navigate('/'), 2200);
+          console.error("Razorpay verification error:", err);
+          // 🔴 SECURITY: Do NOT activate subscription on verification failure
+          setGatewayStep(0);
+          setCheckoutLoading(false);
+          setErrorMessage(`Payment verification failed: ${err.message || 'Please contact support if amount was deducted.'}`);
         }
       }
     }, 800);
@@ -1015,7 +1024,7 @@ export default function Subscribe() {
             color: 'var(--text-secondary)'
           }}>
             <Lock size={10} color="#a78bfa" />
-            <span>Stripe Secure Gateway | 256-Bit SSL Encryption</span>
+            <span>Razorpay Secure Gateway | 256-Bit SSL Encryption | PCI-DSS Compliant</span>
           </div>
 
         </div>
