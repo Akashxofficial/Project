@@ -58,6 +58,94 @@ const standardSubjects = [
   { name: 'Informatics Practices', icon: '🖥️', color: '#06b6d4' }
 ];
 
+const fallbackConcept = {
+  conceptName: "Arithmetic Progression (AP)",
+  questionText: "In an Arithmetic Progression (AP), if the common difference ($d$) is $-4$, and the seventh term ($a_7$) is $4$, find the first term ($a$).",
+  options: [
+    { key: 'A', desc: "First term $a = 20$" },
+    { key: 'B', desc: "First term $a = 24$" },
+    { key: 'C', desc: "First term $a = 28$" },
+    { key: 'D', desc: "First term $a = 32$" }
+  ],
+  correctKey: 'C',
+  explanation: "Formula: $a_n = a + (n-1)d$. For the seventh term ($n=7$): $a_7 = a + 6d$. Substituting the values: $4 = a + 6(-4) \\implies 4 = a - 24 \\implies a = 28$."
+};
+
+const fallbackRevision = {
+  title: "Refraction & Lens Power Summary",
+  revisionPoints: [
+    "**Refractive Index ($n$):** Ratio of light speeds: $n = \\frac{c}{v}$.",
+    "**Snell's Law:** Ratio of sines is constant: $\\frac{\\sin i}{\\sin r} = n_{21}$.",
+    "**Power of Lens ($P$):** Reciprocal of focal length: $P = \\frac{1}{f}$ (f must be in meters). SI Unit is Dioptre (D).",
+    "**Lens Sign Conventions:** Convex lenses have positive focal length ($+f$), Concave lenses have negative ($-f$)."
+  ],
+  questionText: "If a doctor prescribes a lens of power $+2.0\\text{ D}$, what is its focal length and lens type?",
+  options: [
+    { key: 'A', desc: "$f = -0.5\\text{ m}$, Concave" },
+    { key: 'B', desc: "$f = +0.5\\text{ m}$, Convex" },
+    { key: 'C', desc: "$f = +2.0\\text{ m}$, Convex" },
+    { key: 'D', desc: "$f = -2.0\\text{ m}$, Concave" }
+  ],
+  correctKey: 'B',
+  explanation: "Power is positive $+2.0\\text{ D}$, so the lens is Convex. Focal length: $f = \\frac{1}{P} = \\frac{1}{2.0} = 0.5\\text{ m} = +0.5\\text{ m}$."
+};
+
+const fallbackQuiz = {
+  quizTitle: "Chemistry Core MCQ Quiz",
+  questions: [
+    {
+      questionText: "Which of the following is a decomposition reaction?",
+      options: [
+        { key: 'A', desc: "$2\\text{H}_2 + \\text{O}_2 \\longrightarrow 2\\text{H}_2\\text{O}$ (Combination)" },
+        { key: 'B', desc: "$\\text{CaCO}_3 \\longrightarrow \\text{CaO} + \\text{CO}_2$ (Decomposition)" },
+        { key: 'C', desc: "$\\text{Zn} + \\text{CuSO}_4 \\longrightarrow \\text{ZnSO}_4 + \\text{Cu}$ (Displacement)" }
+      ],
+      correctKey: 'B',
+      explanation: "A single reactant decomposes into multiple products. $\\text{CaCO}_3$ splits into $\\text{CaO}$ and $\\text{CO}_2$."
+    },
+    {
+      questionText: "The pH value of an acidic solution is:",
+      options: [
+        { key: 'A', desc: "Less than 7" },
+        { key: 'B', desc: "Equal to 7" },
+        { key: 'C', desc: "Greater than 7" }
+      ],
+      correctKey: 'A',
+      explanation: "pH < 7 is acidic, pH = 7 is neutral, and pH > 7 is basic."
+    },
+    {
+      questionText: "Which of the following metals is stored under kerosene oil to prevent accidental fires?",
+      options: [
+        { key: 'A', desc: "Gold" },
+        { key: 'B', desc: "Sodium" },
+        { key: 'C', desc: "Copper" }
+      ],
+      correctKey: 'B',
+      explanation: "Sodium is highly reactive with air and water, so it is kept under kerosene."
+    },
+    {
+      questionText: "The functional group present in ethanol ($\\text{CH}_3\\text{CH}_2\\text{OH}$) is:",
+      options: [
+        { key: 'A', desc: "Aldehyde ($-\\text{CHO}$)" },
+        { key: 'B', desc: "Alcohol ($-\\text{OH}$)" },
+        { key: 'C', desc: "Carboxylic Acid ($-\\text{COOH}$)" }
+      ],
+      correctKey: 'B',
+      explanation: "Ethanol ends in -ol and contains the hydroxyl ($-\\text{OH}$) functional group of alcohols."
+    },
+    {
+      questionText: "Bronze is a metallic alloy primarily composed of:",
+      options: [
+        { key: 'A', desc: "Copper and Zinc" },
+        { key: 'B', desc: "Copper and Tin" },
+        { key: 'C', desc: "Lead and Tin" }
+      ],
+      correctKey: 'B',
+      explanation: "Bronze is made of copper and tin, while brass is made of copper and zinc."
+    }
+  ]
+};
+
 
 
 export default function Home() {
@@ -97,6 +185,11 @@ export default function Home() {
   const [missionSubmitted, setMissionSubmitted] = useState(false);
   const [quizStep, setQuizStep] = useState(0);
   const [quizAnswers, setQuizAnswers] = useState({});
+
+  // ── DYNAMIC AI STUDY MISSIONS STATE ──
+  const [dynamicMissionContent, setDynamicMissionContent] = useState(null);
+  const [missionLoading, setMissionLoading] = useState(false);
+  const [missionError, setMissionError] = useState('');
 
   // ── 3. WEAKNESSES STATE (starts EMPTY — student adds their own) ──
   const [weaknesses, setWeaknesses] = useState([]);
@@ -166,6 +259,7 @@ export default function Home() {
         xp: tmpl.xp,
         done: false,
         dateKey,
+        subject: subj,
       };
       if (tmpl.promptFn) mission.prompt = tmpl.promptFn(subj, grade);
       if (tmpl.topicFn) mission.topic = tmpl.topicFn(subj);
@@ -430,6 +524,218 @@ export default function Home() {
         setTimeout(() => awardXp(10, '🔥 All Daily Missions Complete!'), 600);
       }
     }
+  };
+
+  const fetchDynamicMission = async (mission) => {
+    setMissionLoading(true);
+    setMissionError('');
+    setDynamicMissionContent(null);
+
+    const subject = mission.subject || 'General Science';
+    const grade = profileClass || '10';
+    const board = profileBoard || 'CBSE';
+
+    // ── Calculate days remaining dynamically ──
+    const now = new Date();
+    const EXAM_DATES = {
+      CBSE: {
+        '10': { month: 1, day: 15 },
+        '12': { month: 1, day: 15 },
+        '8':  { month: 2, day: 1 },
+        '9':  { month: 2, day: 1 },
+        '11': { month: 2, day: 1 },
+      },
+      RBSE: {
+        '10': { month: 2, day: 5 },
+        '12': { month: 2, day: 5 },
+        '8':  { month: 2, day: 10 },
+        '9':  { month: 2, day: 10 },
+        '11': { month: 2, day: 10 },
+      },
+    };
+    const classNum = grade.toString().replace(/\D/g, '') || '10';
+    const examInfo = EXAM_DATES[board]?.[classNum] || EXAM_DATES['CBSE']['10'];
+
+    let examYear = now.getFullYear();
+    const examDate = new Date(examYear, examInfo.month, examInfo.day);
+    if (examDate <= now) {
+      examYear += 1;
+      examDate.setFullYear(examYear);
+    }
+    const diffMs = examDate - now;
+    const diffDays = Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+
+    // ── Systematic study pacing instructions based on days remaining ──
+    const studyInstructions = `
+Target Subject: ${subject}
+Target Class/Grade: Class ${grade}
+Target Board: ${board}
+Days Remaining until Exams: ${diffDays} Days
+
+SYSTEMATIC STUDY PACING LAW:
+You are an elite, highly structured personal teacher. You are pacing the student's study plan so they complete their ENTIRE syllabus of this subject (${subject}) systematically by their exam date (which is in ${diffDays} days).
+Pacing Logic:
+1. Standard academic year has ~250 to 300 days remaining (starting in April/May). If ${diffDays} >= 220, the student is at the very beginning of the syllabus. You MUST generate questions strictly for Chapter 1 of the official Class ${grade} ${subject} syllabus (e.g. Mole Concept/Basic Concepts in Chem, physical world/units in Physics, Chapter 1 in Math, etc.).
+2. If ${diffDays} is between 150 and 220, they should be in the early-middle syllabus. Generate for Chapter 2, 3 or 4.
+3. If ${diffDays} is between 75 and 150, they should be in the late-middle syllabus. Generate for Chapter 5, 6, 7 or 8.
+4. If ${diffDays} is under 75, they are in the final revision sprint phase. Generate for high-weightage chapters, mock revision questions, or ending chapters.
+
+Your output task/material MUST be specifically and exclusively for the chapter calculated from this pacing logic! You must make the tasks systematically move forward day-by-day.
+`;
+
+    let prompt = '';
+    if (mission.type === 'concept') {
+      prompt = `You are an expert personal teacher built for Indian school students.
+Generate a conceptual, high-yield Multiple Choice Question (MCQ) for study practice.
+
+${studyInstructions}
+
+Your output MUST be a valid JSON object with the following keys. Do not include any conversational text or markdown code blocks (no \`\`\`json). Output raw JSON only.
+
+JSON Structure:
+{
+  "conceptName": "Name of the key chapter and concept being tested (e.g. Chapter 1: Basic Concepts - Mole Concept)",
+  "questionText": "The actual question. Wrap any math formulas, variables, chemical equations, or scientific notation in KaTeX dollar-sign delimiters (e.g., $v = u + at$, $H_2SO_4$). Wrap inline formulas in single $, block formulas in double $$.",
+  "options": [
+    { "key": "A", "desc": "Option A description. Wrap any math in $ delimiters if needed." },
+    { "key": "B", "desc": "Option B description" },
+    { "key": "C", "desc": "Option C description" },
+    { "key": "D", "desc": "Option D description" }
+  ],
+  "correctKey": "A, B, C, or D",
+  "explanation": "A premium, step-by-step topper explanation of the solution. Wrap all equations, math, formulas in $ delimiters."
+}`;
+    } else if (mission.type === 'revision') {
+      prompt = `You are an expert personal teacher built for Indian school students.
+Generate a high-density, high-yield study sheet and a retention Multiple Choice Question (MCQ) for study practice.
+
+${studyInstructions}
+
+Your output MUST be a valid JSON object with the following keys. Do not include any conversational text or markdown code blocks (no \`\`\`json). Output raw JSON only.
+
+JSON Structure:
+{
+  "title": "A short, engaging revision title (e.g. Chapter 1: Chemical Reactions Revision Card)",
+  "revisionPoints": [
+    "A concise, high-density bullet point of the core concept. Wrap all formulas, variables, scientific notation, equations in LaTeX $ delimiters.",
+    "Another high-density revision bullet point.",
+    "Another high-density revision bullet point.",
+    "One more high-density revision bullet point."
+  ],
+  "questionText": "A quick conceptual check question based on the above revision points. Wrap all formulas/math/variables in KaTeX $ delimiters.",
+  "options": [
+    { "key": "A", "desc": "Option A description. Wrap any math in $ delimiters." },
+    { "key": "B", "desc": "Option B description" },
+    { "key": "C", "desc": "Option C description" },
+    { "key": "D", "desc": "Option D description" }
+  ],
+  "correctKey": "A, B, C, or D",
+  "explanation": "A clear, concise topper explanation of the solution. Wrap all math/equations in $ delimiters."
+}`;
+    } else if (mission.type === 'quiz') {
+      prompt = `You are an expert personal teacher built for Indian school students.
+Generate a 5-question high-yield Multiple Choice Quiz (MCQ) for study practice.
+
+${studyInstructions}
+
+Your output MUST be a valid JSON object with the following keys. Do not include any conversational text or markdown code blocks (no \`\`\`json). Output raw JSON only.
+
+JSON Structure:
+{
+  "quizTitle": "Engaging title for the quiz (e.g., Chapter 1: Motion Speed Quiz)",
+  "questions": [
+    {
+      "questionText": "Question 1 text. Wrap all math, variables, equations, chemical terms in LaTeX $ delimiters.",
+      "options": [
+        { "key": "A", "desc": "Option A text. Wrap any math in $." },
+        { "key": "B", "desc": "Option B text" },
+        { "key": "C", "desc": "Option C text" }
+      ],
+      "correctKey": "A, B, or C",
+      "explanation": "Brief solution explanation. Wrap math in $."
+    },
+    {
+      "questionText": "Question 2 text. Wrap all math, variables, equations, chemical terms in LaTeX $ delimiters.",
+      "options": [
+        { "key": "A", "desc": "Option A text. Wrap any math in $." },
+        { "key": "B", "desc": "Option B text" },
+        { "key": "C", "desc": "Option C text" }
+      ],
+      "correctKey": "A, B, or C",
+      "explanation": "Brief solution explanation. Wrap math in $."
+    },
+    {
+      "questionText": "Question 3 text. Wrap all math, variables, equations, chemical terms in LaTeX $ delimiters.",
+      "options": [
+        { "key": "A", "desc": "Option A text. Wrap any math in $." },
+        { "key": "B", "desc": "Option B text" },
+        { "key": "C", "desc": "Option C text" }
+      ],
+      "correctKey": "A, B, or C",
+      "explanation": "Brief solution explanation. Wrap math in $."
+    },
+    {
+      "questionText": "Question 4 text. Wrap all math, variables, equations, chemical terms in LaTeX $ delimiters.",
+      "options": [
+        { "key": "A", "desc": "Option A text. Wrap any math in $." },
+        { "key": "B", "desc": "Option B text" },
+        { "key": "C", "desc": "Option C text" }
+      ],
+      "correctKey": "A, B, or C",
+      "explanation": "Brief solution explanation. Wrap math in $."
+    },
+    {
+      "questionText": "Question 5 text. Wrap all math, variables, equations, chemical terms in LaTeX $ delimiters.",
+      "options": [
+        { "key": "A", "desc": "Option A text. Wrap any math in $." },
+        { "key": "B", "desc": "Option B text" },
+        { "key": "C", "desc": "Option C text" }
+      ],
+      "correctKey": "A, B, or C",
+      "explanation": "Brief solution explanation. Wrap math in $."
+    }
+  ]
+}`;
+    }
+
+    try {
+      const response = await generateAIContent(prompt);
+      if (response.error || !response.text) {
+        throw new Error(response.message || 'AI generation failed');
+      }
+
+      // Securely extract and parse the JSON block
+      let cleanText = response.text.trim();
+      // Remove any markdown code block wrap: ```json ... ``` or ``` ... ```
+      cleanText = cleanText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
+      
+      const parsed = JSON.parse(cleanText);
+      setDynamicMissionContent(parsed);
+    } catch (e) {
+      console.warn("⚠️ Dynamic mission generation failed, using fallback:", e.message);
+      setMissionError(e.message);
+      // Fallback is handled automatically in the UI rendering by checking if dynamicMissionContent is null
+    } finally {
+      setMissionLoading(false);
+    }
+  };
+
+  const startStudyMission = (mission) => {
+    setMissionAnswer(null);
+    setMissionSubmitted(false);
+    setQuizStep(0);
+    setQuizAnswers({});
+    setActiveMission(mission);
+    
+    // Asynchronously fetch dynamic AI content for this mission
+    fetchDynamicMission(mission);
+
+    logActivity(
+      currentUser?.uid || 'guest',
+      currentUser?.displayName || currentUser?.email || 'Student',
+      'study_session',
+      `Started study mission: ${mission.label}`
+    ).catch(err => console.error("Activity logging failed", err));
   };
 
   // Add a custom weakness
@@ -1273,19 +1579,7 @@ export default function Home() {
                         </span>
                         {!mission.done && mission.type !== 'login' && (
                           <button 
-                            onClick={() => {
-                              setMissionAnswer(null);
-                              setMissionSubmitted(false);
-                              setQuizStep(0);
-                              setQuizAnswers({});
-                              setActiveMission(mission);
-                              logActivity(
-                                currentUser?.uid || 'guest',
-                                currentUser?.displayName || currentUser?.email || 'Student',
-                                'study_session',
-                                `Started study mission: ${mission.label}`
-                              ).catch(err => console.error("Activity logging failed", err));
-                            }}
+                            onClick={() => startStudyMission(mission)}
                             className="btn btn-secondary" 
                             style={{ padding: '0.3rem 0.6rem', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.25rem', whiteSpace: 'nowrap' }}
                           >
@@ -1695,6 +1989,7 @@ export default function Home() {
             <label className="input-label" style={{ fontSize: '0.7rem' }}>Class</label>
             <select className="input-field" value={examGrade} onChange={e => setExamGrade(e.target.value)} style={{ padding: '0.5rem', fontSize: '0.85rem', width: '100%' }}>
               <option value="Class 10">Class 10</option>
+              <option value="Class 11">Class 11</option>
               <option value="Class 12">Class 12</option>
               <option value="Class 9">Class 9</option>
               <option value="Class 8">Class 8</option>
@@ -1802,13 +2097,16 @@ export default function Home() {
                   ⚡ ACTIVE DAILY MISSION
                 </span>
                 <h4 style={{ margin: 0, color: '#fff', fontSize: '1.1rem', fontWeight: 800 }}>
-                  {activeMission.type === 'concept' && "Doubt Practice: Solve Math Concept"}
-                  {activeMission.type === 'revision' && "15-Min Revision: Physics Quick Recap"}
-                  {activeMission.type === 'quiz' && "Quick Quiz: Chemistry MCQ Test"}
+                  {activeMission.type === 'concept' && `Doubt Practice: Solve ${activeMission.subject || 'Math'} Concept`}
+                  {activeMission.type === 'revision' && `15-Min Revision: ${activeMission.subject || 'Physics'} Quick Recap`}
+                  {activeMission.type === 'quiz' && `Quick Quiz: ${activeMission.subject || 'Chemistry'} MCQ Test`}
                 </h4>
               </div>
               <button 
-                onClick={() => setActiveMission(null)}
+                onClick={() => {
+                  setActiveMission(null);
+                  setDynamicMissionContent(null);
+                }}
                 style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', opacity: 0.7 }}
               >
                 <X size={20} />
@@ -1816,334 +2114,352 @@ export default function Home() {
             </div>
 
             {/* Content Area */}
-            <div style={{ marginBottom: '1.75rem' }}>
-              
-              {/* 1. CONCEPT (Mathematics) */}
-              {activeMission.type === 'concept' && (
-                <div>
-                  <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '1.25rem' }}>
-                    💡 <strong style={{ color: '#fff' }}>AP Concept Practice:</strong> Solve this high-yield Class 10 Board exam problem to earn your XP!
-                  </p>
-
-                  <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '12px', padding: '1.25rem', marginBottom: '1.25rem' }}>
-                    <div style={{ fontSize: '0.92rem', fontWeight: 700, color: '#fff', lineHeight: 1.5 }}>
-                      Q: In an Arithmetic Progression (AP), if the common difference (<span style={{ fontFamily: 'math', fontStyle: 'italic' }}>d</span>) is −4, and the seventh term (<span style={{ fontFamily: 'math', fontStyle: 'italic' }}>a₇</span>) is 4, find the first term (<span style={{ fontFamily: 'math', fontStyle: 'italic' }}>a</span>).
-                    </div>
+            <div style={{ marginBottom: '1.75rem', flex: 1 }}>
+              {missionLoading ? (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '300px', gap: '1.5rem', textAlign: 'center' }}>
+                  <Loader2 size={40} style={{ color: 'var(--primary)', animation: 'spin 1.5s linear infinite' }} />
+                  <div>
+                    <h4 style={{ margin: '0 0 0.5rem 0', color: '#fff', fontSize: '1.1rem', fontWeight: 800 }}>TaniOS AI Study Engine</h4>
+                    <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                      Engineering high-yield board study tasks for <strong>{activeMission.subject || 'your subjects'}</strong> (Class {profileClass || '10'})...
+                    </p>
                   </div>
-
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                    {[
-                      { key: 'A', value: '20', desc: 'First term a = 20' },
-                      { key: 'B', value: '24', desc: 'First term a = 24' },
-                      { key: 'C', value: '28', desc: 'First term a = 28 (Correct)' },
-                      { key: 'D', value: '32', desc: 'First term a = 32' }
-                    ].map(opt => {
-                      const isSelected = missionAnswer === opt.key;
-                      return (
-                        <button
-                          key={opt.key}
-                          onClick={() => !missionSubmitted && setMissionAnswer(opt.key)}
-                          disabled={missionSubmitted}
-                          style={{
-                            display: 'flex', alignItems: 'center', gap: '1rem',
-                            width: '100%', padding: '0.85rem 1rem',
-                            background: isSelected ? 'rgba(108, 99, 255, 0.12)' : 'rgba(255, 255, 255, 0.01)',
-                            border: isSelected ? '1px solid var(--primary)' : '1px solid rgba(255,255,255,0.05)',
-                            borderRadius: '10px', color: '#fff', textAlign: 'left',
-                            cursor: missionSubmitted ? 'default' : 'pointer',
-                            transition: 'all 0.2s'
-                          }}
-                        >
-                          <div style={{
-                            width: '24px', height: '24px', borderRadius: '50%',
-                            background: isSelected ? 'var(--primary)' : 'rgba(255,255,255,0.05)',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            fontSize: '0.75rem', fontWeight: 800, color: isSelected ? '#fff' : 'var(--text-secondary)'
-                          }}>
-                            {opt.key}
-                          </div>
-                          <span style={{ fontSize: '0.88rem', fontWeight: 600 }}>{opt.desc}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  {missionSubmitted && (
-                    <div style={{
-                      marginTop: '1.25rem', padding: '1rem',
-                      background: missionAnswer === 'C' ? 'rgba(16, 185, 129, 0.08)' : 'rgba(239, 68, 68, 0.08)',
-                      border: missionAnswer === 'C' ? '1px solid rgba(16, 185, 129, 0.2)' : '1px solid rgba(239, 68, 68, 0.2)',
-                      borderRadius: '10px', fontSize: '0.82rem', lineHeight: 1.5, color: 'var(--text-secondary)'
-                    }}>
-                      {missionAnswer === 'C' ? (
-                        <>
-                          🎉 <strong style={{ color: '#10b981' }}>Correct Answer!</strong> Good job! Formula: <span style={{ fontFamily: 'monospace' }}>a₇ = a + 6d</span>. Substituting the values: <span style={{ fontFamily: 'monospace' }}>4 = a + 6(−4) ⟹ 4 = a − 24 ⟹ a = 28</span>.
-                        </>
-                      ) : (
-                        <>
-                          ❌ <strong style={{ color: '#f87171' }}>Incorrect Option.</strong> Hint: Use the formula <span style={{ fontFamily: 'monospace' }}>a_n = a + (n−1)d</span>. Try calculating <span style={{ fontFamily: 'monospace' }}>a₇ = a + 6d ⟹ 4 = a − 24</span>. Select option <strong>C (28)</strong> to solve!
-                        </>
-                      )}
-                    </div>
-                  )}
                 </div>
-              )}
+              ) : (
+                <>
+                  {/* 1. CONCEPT (Mathematics / Concept Doubt practice) */}
+                  {activeMission.type === 'concept' && (() => {
+                    const data = dynamicMissionContent || fallbackConcept;
+                    return (
+                      <div>
+                        <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '1.25rem' }}>
+                          💡 <strong style={{ color: '#fff' }}>{data.conceptName || "Concept"} Practice:</strong> Solve this high-yield CBSE/State-board MCQ to earn your XP!
+                        </p>
 
-              {/* 2. REVISION (Physics) */}
-              {activeMission.type === 'revision' && (
-                <div>
-                  <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '1rem' }}>
-                    📚 Read this high-density Physics card and solve the retention question:
-                  </p>
-
-                  {/* Bullet sheet */}
-                  <div style={{
-                    background: 'linear-gradient(135deg, rgba(167, 139, 250, 0.05), rgba(108, 99, 255, 0.08))',
-                    border: '1px solid rgba(167, 139, 250, 0.15)',
-                    borderRadius: '12px', padding: '1rem 1.25rem', marginBottom: '1.25rem',
-                    fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.6
-                  }}>
-                    <strong style={{ color: '#fff', fontSize: '0.85rem', display: 'block', marginBottom: '0.5rem' }}>
-                      ⚡ Refraction & Lens Power Summary
-                    </strong>
-                    <ul style={{ paddingLeft: '1.25rem', margin: 0 }}>
-                      <li style={{ marginBottom: '0.35rem' }}><strong style={{ color: '#a78bfa' }}>Refractive Index (n):</strong> Ratio of light speeds: <span style={{ fontFamily: 'monospace' }}>n = c/v</span>.</li>
-                      <li style={{ marginBottom: '0.35rem' }}><strong style={{ color: '#a78bfa' }}>Snell\'s Law:</strong> Ratio of sines is constant: <span style={{ fontFamily: 'monospace' }}>sin i / sin r = constant = n₂/n₁</span>.</li>
-                      <li style={{ marginBottom: '0.35rem' }}><strong style={{ color: '#a78bfa' }}>Power of Lens (P):</strong> Reciprocal of focal length: <span style={{ fontFamily: 'monospace' }}>P = 1/f</span> (f must be in meters). SI Unit is Dioptre (D).</li>
-                      <li><strong style={{ color: '#a78bfa' }}>Lens Sign Conventions:</strong> Convex lenses have positive focal length (+f), Concave lenses have negative (-f).</li>
-                    </ul>
-                  </div>
-
-                  <div style={{ fontSize: '0.88rem', fontWeight: 700, color: '#fff', marginBottom: '0.75rem', lineHeight: 1.4 }}>
-                    Q: If a doctor prescribes a lens of power +2.0 D, what is its focal length and lens type?
-                  </div>
-
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
-                    {[
-                      { key: 'A', value: 'f = -0.5 m, Concave' },
-                      { key: 'B', value: 'f = +0.5 m, Convex (Correct)' },
-                      { key: 'C', value: 'f = +2.0 m, Convex' },
-                      { key: 'D', value: 'f = -2.0 m, Concave' }
-                    ].map(opt => {
-                      const isSelected = missionAnswer === opt.key;
-                      return (
-                        <button
-                          key={opt.key}
-                          onClick={() => !missionSubmitted && setMissionAnswer(opt.key)}
-                          disabled={missionSubmitted}
-                          style={{
-                            display: 'flex', alignItems: 'center', gap: '1rem',
-                            width: '100%', padding: '0.75rem 1rem',
-                            background: isSelected ? 'rgba(108, 99, 255, 0.12)' : 'rgba(255, 255, 255, 0.01)',
-                            border: isSelected ? '1px solid var(--primary)' : '1px solid rgba(255,255,255,0.05)',
-                            borderRadius: '10px', color: '#fff', textAlign: 'left',
-                            cursor: missionSubmitted ? 'default' : 'pointer',
-                            transition: 'all 0.2s'
-                          }}
-                        >
-                          <div style={{
-                            width: '22px', height: '22px', borderRadius: '50%',
-                            background: isSelected ? 'var(--primary)' : 'rgba(255,255,255,0.05)',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            fontSize: '0.72rem', fontWeight: 800, color: isSelected ? '#fff' : 'var(--text-secondary)'
-                          }}>
-                            {opt.key}
+                        <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '12px', padding: '1.25rem', marginBottom: '1.25rem' }}>
+                          <div style={{ fontSize: '0.92rem', fontWeight: 700, color: '#fff', lineHeight: 1.5 }}>
+                            <ReactMarkdown
+                              remarkPlugins={[remarkGfm, remarkMath]}
+                              rehypePlugins={[rehypeKatex]}
+                              components={markdownComponents}
+                            >{data.questionText}</ReactMarkdown>
                           </div>
-                          <span style={{ fontSize: '0.8rem', fontWeight: 600 }}>{opt.value}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  {missionSubmitted && (
-                    <div style={{
-                      marginTop: '1.25rem', padding: '1rem',
-                      background: missionAnswer === 'B' ? 'rgba(16, 185, 129, 0.08)' : 'rgba(239, 68, 68, 0.08)',
-                      border: missionAnswer === 'B' ? '1px solid rgba(16, 185, 129, 0.2)' : '1px solid rgba(239, 68, 68, 0.2)',
-                      borderRadius: '10px', fontSize: '0.82rem', lineHeight: 1.5, color: 'var(--text-secondary)'
-                    }}>
-                      {missionAnswer === 'B' ? (
-                        <>
-                          🎉 <strong style={{ color: '#10b981' }}>Correct Answer!</strong> Power is positive +2.0 D, so the lens is Convex. Focal length: <span style={{ fontFamily: 'monospace' }}>f = 1/P = 1/2.0 = 0.5 m = +0.5 m</span>.
-                        </>
-                      ) : (
-                        <>
-                          ❌ <strong style={{ color: '#f87171' }}>Wrong Answer.</strong> Remember: Power <span style={{ fontFamily: 'monospace' }}>P = 1/f ⟹ f = 1/P = 1/+2.0 = 0.5 m</span>. Positive power means a Convex lens. Select option <strong>B</strong> to proceed!
-                        </>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* 3. QUIZ (Chemistry 5 Qs) */}
-              {activeMission.type === 'quiz' && (() => {
-                const quizQuestions = [
-                  {
-                    q: "Which of the following is a decomposition reaction?",
-                    opts: [
-                      { key: 'A', text: "2H₂ + O₂ ⟶ 2H₂O (Combination)" },
-                      { key: 'B', text: "CaCO₃ ⟶ CaO + CO₂ (Decomposition)" },
-                      { key: 'C', text: "Zn + CuSO₄ ⟶ ZnSO₄ + Cu (Displacement)" }
-                    ],
-                    correct: 'B'
-                  },
-                  {
-                    q: "The pH value of an acidic solution is:",
-                    opts: [
-                      { key: 'A', text: "Less than 7 (Acidic)" },
-                      { key: 'B', text: "Equal to 7 (Neutral)" },
-                      { key: 'C', text: "Greater than 7 (Basic)" }
-                    ],
-                    correct: 'A'
-                  },
-                  {
-                    q: "Which of the following metals is stored under kerosene oil to prevent accidental fires?",
-                    opts: [
-                      { key: 'A', text: "Gold" },
-                      { key: 'B', text: "Sodium" },
-                      { key: 'C', text: "Copper" }
-                    ],
-                    correct: 'B'
-                  },
-                  {
-                    q: "The functional group present in ethanol (CH₃CH₂OH) is:",
-                    opts: [
-                      { key: 'A', text: "Aldehyde (-CHO)" },
-                      { key: 'B', text: "Alcohol (-OH)" },
-                      { key: 'C', text: "Carboxylic Acid (-COOH)" }
-                    ],
-                    correct: 'B'
-                  },
-                  {
-                    q: "Bronze is a metallic alloy primarily composed of:",
-                    opts: [
-                      { key: 'A', text: "Copper and Zinc (Brass)" },
-                      { key: 'B', text: "Copper and Tin (Bronze)" },
-                      { key: 'C', text: "Lead and Tin (Solder)" }
-                    ],
-                    correct: 'B'
-                  }
-                ];
-
-                if (quizStep < 5) {
-                  const currentQ = quizQuestions[quizStep];
-                  const selectedOpt = quizAnswers[quizStep];
-                  return (
-                    <div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                        <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 700 }}>
-                          Question {quizStep + 1} of 5
-                        </span>
-                        <div style={{ width: '80px', height: '4px', background: 'rgba(255,255,255,0.05)', borderRadius: '10px', overflow: 'hidden' }}>
-                          <div style={{ width: `${((quizStep + 1) / 5) * 100}%`, height: '100%', background: 'var(--primary)' }} />
                         </div>
-                      </div>
 
-                      <div style={{ fontSize: '0.92rem', fontWeight: 700, color: '#fff', marginBottom: '1.25rem', lineHeight: 1.45 }}>
-                        {currentQ.q}
-                      </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                          {data.options.map(opt => {
+                            const isSelected = missionAnswer === opt.key;
+                            return (
+                              <button
+                                key={opt.key}
+                                onClick={() => !missionSubmitted && setMissionAnswer(opt.key)}
+                                disabled={missionSubmitted}
+                                style={{
+                                  display: 'flex', alignItems: 'center', gap: '1rem',
+                                  width: '100%', padding: '0.85rem 1rem',
+                                  background: isSelected ? 'rgba(108, 99, 255, 0.12)' : 'rgba(255, 255, 255, 0.01)',
+                                  border: isSelected ? '1px solid var(--primary)' : '1px solid rgba(255,255,255,0.05)',
+                                  borderRadius: '10px', color: '#fff', textAlign: 'left',
+                                  cursor: missionSubmitted ? 'default' : 'pointer',
+                                  transition: 'all 0.2s'
+                                }}
+                              >
+                                <div style={{
+                                  width: '24px', height: '24px', borderRadius: '50%',
+                                  background: isSelected ? 'var(--primary)' : 'rgba(255,255,255,0.05)',
+                                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                  fontSize: '0.75rem', fontWeight: 800, color: isSelected ? '#fff' : 'var(--text-secondary)'
+                                }}>
+                                  {opt.key}
+                                </div>
+                                <span style={{ fontSize: '0.88rem', fontWeight: 600 }}>
+                                  <ReactMarkdown
+                                    remarkPlugins={[remarkGfm, remarkMath]}
+                                    rehypePlugins={[rehypeKatex]}
+                                    components={markdownComponents}
+                                  >{opt.desc || opt.text}</ReactMarkdown>
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
 
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
-                        {currentQ.opts.map(opt => {
-                          const isSelected = selectedOpt === opt.key;
-                          return (
+                        {missionSubmitted && (
+                          <div style={{
+                            marginTop: '1.25rem', padding: '1rem',
+                            background: missionAnswer === data.correctKey ? 'rgba(16, 185, 129, 0.08)' : 'rgba(239, 68, 68, 0.08)',
+                            border: missionAnswer === data.correctKey ? '1px solid rgba(16, 185, 129, 0.2)' : '1px solid rgba(239, 68, 68, 0.2)',
+                            borderRadius: '10px', fontSize: '0.82rem', lineHeight: 1.5, color: 'var(--text-secondary)'
+                          }}>
+                            {missionAnswer === data.correctKey ? (
+                              <>
+                                🎉 <strong style={{ color: '#10b981' }}>Correct Answer!</strong> Good job! <br />
+                                <ReactMarkdown
+                                  remarkPlugins={[remarkGfm, remarkMath]}
+                                  rehypePlugins={[rehypeKatex]}
+                                  components={markdownComponents}
+                                >{data.explanation}</ReactMarkdown>
+                              </>
+                            ) : (
+                              <>
+                                ❌ <strong style={{ color: '#f87171' }}>Incorrect Option.</strong> <br />
+                                Select option <strong>{data.correctKey}</strong> to solve!
+                              </>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
+
+                  {/* 2. REVISION (Physics / Science quick card + retention question) */}
+                  {activeMission.type === 'revision' && (() => {
+                    const data = dynamicMissionContent || fallbackRevision;
+                    return (
+                      <div>
+                        <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '1rem' }}>
+                          📚 Read this high-density study card and solve the retention question:
+                        </p>
+
+                        {/* Bullet sheet */}
+                        <div style={{
+                          background: 'linear-gradient(135deg, rgba(167, 139, 250, 0.05), rgba(108, 99, 255, 0.08))',
+                          border: '1px solid rgba(167, 139, 250, 0.15)',
+                          borderRadius: '12px', padding: '1rem 1.25rem', marginBottom: '1.25rem',
+                          fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.6
+                        }}>
+                          <strong style={{ color: '#fff', fontSize: '0.85rem', display: 'block', marginBottom: '0.5rem' }}>
+                            ⚡ {data.title}
+                          </strong>
+                          <ul style={{ paddingLeft: '1.25rem', margin: 0 }}>
+                            {data.revisionPoints.map((pt, idx) => (
+                              <li key={idx} style={{ marginBottom: '0.35rem' }}>
+                                <ReactMarkdown
+                                  remarkPlugins={[remarkGfm, remarkMath]}
+                                  rehypePlugins={[rehypeKatex]}
+                                  components={markdownComponents}
+                                >{pt}</ReactMarkdown>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+
+                        <div style={{ fontSize: '0.88rem', fontWeight: 700, color: '#fff', marginBottom: '0.75rem', lineHeight: 1.4 }}>
+                          <ReactMarkdown
+                            remarkPlugins={[remarkGfm, remarkMath]}
+                            rehypePlugins={[rehypeKatex]}
+                            components={markdownComponents}
+                          >{data.questionText}</ReactMarkdown>
+                        </div>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+                          {data.options.map(opt => {
+                            const isSelected = missionAnswer === opt.key;
+                            return (
+                              <button
+                                key={opt.key}
+                                onClick={() => !missionSubmitted && setMissionAnswer(opt.key)}
+                                disabled={missionSubmitted}
+                                style={{
+                                  display: 'flex', alignItems: 'center', gap: '1rem',
+                                  width: '100%', padding: '0.75rem 1rem',
+                                  background: isSelected ? 'rgba(108, 99, 255, 0.12)' : 'rgba(255, 255, 255, 0.01)',
+                                  border: isSelected ? '1px solid var(--primary)' : '1px solid rgba(255,255,255,0.05)',
+                                  borderRadius: '10px', color: '#fff', textAlign: 'left',
+                                  cursor: missionSubmitted ? 'default' : 'pointer',
+                                  transition: 'all 0.2s'
+                                }}
+                              >
+                                <div style={{
+                                  width: '22px', height: '22px', borderRadius: '50%',
+                                  background: isSelected ? 'var(--primary)' : 'rgba(255,255,255,0.05)',
+                                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                  fontSize: '0.72rem', fontWeight: 800, color: isSelected ? '#fff' : 'var(--text-secondary)'
+                                }}>
+                                  {opt.key}
+                                </div>
+                                <span style={{ fontSize: '0.8rem', fontWeight: 600 }}>
+                                  <ReactMarkdown
+                                    remarkPlugins={[remarkGfm, remarkMath]}
+                                    rehypePlugins={[rehypeKatex]}
+                                    components={markdownComponents}
+                                  >{opt.desc || opt.text}</ReactMarkdown>
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+
+                        {missionSubmitted && (
+                          <div style={{
+                            marginTop: '1.25rem', padding: '1rem',
+                            background: missionAnswer === data.correctKey ? 'rgba(16, 185, 129, 0.08)' : 'rgba(239, 68, 68, 0.08)',
+                            border: missionAnswer === data.correctKey ? '1px solid rgba(16, 185, 129, 0.2)' : '1px solid rgba(239, 68, 68, 0.2)',
+                            borderRadius: '10px', fontSize: '0.82rem', lineHeight: 1.5, color: 'var(--text-secondary)'
+                          }}>
+                            {missionAnswer === data.correctKey ? (
+                              <>
+                                🎉 <strong style={{ color: '#10b981' }}>Correct Answer!</strong> <br />
+                                <ReactMarkdown
+                                  remarkPlugins={[remarkGfm, remarkMath]}
+                                  rehypePlugins={[rehypeKatex]}
+                                  components={markdownComponents}
+                                >{data.explanation}</ReactMarkdown>
+                              </>
+                            ) : (
+                              <>
+                                ❌ <strong style={{ color: '#f87171' }}>Wrong Answer.</strong> <br />
+                                Select option <strong>{data.correctKey}</strong> to proceed!
+                              </>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
+
+                  {/* 3. QUIZ (Chemistry / 5 Question Quiz) */}
+                  {activeMission.type === 'quiz' && (() => {
+                    const data = dynamicMissionContent || fallbackQuiz;
+                    const questions = data.questions || fallbackQuiz.questions;
+                    const quizTitle = data.quizTitle || fallbackQuiz.quizTitle;
+
+                    if (quizStep < 5) {
+                      const currentQ = questions[quizStep] || fallbackQuiz.questions[quizStep];
+                      const selectedOpt = quizAnswers[quizStep];
+                      return (
+                        <div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                            <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 700 }}>
+                              Question {quizStep + 1} of 5
+                            </span>
+                            <div style={{ width: '80px', height: '4px', background: 'rgba(255,255,255,0.05)', borderRadius: '10px', overflow: 'hidden' }}>
+                              <div style={{ width: `${((quizStep + 1) / 5) * 100}%`, height: '100%', background: 'var(--primary)' }} />
+                            </div>
+                          </div>
+
+                          <div style={{ fontSize: '0.92rem', fontWeight: 700, color: '#fff', marginBottom: '1.25rem', lineHeight: 1.45 }}>
+                            <ReactMarkdown
+                              remarkPlugins={[remarkGfm, remarkMath]}
+                              rehypePlugins={[rehypeKatex]}
+                              components={markdownComponents}
+                            >{currentQ.questionText}</ReactMarkdown>
+                          </div>
+
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+                            {currentQ.options.map(opt => {
+                              const isSelected = selectedOpt === opt.key;
+                              return (
+                                <button
+                                  key={opt.key}
+                                  onClick={() => setQuizAnswers(prev => ({ ...prev, [quizStep]: opt.key }))}
+                                  style={{
+                                    display: 'flex', alignItems: 'center', gap: '1rem',
+                                    width: '100%', padding: '0.85rem 1rem',
+                                    background: isSelected ? 'rgba(108, 99, 255, 0.12)' : 'rgba(255, 255, 255, 0.01)',
+                                    border: isSelected ? '1px solid var(--primary)' : '1px solid rgba(255,255,255,0.05)',
+                                    borderRadius: '10px', color: '#fff', textAlign: 'left',
+                                    cursor: 'pointer', transition: 'all 0.2s'
+                                  }}
+                                >
+                                  <div style={{
+                                    width: '22px', height: '22px', borderRadius: '50%',
+                                    background: isSelected ? 'var(--primary)' : 'rgba(255,255,255,0.05)',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    fontSize: '0.72rem', fontWeight: 800, color: isSelected ? '#fff' : 'var(--text-secondary)'
+                                  }}>
+                                    {opt.key}
+                                  </div>
+                                  <span style={{ fontSize: '0.82rem', fontWeight: 600 }}>
+                                    <ReactMarkdown
+                                      remarkPlugins={[remarkGfm, remarkMath]}
+                                      rehypePlugins={[rehypeKatex]}
+                                      components={markdownComponents}
+                                    >{opt.desc || opt.text}</ReactMarkdown>
+                                  </span>
+                                </button>
+                              );
+                            })}
+                          </div>
+
+                          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
                             <button
-                              key={opt.key}
-                              onClick={() => setQuizAnswers(prev => ({ ...prev, [quizStep]: opt.key }))}
+                              onClick={() => selectedOpt && setQuizStep(s => s + 1)}
+                              disabled={!selectedOpt}
+                              className="btn btn-primary"
                               style={{
-                                display: 'flex', alignItems: 'center', gap: '1rem',
-                                width: '100%', padding: '0.85rem 1rem',
-                                background: isSelected ? 'rgba(108, 99, 255, 0.12)' : 'rgba(255, 255, 255, 0.01)',
-                                border: isSelected ? '1px solid var(--primary)' : '1px solid rgba(255,255,255,0.05)',
-                                borderRadius: '10px', color: '#fff', textAlign: 'left',
-                                cursor: 'pointer', transition: 'all 0.2s'
+                                padding: '0.6rem 1.25rem', fontSize: '0.82rem', fontWeight: 700,
+                                cursor: selectedOpt ? 'pointer' : 'not-allowed', opacity: selectedOpt ? 1 : 0.5
                               }}
                             >
-                              <div style={{
-                                width: '22px', height: '22px', borderRadius: '50%',
-                                background: isSelected ? 'var(--primary)' : 'rgba(255,255,255,0.05)',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                fontSize: '0.72rem', fontWeight: 800, color: isSelected ? '#fff' : 'var(--text-secondary)'
-                              }}>
-                                {opt.key}
-                              </div>
-                              <span style={{ fontSize: '0.82rem', fontWeight: 600 }}>{opt.text}</span>
+                              {quizStep === 4 ? "Review Answers" : "Next Question ➔"}
                             </button>
-                          );
-                        })}
-                      </div>
+                          </div>
+                        </div>
+                      );
+                    } else {
+                      // Final summary results
+                      let correctCount = 0;
+                      questions.forEach((q, idx) => {
+                        const correctKey = q.correctKey || q.correct;
+                        if (quizAnswers[idx] === correctKey) correctCount++;
+                      });
 
-                      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
-                        <button
-                          onClick={() => selectedOpt && setQuizStep(s => s + 1)}
-                          disabled={!selectedOpt}
-                          className="btn btn-primary"
-                          style={{
-                            padding: '0.6rem 1.25rem', fontSize: '0.82rem', fontWeight: 700,
-                            cursor: selectedOpt ? 'pointer' : 'not-allowed', opacity: selectedOpt ? 1 : 0.5
-                          }}
-                        >
-                          {quizStep === 4 ? "Review Answers" : "Next Question ➔"}
-                        </button>
-                      </div>
-                    </div>
-                  );
-                } else {
-                  // Final summary results
-                  let correctCount = 0;
-                  quizQuestions.forEach((q, idx) => {
-                    if (quizAnswers[idx] === q.correct) correctCount++;
-                  });
+                      return (
+                        <div style={{ textAlign: 'center' }}>
+                          <span style={{ fontSize: '2.5rem' }}>🏆</span>
+                          <h4 style={{ color: '#10b981', margin: '0.5rem 0', fontWeight: 800, fontSize: '1.25rem' }}>
+                            {quizTitle} Completed!
+                          </h4>
+                          <p style={{ margin: '0 0 1.25rem 0', fontSize: '0.88rem', color: 'var(--text-secondary)' }}>
+                            You scored <strong style={{ color: '#fff' }}>{correctCount} / 5 Correct</strong> ({correctCount * 20}% Score)
+                          </p>
 
-                  return (
-                    <div style={{ textAlign: 'center' }}>
-                      <span style={{ fontSize: '2.5rem' }}>🏆</span>
-                      <h4 style={{ color: '#10b981', margin: '0.5rem 0', fontWeight: 800, fontSize: '1.25rem' }}>
-                        Chemistry Quiz Completed!
-                      </h4>
-                      <p style={{ margin: '0 0 1.25rem 0', fontSize: '0.88rem', color: 'var(--text-secondary)' }}>
-                        You scored <strong style={{ color: '#fff' }}>{correctCount} / 5 Correct</strong> ({correctCount * 20}% Score)
-                      </p>
+                          {/* Brief details checklist */}
+                          <div style={{
+                            background: 'rgba(255,255,255,0.02)',
+                            border: '1px solid rgba(255,255,255,0.05)',
+                            borderRadius: '12px', padding: '1rem',
+                            textAlign: 'left', marginBottom: '1.5rem',
+                            display: 'flex', flexDirection: 'column', gap: '0.5rem'
+                          }}>
+                            {questions.map((q, i) => {
+                              const userAns = quizAnswers[i];
+                              const correctKey = q.correctKey || q.correct;
+                              const isCorrect = userAns === correctKey;
+                              return (
+                                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem' }}>
+                                  <span style={{ color: 'var(--text-secondary)', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', maxWidth: '70%' }}>
+                                    Q{i+1}: {q.questionText.replace(/[$#*\-_]/g, '').substring(0, 50)}...
+                                  </span>
+                                  <span style={{ color: isCorrect ? '#10b981' : '#f87171', fontWeight: 800, flexShrink: 0 }}>
+                                    {isCorrect ? "✓ Correct" : `✗ Wrong (Ans: ${correctKey})`}
+                                  </span>
+                                </div>
+                              );
+                            })}
+                          </div>
 
-                      {/* Brief details checklist */}
-                      <div style={{
-                        background: 'rgba(255,255,255,0.02)',
-                        border: '1px solid rgba(255,255,255,0.05)',
-                        borderRadius: '12px', padding: '1rem',
-                        textAlign: 'left', marginBottom: '1.5rem',
-                        display: 'flex', flexDirection: 'column', gap: '0.5rem'
-                      }}>
-                        {quizQuestions.map((q, i) => {
-                          const userAns = quizAnswers[i];
-                          const isCorrect = userAns === q.correct;
-                          return (
-                            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem' }}>
-                              <span style={{ color: 'var(--text-secondary)' }}>Q{i+1}: Decomposition, Acids, Sodium, Ethanol, Bronze</span>
-                              <span style={{ color: isCorrect ? '#10b981' : '#f87171', fontWeight: 800 }}>
-                                {isCorrect ? "✓ Correct" : `✗ Wrong (Ans: ${q.correct})`}
-                              </span>
-                            </div>
-                          );
-                        })}
-                      </div>
-
-                      <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
-                        Ready to submit and unlock <strong style={{ color: '#a78bfa' }}>+30 XP</strong>?
-                      </p>
-                    </div>
-                  );
-                }
-              })()}
-
+                          <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
+                            Ready to submit and unlock <strong style={{ color: '#a78bfa' }}>+30 XP</strong>?
+                          </p>
+                        </div>
+                      );
+                    }
+                  })()}
+                </>
+              )}
             </div>
 
             {/* Modal Bottom Actions */}
-            {activeMission.type !== 'quiz' && (
+            {!missionLoading && activeMission.type !== 'quiz' && (
               <div style={{ display: 'flex', gap: '0.75rem', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '1.25rem' }}>
                 {!missionSubmitted ? (
                   <button
-                    onClick={() => missionAnswer && setMissionSubmitted(true)}
+                    onClick={() => {
+                      const data = dynamicMissionContent || (activeMission.type === 'concept' ? fallbackConcept : fallbackRevision);
+                      if (missionAnswer) setMissionSubmitted(true);
+                    }}
                     disabled={!missionAnswer}
                     className="btn btn-primary"
                     style={{
@@ -2156,14 +2472,9 @@ export default function Home() {
                 ) : (
                   <button
                     onClick={() => {
-                      if (activeMission.type === 'concept' && missionAnswer !== 'C') {
-                        // User got math wrong, hint was displayed, let them try again
-                        setMissionSubmitted(false);
-                        setMissionAnswer(null);
-                        return;
-                      }
-                      if (activeMission.type === 'revision' && missionAnswer !== 'B') {
-                        // User got physics wrong, hint was displayed, let them try again
+                      const data = dynamicMissionContent || (activeMission.type === 'concept' ? fallbackConcept : fallbackRevision);
+                      if (missionAnswer !== data.correctKey) {
+                        // User got it wrong, let them try again
                         setMissionSubmitted(false);
                         setMissionAnswer(null);
                         return;
@@ -2171,22 +2482,26 @@ export default function Home() {
                       // Correct selection: Mark completed on dashboard!
                       toggleMission(activeMission.id);
                       setActiveMission(null);
+                      setDynamicMissionContent(null);
                     }}
                     className="btn btn-primary"
                     style={{
                       flex: 1, padding: '0.8rem 1rem', fontSize: '0.88rem', fontWeight: 800,
-                      background: (activeMission.type === 'concept' && missionAnswer === 'C') || (activeMission.type === 'revision' && missionAnswer === 'B')
+                      background: (missionAnswer === (dynamicMissionContent || (activeMission.type === 'concept' ? fallbackConcept : fallbackRevision))?.correctKey)
                         ? 'linear-gradient(135deg, #10b981, #059669)'
                         : 'linear-gradient(135deg, var(--primary), var(--accent))'
                     }}
                   >
-                    {(activeMission.type === 'concept' && missionAnswer === 'C') || (activeMission.type === 'revision' && missionAnswer === 'B')
+                    {(missionAnswer === (dynamicMissionContent || (activeMission.type === 'concept' ? fallbackConcept : fallbackRevision))?.correctKey)
                       ? "Submit & Complete Mission"
                       : "Try Correct Option ➔"}
                   </button>
                 )}
                 <button
-                  onClick={() => setActiveMission(null)}
+                  onClick={() => {
+                    setActiveMission(null);
+                    setDynamicMissionContent(null);
+                  }}
                   style={{
                     background: 'rgba(255,255,255,0.03)',
                     border: '1px solid rgba(255,255,255,0.05)',
@@ -2200,12 +2515,13 @@ export default function Home() {
               </div>
             )}
 
-            {activeMission.type === 'quiz' && quizStep === 5 && (
+            {!missionLoading && activeMission.type === 'quiz' && quizStep === 5 && (
               <div style={{ display: 'flex', gap: '0.75rem', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '1.25rem' }}>
                 <button
                   onClick={() => {
                     toggleMission(activeMission.id);
                     setActiveMission(null);
+                    setDynamicMissionContent(null);
                   }}
                   className="btn btn-primary"
                   style={{ flex: 1, padding: '0.8rem 1rem', fontSize: '0.88rem', fontWeight: 800 }}
@@ -2213,7 +2529,10 @@ export default function Home() {
                   Submit & Complete Mission
                 </button>
                 <button
-                  onClick={() => setActiveMission(null)}
+                  onClick={() => {
+                    setActiveMission(null);
+                    setDynamicMissionContent(null);
+                  }}
                   style={{
                     background: 'rgba(255,255,255,0.03)',
                     border: '1px solid rgba(255,255,255,0.05)',
