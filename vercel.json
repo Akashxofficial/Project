@@ -6,8 +6,14 @@
     }
   ],
   "functions": {
-    "api/generate.js": {
-      "maxDuration": 60
-    }
+    "api/generate.js":              { "maxDuration": 60 },
+    "api/razorpay-order.js":        { "maxDuration": 30 },
+    "api/razorpay-verify.js":       { "maxDuration": 30 },
+    "api/track/activity.js":        { "maxDuration": 15 },
+    "api/track/user.js":            { "maxDuration": 15 },
+    "api/track/payment.js":         { "maxDuration": 15 },
+    "api/track/subscription.js":    { "maxDuration": 15 },
+    "api/admin/activities.js":      { "maxDuration": 30 },
+    "api/admin/students.js":        { "maxDuration": 30 }
   }
 }

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { LayoutDashboard, Key, ShieldAlert, Users, Settings, Activity, Sparkles, RefreshCw, CheckCircle, AlertTriangle, CreditCard, ClipboardList } from 'lucide-react';
-import { db, getActivities, getStudents } from '../lib/firebase';
+import { db, getActivities, getStudents, trackSubscriptionInMongo } from '../lib/firebase';
 import { collection, getDocs, query, orderBy, doc, updateDoc, setDoc } from 'firebase/firestore';
 
 export default function AdminDashboard() {
@@ -129,7 +129,7 @@ export default function AdminDashboard() {
           updatedAt: new Date()
         });
 
-        // 2. Update user profile document to set subscription Active
+        // 2. Update user profile document to set subscription Active in Firestore
         await setDoc(doc(db, "users", req.userId), {
           subscriptionActive: true,
           subscriptionStatus: 'active',
@@ -138,6 +138,15 @@ export default function AdminDashboard() {
           subscriptionUtr: req.utr,
           subscriptionActivatedAt: new Date()
         }, { merge: true });
+
+        // 3. ✅ Also sync subscription to MongoDB Atlas so student registry stays current
+        await trackSubscriptionInMongo(req.userId, {
+          subscriptionActive: true,
+          subscriptionPlan: 'Pro AI Member',
+          subscriptionAmount: req.amount,
+          subscriptionUtr: req.utr,
+          subscriptionActivatedAt: new Date().toISOString()
+        });
         
         alert("✅ Subscription approved and successfully activated for " + req.userName + "!");
       } else {
@@ -163,12 +172,20 @@ export default function AdminDashboard() {
           updatedAt: new Date()
         });
 
-        // 2. Set user status to none/rejected
+        // 2. Set user status to none/rejected in Firestore
         await setDoc(doc(db, "users", req.userId), {
           subscriptionActive: false,
           subscriptionStatus: 'rejected',
           subscriptionPlan: 'None (Rejected)'
         }, { merge: true });
+
+        // 3. ✅ Sync rejection to MongoDB Atlas as well
+        await trackSubscriptionInMongo(req.userId, {
+          subscriptionActive: false,
+          subscriptionPlan: 'None (Rejected)',
+          subscriptionAmount: 0,
+          subscriptionUtr: req.utr
+        });
         
         alert("❌ Subscription request rejected.");
       } else {
