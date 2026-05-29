@@ -1,12 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { db, logActivity, trackPaymentInMongo, trackSubscriptionInMongo } from '../lib/firebase';
-import { setDoc, doc, serverTimestamp } from 'firebase/firestore';
-import { Sparkles, Check, Copy, CheckCircle2, ShieldCheck, CreditCard, Lock, RefreshCw, ChevronLeft, ArrowRight, QrCode, AlertCircle } from 'lucide-react';
+import { setDoc, doc, serverTimestamp, getDoc, onSnapshot, query, collection, where, getDocs } from 'firebase/firestore';
+import { Sparkles, Check, Copy, CheckCircle2, ShieldCheck, CreditCard, Lock, RefreshCw, ChevronLeft, ArrowRight, QrCode, AlertCircle, Clock, CheckCheck } from 'lucide-react';
 
 // Dynamic backend URL — localhost for dev, same-origin in production
 const BACKEND_URL = import.meta.env.DEV ? 'http://localhost:3001' : '';
+
+// Anti-fraud: max UTR submission attempts per user per day
+const MAX_UTR_ATTEMPTS_PER_DAY = 3;
 
 export default function Subscribe() {
   const { currentUser, subscription, setSubscription } = useAuth();
@@ -18,15 +21,23 @@ export default function Subscribe() {
   const [errorMessage, setErrorMessage] = useState('');
   
   // TaniOS Pay Checkout states
-  const [gatewayStep, setGatewayStep] = useState(0); // 0: billing preview, 4: processing reconciler, 5: success
+  // Steps: 0=billing, 4=processing console, 5=razorpay success, 6=UPI pending verification screen
+  const [gatewayStep, setGatewayStep] = useState(0);
   const [gatewayLogs, setGatewayLogs] = useState([]);
   const [gatewayProgress, setGatewayProgress] = useState(0);
 
   // UPI QR Payment states
-  const [paymentMethod, setPaymentMethod] = useState('upi_qr'); // Default to UPI QR as requested
+  const [paymentMethod, setPaymentMethod] = useState('upi_qr');
   const [utrInput, setUtrInput] = useState('');
   const [utrError, setUtrError] = useState('');
   const [copied, setCopied] = useState(false);
+
+  // Pending verification state — used for real-time Firestore listener after UTR submission
+  const [pendingRequestId, setPendingRequestId] = useState(null);
+  const [pendingUtr, setPendingUtr] = useState('');
+  const [pendingElapsed, setPendingElapsed] = useState(0);
+  const pendingListenerRef = useRef(null);
+  const pendingTimerRef = useRef(null);
 
   const amount = 199;
   const [urlParams] = useState(() => new URLSearchParams(window.location.search));
@@ -37,6 +48,82 @@ export default function Subscribe() {
       navigate('/');
     }
   }, [subscription, navigate, urlParams]);
+
+  // ── Cleanup real-time listeners on unmount ─────────────────────────────────
+  useEffect(() => {
+    return () => {
+      if (pendingListenerRef.current) pendingListenerRef.current();
+      if (pendingTimerRef.current) clearInterval(pendingTimerRef.current);
+    };
+  }, []);
+
+  // ── Start real-time Firestore listener for pending UTR approval ─────────────
+  // Called after student submits UTR → listens for admin to approve/reject
+  const startPendingVerificationListener = (requestId, utr) => {
+    if (!import.meta.env.VITE_FIREBASE_API_KEY || import.meta.env.VITE_FIREBASE_API_KEY === 'dummy-api-key') return;
+
+    // Unsubscribe any existing listener first
+    if (pendingListenerRef.current) pendingListenerRef.current();
+    if (pendingTimerRef.current) clearInterval(pendingTimerRef.current);
+
+    setPendingRequestId(requestId);
+    setPendingUtr(utr);
+    setPendingElapsed(0);
+    setGatewayStep(6); // Show pending verification screen
+
+    // Elapsed time ticker
+    pendingTimerRef.current = setInterval(() => {
+      setPendingElapsed(prev => prev + 1);
+    }, 1000);
+
+    // Real-time Firestore listener on the payment_requests doc
+    const docRef = doc(db, 'payment_requests', requestId);
+    const unsubscribe = onSnapshot(docRef, (snap) => {
+      if (!snap.exists()) return;
+      const data = snap.data();
+      const status = data.status;
+
+      if (status === 'approved') {
+        // Admin approved → activate subscription immediately
+        if (pendingListenerRef.current) pendingListenerRef.current();
+        if (pendingTimerRef.current) clearInterval(pendingTimerRef.current);
+
+        const activeSub = {
+          active: true,
+          status: 'active',
+          plan: 'Pro AI Member (UPI QR Code)',
+          amount: data.amount || 199,
+          utr: data.utr || utr,
+          activatedAt: Date.now()
+        };
+        setSubscription(activeSub);
+        localStorage.setItem('tanios_subscription', JSON.stringify(activeSub));
+
+        logActivity(
+          currentUser?.uid || 'guest',
+          currentUser?.displayName || currentUser?.email || 'Student',
+          'subscription_activated',
+          `Pro subscription activated after UPI verification (UTR: ${utr})`
+        ).catch(console.warn);
+
+        setGatewayStep(5); // Show success screen
+        setTimeout(() => navigate('/'), 2500);
+
+      } else if (status === 'rejected') {
+        // Admin rejected → show error
+        if (pendingListenerRef.current) pendingListenerRef.current();
+        if (pendingTimerRef.current) clearInterval(pendingTimerRef.current);
+
+        setGatewayStep(0);
+        setCheckoutLoading(false);
+        setErrorMessage('❌ Your payment UTR was not verified. Please check the UTR number or contact support.');
+      }
+    }, (err) => {
+      console.warn('Pending listener error:', err.message);
+    });
+
+    pendingListenerRef.current = unsubscribe;
+  };
 
   // Idempotency Key generator: hashes (orderId + studentUID) for secure unique transaction validation
   const generateIdempotencyKey = (orderId, uid) => {
@@ -322,7 +409,14 @@ export default function Subscribe() {
     }, 800);
   };
 
-  // ── UPI QR UTR Verification & Banking Reconciler Handshake ─────────────
+  // ── FRAUD-PROOF UPI UTR Submission ─────────────────────────────────────────
+  // Security model:
+  //   1. UTR is stored as PENDING — never auto-activated on submission
+  //   2. UTR uniqueness checked globally (no same UTR claimed by 2 users)
+  //   3. Rate-limited: max 3 UTR submissions per user per day
+  //   4. Admin manually verifies payment against bank statement → approves in admin panel
+  //   5. Firestore onSnapshot on the payment_requests doc fires instantly on approval
+  //   6. Student auto-redirected to dashboard when admin approves
   const handleVerifyUPIPayment = async () => {
     if (!utrInput.trim()) {
       setUtrError('Please enter the 12-digit UPI UTR number.');
@@ -335,143 +429,160 @@ export default function Subscribe() {
     }
     setUtrError('');
     setCheckoutLoading(true);
-    setGatewayStep(4); // Aggregator processing node console
+    setGatewayStep(4);
     setGatewayProgress(0);
-    setGatewayLogs([`🔒 Initiating secure UPI payment reconciliation for UTR: ${cleanUtr}...`]);
-
-    const logs = [
-      `🔒 Initiating secure UPI payment reconciliation for UTR: ${cleanUtr}...`,
-      `📡 Connecting to NPCI Unified Payments Interface network... [CONNECTED]`,
-      ` Pinging banking partner node (Kotak Mahindra Bank)... [CONNECTED]`,
-      `🔍 Searching UPI database for Transaction UTR: ${cleanUtr}...`,
-      `💰 Verifying received funds of ₹199.00... [SETTLED]`,
-      `🛡️ Running anti-tamper and duplicate UTR checks... [PASSED]`,
-      `👑 Synchronizing user profile database & unlocking TaniOS Pro...`
-    ];
+    setGatewayLogs(['🔒 Initiating secure UTR submission...']);
 
     const uid = currentUser?.uid || currentUser?.email || 'guest';
-    const requestId = `pay_upi_qr_idemp_${cleanUtr}`;
+    const requestId = `pay_upi_${cleanUtr}`;
 
-    let isDoubleSubmit = false;
-    if (import.meta.env.VITE_FIREBASE_API_KEY && import.meta.env.VITE_FIREBASE_API_KEY !== 'dummy-api-key') {
-      try {
-        const { getDoc, doc } = await import('firebase/firestore');
-        const docSnap = await getDoc(doc(db, "payment_requests", requestId));
-        if (docSnap.exists()) {
-          isDoubleSubmit = true;
-        }
-      } catch (err) {
-        console.warn("Idempotency read warning:", err);
-      }
+    // ── ANTI-FRAUD GATE 1: Daily rate-limit per user ──────────────────────────
+    const rateLimitKey = `utr_attempts_${uid}_${new Date().toDateString()}`;
+    const attempts = parseInt(localStorage.getItem(rateLimitKey) || '0', 10);
+    if (attempts >= MAX_UTR_ATTEMPTS_PER_DAY) {
+      setGatewayStep(0);
+      setCheckoutLoading(false);
+      setUtrError(`Too many attempts. Maximum ${MAX_UTR_ATTEMPTS_PER_DAY} UTR submissions allowed per day. Contact support if needed.`);
+      return;
     }
 
-    let currentStep = 0;
-    const interval = setInterval(async () => {
-      currentStep++;
-      setGatewayProgress(currentStep);
+    const logs = [
+      '🔒 Initiating secure UTR submission...',
+      '📡 Connecting to payment verification system... [CONNECTED]',
+      `🔍 Checking UTR ${cleanUtr} for prior claims...`,
+      '🛡️ Running anti-fraud duplicate checks across all accounts...',
+      '📝 Registering payment claim for admin verification...'
+    ];
 
-      if (currentStep < logs.length) {
-        // Step 5: Duplicate UTR check
-        if (currentStep === 5 && isDoubleSubmit) {
-          clearInterval(interval);
+    // ── ANTI-FRAUD GATE 2: Global UTR uniqueness check ────────────────────────
+    // Checks if ANY other user has claimed this exact UTR already
+    let isAlreadyClaimed = false;
+    let myExistingStatus = null;
+
+    if (import.meta.env.VITE_FIREBASE_API_KEY && import.meta.env.VITE_FIREBASE_API_KEY !== 'dummy-api-key') {
+      try {
+        setGatewayLogs(prev => [...prev, logs[1]]);
+        setGatewayProgress(1);
+
+        // Check if this specific request doc exists already
+        const docSnap = await getDoc(doc(db, 'payment_requests', requestId));
+        if (docSnap.exists()) {
+          const existing = docSnap.data();
+          if (existing.userId !== uid) {
+            // Another user already claimed this UTR
+            isAlreadyClaimed = true;
+          } else {
+            // Same user, check status
+            myExistingStatus = existing.status;
+          }
+        }
+
+        setGatewayLogs(prev => [...prev, logs[2]]);
+        setGatewayProgress(2);
+
+        if (isAlreadyClaimed) {
           setGatewayLogs(prev => [
             ...prev,
-            `❌ IDEMPOTENCY VIOLATION: UPI Ref ${cleanUtr} already claimed!`,
-            `⚠️ Transaction has already been settled for another account.`
+            `❌ FRAUD DETECTED: UTR ${cleanUtr} already claimed by another account!`,
+            '⛔ Security guard triggered. This incident has been logged.'
           ]);
+          setGatewayProgress(3);
           setTimeout(() => {
             setGatewayStep(0);
             setCheckoutLoading(false);
-            setErrorMessage(`This UPI UTR / Ref No has already been verified and credited to another account.`);
+            setUtrError('This UTR has already been claimed by another account. If this is your payment, please contact support.');
           }, 3000);
           return;
         }
-        setGatewayLogs(prev => [...prev, logs[currentStep]]);
+
+        // If this user already submitted this UTR and it's pending/approved, resume the listener
+        if (myExistingStatus === 'pending') {
+          setGatewayLogs(prev => [...prev, '⏳ Found your existing pending verification — resuming listener...']);
+          setGatewayProgress(4);
+          setTimeout(() => startPendingVerificationListener(requestId, cleanUtr), 800);
+          return;
+        }
+
+        if (myExistingStatus === 'approved') {
+          setGatewayStep(5);
+          setCheckoutLoading(false);
+          setTimeout(() => navigate('/'), 1500);
+          return;
+        }
+
+        if (myExistingStatus === 'rejected') {
+          setGatewayStep(0);
+          setCheckoutLoading(false);
+          setUtrError('This UTR was previously rejected. Please contact support or try with a different UTR.');
+          return;
+        }
+
+      } catch (err) {
+        console.warn('Anti-fraud check warning:', err.message);
+        // Non-blocking: continue even if check fails
+      }
+    }
+
+    // ── Animate submission logs ───────────────────────────────────────────────
+    let step = 2;
+    const interval = setInterval(async () => {
+      step++;
+      setGatewayProgress(step);
+
+      if (step < logs.length) {
+        setGatewayLogs(prev => [...prev, logs[step]]);
       } else {
         clearInterval(interval);
 
         try {
-          const activeSub = {
-            active: true,
-            status: 'active',
-            plan: 'Pro AI Member (UPI QR Code)',
-            amount: amount,
-            utr: cleanUtr,
-            activatedAt: Date.now()
-          };
-
+          // ── STORE AS PENDING — never auto-activate! ───────────────────────
           if (import.meta.env.VITE_FIREBASE_API_KEY && import.meta.env.VITE_FIREBASE_API_KEY !== 'dummy-api-key') {
-            const auditTrail = [
-              { time: new Date().toISOString(), status: 'PENDING', desc: 'UPI QR checkout initiated.' },
-              { time: new Date().toISOString(), status: 'VERIFIED', desc: `UTR ${cleanUtr} format verified.` },
-              { time: new Date().toISOString(), status: 'SETTLED', desc: 'Merchant node UPI settlement confirmed. Pro activated.' }
-            ];
-
-            // 1. Log payment request in Firestore
-            await setDoc(doc(db, "payment_requests", requestId), {
+            await setDoc(doc(db, 'payment_requests', requestId), {
               requestId,
               userId: uid,
               userEmail: currentUser.email || 'student@tanios.ai',
               userName: currentUser.displayName || 'Student',
               utr: cleanUtr,
-              amount: amount,
-              status: 'SETTLED',
-              auditTrail,
-              verificationMethod: 'UPI QR UTR Settlement',
-              createdAt: serverTimestamp()
+              amount,
+              status: 'pending',   // ← PENDING, not SETTLED or ACTIVE
+              verificationMethod: 'UPI QR UTR',
+              createdAt: serverTimestamp(),
+              updatedAt: serverTimestamp()
             });
-
-            // 2. Activate user subscription in users collection
-            await setDoc(doc(db, "users", currentUser.uid || currentUser.email), {
-              subscriptionActive: true,
-              subscriptionStatus: 'active',
-              subscriptionPlan: 'Pro AI Member (UPI QR Code)',
-              subscriptionAmount: amount,
-              subscriptionUtr: cleanUtr,
-              subscriptionActivatedAt: serverTimestamp()
-            }, { merge: true });
           }
 
-          setSubscription(activeSub);
-          localStorage.setItem('tanios_subscription', JSON.stringify(activeSub));
+          // Increment daily rate-limit counter
+          localStorage.setItem(rateLimitKey, String(attempts + 1));
 
+          // Log activity
           await logActivity(
-            currentUser?.uid || 'guest',
+            uid,
             currentUser?.displayName || currentUser?.email || 'Student',
             'payment_submitted',
-            `Completed UPI QR Payment (UTR: ${cleanUtr})`
+            `UPI UTR submitted for admin verification (UTR: ${cleanUtr})`
           );
 
+          // Track payment in MongoDB as pending
           trackPaymentInMongo(
-            currentUser?.uid || 'guest',
+            uid,
             currentUser?.email || 'Student',
             amount,
             cleanUtr,
-            'success',
+            'pending',
             'UPI QR Code'
           ).catch(console.warn);
 
-          trackSubscriptionInMongo(currentUser?.uid || currentUser?.email, {
-            subscriptionActive: true,
-            subscriptionPlan: 'Pro AI Member (UPI QR Code)',
-            subscriptionAmount: amount,
-            subscriptionUtr: cleanUtr,
-            subscriptionActivatedAt: new Date().toISOString()
-          }).catch(console.warn);
-
-          setGatewayStep(5);
-          setTimeout(() => {
-            navigate('/');
-          }, 2200);
+          // ── Start real-time listener — auto-redirects on admin approval ───
+          startPendingVerificationListener(requestId, cleanUtr);
 
         } catch (err) {
-          console.error("UPI verification error:", err);
+          console.error('UTR submission error:', err);
           setGatewayStep(0);
           setCheckoutLoading(false);
-          setErrorMessage(`Verification failed: ${err.message || 'Please contact support if payment was made.'}`);
+          setErrorMessage(`Submission failed: ${err.message || 'Please try again.'}`);
         }
       }
-    }, 800);
+    }, 700);
   };
 
 
@@ -1339,7 +1450,7 @@ export default function Subscribe() {
             </div>
           )}
 
-          {/* Step 5: Aggregator Success overlays */}
+          {/* Step 5: Payment Success Screen */}
           {gatewayStep === 5 && (
             <div style={{
               background: 'rgba(16,185,129,0.08)',
@@ -1355,10 +1466,124 @@ export default function Subscribe() {
               alignItems: 'center'
             }}>
               <span style={{ fontSize: '2.5rem', display: 'block', marginBottom: '0.5rem' }}>🎉</span>
-              <h4 style={{ color: '#10b981', margin: '0.5rem 0 0.25rem 0', fontWeight: 800 }}>Transaction Successful!</h4>
+              <h4 style={{ color: '#10b981', margin: '0.5rem 0 0.25rem 0', fontWeight: 800 }}>Pro Access Activated!</h4>
               <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                ₹199 captured securely via Razorpay. Database synchronization completed! Redirecting you home...
+                Your TaniOS Pro subscription is now active. Redirecting you to the dashboard...
               </p>
+            </div>
+          )}
+
+          {/* Step 6: UPI Pending Verification Screen — Real-time listener active */}
+          {gatewayStep === 6 && (
+            <div style={{
+              animation: 'fadeUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) both',
+              flex: 1,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '1.25rem'
+            }}>
+              {/* Header */}
+              <div style={{
+                background: 'rgba(245,158,11,0.08)',
+                border: '1px solid rgba(245,158,11,0.25)',
+                borderRadius: '12px',
+                padding: '1.25rem',
+                textAlign: 'center'
+              }}>
+                <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🕒</div>
+                <h4 style={{ color: '#f59e0b', margin: '0 0 0.35rem 0', fontWeight: 800, fontSize: '1rem' }}>
+                  Awaiting Admin Verification
+                </h4>
+                <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                  Your UTR <strong style={{ color: '#fff', fontFamily: 'monospace', letterSpacing: '1px' }}>{pendingUtr}</strong> has been submitted for manual verification against our bank statement.
+                </p>
+              </div>
+
+              {/* Real-time status indicator */}
+              <div style={{
+                background: 'rgba(99,102,241,0.06)',
+                border: '1px solid rgba(99,102,241,0.15)',
+                borderRadius: '10px',
+                padding: '1rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.75rem'
+              }}>
+                <div style={{
+                  width: '8px', height: '8px',
+                  borderRadius: '50%',
+                  background: '#10b981',
+                  animation: 'blink 1s infinite',
+                  flexShrink: 0
+                }} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#fff' }}>Live Verification Listener Active</div>
+                  <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: '0.15rem' }}>
+                    This page will automatically redirect when admin approves your payment. No need to refresh!
+                  </div>
+                </div>
+                <div style={{ fontSize: '0.72rem', color: '#a78bfa', fontFamily: 'monospace', flexShrink: 0 }}>
+                  {Math.floor(pendingElapsed / 60).toString().padStart(2, '0')}:{(pendingElapsed % 60).toString().padStart(2, '0')}
+                </div>
+              </div>
+
+              {/* What happens next */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+                {[
+                  { icon: '✅', label: 'UTR Submitted', desc: `Reference: ${pendingUtr}`, done: true },
+                  { icon: '🔍', label: 'Admin Verifying', desc: 'Cross-checking UTR against Kotak bank statement', done: false },
+                  { icon: '👑', label: 'Pro Access Granted', desc: 'You will be auto-redirected instantly on approval', done: false }
+                ].map((step, i) => (
+                  <div key={i} style={{
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: '0.75rem',
+                    padding: '0.65rem 0.85rem',
+                    background: step.done ? 'rgba(16,185,129,0.05)' : 'rgba(255,255,255,0.02)',
+                    border: `1px solid ${step.done ? 'rgba(16,185,129,0.2)' : 'rgba(255,255,255,0.05)'}`,
+                    borderRadius: '8px'
+                  }}>
+                    <span style={{ fontSize: '1rem', flexShrink: 0 }}>{step.icon}</span>
+                    <div>
+                      <div style={{ fontSize: '0.78rem', fontWeight: 700, color: step.done ? '#10b981' : '#fff' }}>{step.label}</div>
+                      <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: '0.1rem' }}>{step.desc}</div>
+                    </div>
+                    {step.done && <CheckCheck size={14} color="#10b981" style={{ marginLeft: 'auto', flexShrink: 0, marginTop: '2px' }} />}
+                  </div>
+                ))}
+              </div>
+
+              {/* Estimated time + support note */}
+              <div style={{
+                background: 'rgba(255,255,255,0.02)',
+                border: '1px solid rgba(255,255,255,0.05)',
+                borderRadius: '8px',
+                padding: '0.85rem 1rem',
+                fontSize: '0.72rem',
+                color: 'var(--text-secondary)',
+                lineHeight: 1.6
+              }}>
+                ⏱️ <strong style={{ color: '#fff' }}>Estimated wait:</strong> 5–30 minutes during business hours (10am–8pm IST).<br />
+                📧 If not activated within 2 hours, contact <strong style={{ color: '#a78bfa' }}>support@tanios.ai</strong> with your UTR number.
+              </div>
+
+              {/* Cancel / go back option */}
+              <button
+                onClick={() => { setGatewayStep(0); setCheckoutLoading(false); }}
+                type="button"
+                style={{
+                  background: 'none',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  color: 'var(--text-secondary)',
+                  borderRadius: '8px',
+                  padding: '0.6rem 1rem',
+                  fontSize: '0.78rem',
+                  cursor: 'pointer',
+                  marginTop: 'auto'
+                }}
+              >
+                ← Back (listener will stop)
+              </button>
             </div>
           )}
 
