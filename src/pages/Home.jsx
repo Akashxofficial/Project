@@ -556,17 +556,18 @@ const CLASS_SYLLABUS = {
   }
 };
 
-const fallbackTeachingMCQ = {
-  topic: "Chemical Reactions: Types of Reactions Masterclass",
-  questionText: "Which of the following statements perfectly captures the difference between combination, decomposition, and displacement reactions?",
-  options: [
-    { key: "A", desc: "Combination reactions break compounds apart; decomposition reactions combine reactants together." },
-    { key: "B", desc: "Combination reactions merge reactants into a single product ($A + B \\rightarrow AB$); decomposition breaks a reactant into multiple products ($AB \\rightarrow A + B$); displacement swaps a reactive element into a compound ($A + BC \\rightarrow AC + B$)." },
-    { key: "C", desc: "Displacement reactions only occur when a less reactive element is introduced to a highly reactive salt." },
-    { key: "D", desc: "Decomposition reactions are the only reaction type that never requires heat, light, or electrical energy to proceed." }
-  ],
-  correctKey: "B",
-  explanation: `### 🧠 Chemical Reactions Masterclass
+const fallbackMCQsBySubject = {
+  science: {
+    topic: "Chemical Reactions: Types of Reactions Masterclass",
+    questionText: "Which of the following statements perfectly captures the difference between combination, decomposition, and displacement reactions?",
+    options: [
+      { key: "A", desc: "Combination reactions break compounds apart; decomposition reactions combine reactants together." },
+      { key: "B", desc: "Combination reactions merge reactants into a single product ($A + B \\rightarrow AB$); decomposition breaks a reactant into multiple products ($AB \\rightarrow A + B$); displacement swaps a reactive element into a compound ($A + BC \\rightarrow AC + B$)." },
+      { key: "C", desc: "Displacement reactions only occur when a less reactive element is introduced to a highly reactive salt." },
+      { key: "D", desc: "Decomposition reactions are the only reaction type that never requires heat, light, or electrical energy to proceed." }
+    ],
+    correctKey: "B",
+    explanation: `### 🧠 Chemical Reactions Masterclass
 
 Chemical reactions are classified into distinct types based on how atoms are rearranged:
 
@@ -589,6 +590,141 @@ Chemical reactions are classified into distinct types based on how atoms are rea
 
 #### ⚠️ Common Exam Mistakes to Avoid:
 * Don't confuse double displacement with single displacement. Double displacement involves an exchange of ions between two compounds ($AB + CD \\rightarrow AD + CB$), often forming a precipitate!`
+  },
+  economics: {
+    topic: "Factors of Production: Capital Classification Masterclass",
+    questionText: "Which of the following best describes the main difference between 'Fixed Capital' and 'Working Capital' in the factors of production?",
+    options: [
+      { key: "A", desc: "Fixed capital consists of natural resources like land and water, while working capital consists of hired farm laborers." },
+      { key: "B", desc: "Fixed capital (such as tools, machines, and buildings) can be used in production over many years, whereas working capital (such as raw materials and money in hand) is consumed or used up within a single production cycle." },
+      { key: "C", desc: "Fixed capital refers only to the money kept as permanent bank deposits, while working capital refers only to heavy automated farm tractors." },
+      { key: "D", desc: "Fixed capital is exclusively used by large-scale urban manufacturing units, while working capital is exclusively used by small rural farmers." }
+    ],
+    correctKey: "B",
+    explanation: `### 📊 Factors of Production Masterclass
+
+To produce any goods or services, we must organize four essential requirements, known as **factors of production**: **Land**, **Labour**, **Physical Capital**, and **Human Capital**. 
+
+Let's focus on **Physical Capital**, which is the variety of inputs required at every stage of production. It is broadly classified into two categories:
+
+#### 1. 🏗️ Fixed Capital
+* **Definition:** Assets, tools, machinery, and buildings that can be used in production over **many years** (not consumed immediately).
+* **Examples:** A farmer's simple plough, generators, turbines, tractors, computers, and workshop buildings.
+* **Key Concept:** These do not get exhausted in a single production cycle; they are long-term capital investments.
+
+#### 2. 💸 Working Capital
+* **Definition:** Inputs, raw materials, and money that are **used up or consumed** during a single production cycle.
+* **Examples:** Raw materials (like clay for a potter, yarn for a weaver, or seeds for a farmer) and cash in hand to make daily payments and purchase other necessary inputs.
+* **Key Concept:** Unlike fixed capital, working capital is fully consumed in the process of producing the final output and must be constantly replenished.
+
+#### ⚠️ Common Exam Mistakes to Avoid:
+* **Confusing raw materials as fixed capital:** Raw materials are consumed completely to make the final product. Hence, they are *working capital*, not fixed capital.
+* **Forgetting natural resources:** Remember that 'Land' includes all natural resources (water, forests, minerals), while 'Capital' refers strictly to man-made assets.`
+  },
+  mathematics: {
+    topic: "Number Systems: Rational vs. Irrational Numbers Masterclass",
+    questionText: "Which of the following statements is mathematically correct regarding rational and irrational numbers?",
+    options: [
+      { key: "A", desc: "The product of any two irrational numbers is always an irrational number." },
+      { key: "B", desc: "Every real number is either rational or irrational, and any rational number can be written as $p/q$ where $p$ and $q$ are integers and $q \\neq 0$." },
+      { key: "C", desc: "The square root of any positive integer is always an irrational number." },
+      { key: "D", desc: "A decimal expansion that is non-terminating must always represent an irrational number." }
+    ],
+    correctKey: "B",
+    explanation: `### 📐 Number Systems Masterclass
+
+The set of all **Real Numbers** ($\mathbb{R}$) is composed of two completely distinct sets: **Rational Numbers** ($\mathbb{Q}$) and **Irrational Numbers**.
+
+#### 1. 🔢 Rational Numbers
+* **Definition:** Any number that can be expressed in the form $\\frac{p}{q}$, where $p$ and $q$ are integers and $q \\neq 0$.
+* **Decimal Expansion:** The decimal representation of a rational number is either **terminating** (e.g., $\\frac{1}{2} = 0.5$) or **non-terminating repeating/recurring** (e.g., $\\frac{1}{3} = 0.333...$ or $0.\\bar{3}$).
+
+#### 2. 🌀 Irrational Numbers
+* **Definition:** Any number that cannot be written in the form $\\frac{p}{q}$ for integers $p$ and $q$ ($q \\neq 0$).
+* **Decimal Expansion:** The decimal representation of an irrational number is **non-terminating and non-repeating** (e.g., $\\pi = 3.14159...$ or $\\sqrt{2} = 1.41421...$).
+* **Root Rule:** The square root of any positive integer that is *not a perfect square* (like $\\sqrt{2}, \\sqrt{3}, \\sqrt{5}$) is always irrational.
+
+#### ⚠️ Common Exam Pitfalls:
+* **Product of irrationals:** The product of two irrationals is *not always* irrational. For example, $\\sqrt{2} \\times \\sqrt{2} = 2$ (which is rational!).
+* **Non-terminating decimals:** Non-terminating decimal expansions can be rational if they repeat! Only *non-repeating* non-terminating decimals are irrational.`
+  },
+  english: {
+    topic: "Grammar: Active vs. Passive Voice Masterclass",
+    questionText: "Which of the following options correctly represents the passive voice of the sentence: 'The teacher is teaching the students'?",
+    options: [
+      { key: "A", desc: "'The students are taught by the teacher.'" },
+      { key: "B", desc: "'The students are being taught by the teacher.'" },
+      { key: "C", desc: "'The students were being taught by the teacher.'" },
+      { key: "D", desc: "'The students will be taught by the teacher.'" }
+    ],
+    correctKey: "B",
+    explanation: `### 📝 Active & Passive Voice Masterclass
+
+Active and passive voice represent different ways of structuring a sentence depending on whether the **doer** (subject) or the **receiver** (object) is the main focus.
+
+#### 1. ⚙️ Active Voice
+* **Structure:** Subject + Verb + Object
+* **Focus:** The subject performs the action.
+* **Example:** *The teacher (Subject)* + *is teaching (Verb in Present Continuous)* + *the students (Object)*.
+
+#### 2. 🔄 Passive Voice
+* **Structure:** Object + auxiliary verb (be) + being (for continuous) + past participle (V3) + by + Subject
+* **Focus:** The action or the receiver of the action.
+* **Tense Transformation (Present Continuous):** 
+  * Active: \`is/am/are + V-ing\`
+  * Passive: \`is/am/are + being + V3 (past participle)\`
+* **Applying to our sentence:** *The students* (plural object becomes new subject) + *are* (matches plural) + *being* (indicates continuous action) + *taught* (V3 of teach) + *by the teacher*.
+* **Result:** *"The students are being taught by the teacher."*
+
+#### ⚠️ Common Exam Pitfalls:
+* **Forgetting 'being' in continuous tenses:** Leaving out 'being' turns the sentence into simple present tense, changing the meaning.
+* **Incorrect tense changes:** Do not change the tense! Present continuous must remain in the present continuous timeline (do not change 'are being taught' to 'were being taught').`
+  },
+  hindi: {
+    topic: "हिन्दी व्याकरण: सकर्मक और अकर्मक क्रिया मास्टरक्लास",
+    questionText: "निम्नलिखित में से 'सकर्मक क्रिया' (Transitive Verb) का सही और स्पष्ट उदाहरण कौन सा है?",
+    options: [
+      { key: "A", desc: "'अमित गहरी नींद में सो रहा है।'" },
+      { key: "B", desc: "'समीर पुस्तक पढ़ रहा है।'" },
+      { key: "C", desc: "'सुंदर पक्षी आकाश में उड़ते हैं।'" },
+      { key: "D", desc: "'छोटा बच्चा जोर-जोर से रोता है।'" }
+    ],
+    correctKey: "B",
+    explanation: `### ✍️ हिन्दी व्याकरण: क्रिया विचार
+
+वाक्य में किसी कार्य के करने या होने का बोध कराने वाले शब्द **क्रिया** कहलाते हैं। कर्म के आधार पर क्रिया के मुख्य रूप से दो भेद होते हैं:
+
+#### 1. 🎯 सकर्मक क्रिया (Transitive Verb)
+* **परिभाषा:** जिस क्रिया के कार्य का फल सीधे **कर्म (Object)** पर पड़ता है, उसे सकर्मक क्रिया कहते हैं। इसमें क्रिया के साथ कर्म का होना आवश्यक होता है।
+* **पहचान ट्रिक:** क्रिया से पहले 'क्या' या 'किसको' लगाकर प्रश्न पूछें। यदि कोई उत्तर (कर्म) मिलता है, तो क्रिया सकर्मक है।
+  * *उदाहरण:* समीर **क्या** पढ़ रहा है? उत्तर: **पुस्तक** (कर्म)। अतः 'पढ़ना' सकर्मक क्रिया है।
+
+#### 2. 🍃 अकर्मक क्रिया (Intransitive Verb)
+* **परिभाषा:** जिस क्रिया के कार्य का फल सीधे **कर्ता (Subject)** पर पड़ता है और कर्म की आवश्यकता नहीं होती, उसे अकर्मक क्रिया कहते हैं।
+  * *उदाहरण:* अमित सो रहा है। (यहाँ सोने का प्रभाव सीधे अमित पर है, कोई कर्म नहीं है। 'क्या सो रहा है?' का कोई उत्तर नहीं है)।
+  * *उदाहरण:* पक्षी आकाश में उड़ते हैं। ('उड़ना' अकर्मक है, आकाश तो आधार/अधिकरण कारक है, कर्म नहीं)।
+
+#### ⚠️ परीक्षा में होने वाली सामान्य गलतियाँ:
+* **स्थान को कर्म समझना:** 'पक्षी आकाश में उड़ते हैं' में 'आकाश' स्थान (अधिकरण) है, कर्म नहीं। क्रिया 'उड़ना' हमेशा अकर्मक होती है।
+* **क्रिया पहचान:** रोना, हँसना, सोना, जागना, दौड़ना हमेशा अकर्मक क्रियाएँ होती हैं, जबकि लिखना, पढ़ना, खाना, पीना सकर्मक क्रियाएँ हैं।`
+  }
+};
+
+const getFallbackMCQ = (subject = '') => {
+  const s = subject.toLowerCase();
+  if (s.includes('economic') || s.includes('commerce') || s.includes('business') || s.includes('accountancy') || s.includes('social') || s.includes('history') || s.includes('geography') || s.includes('civic') || s.includes('political')) {
+    return fallbackMCQsBySubject.economics;
+  }
+  if (s.includes('math')) {
+    return fallbackMCQsBySubject.mathematics;
+  }
+  if (s.includes('english')) {
+    return fallbackMCQsBySubject.english;
+  }
+  if (s.includes('hindi') || s.includes('sanskrit')) {
+    return fallbackMCQsBySubject.hindi;
+  }
+  return fallbackMCQsBySubject.science;
 };
 
 
@@ -767,6 +903,9 @@ export default function Home() {
   const [missionError, setMissionError] = useState('');
   const [mcqAttempts, setMcqAttempts] = useState([]);
   const [netScore, setNetScore] = useState(0);
+
+  // Subject-aware dynamic fallback MCQ based on active mission
+  const fallback = getFallbackMCQ(activeMission?.subject || '');
 
   // ── 3. WEAKNESSES STATE (starts EMPTY — student adds their own) ──
   const [weaknesses, setWeaknesses] = useState([]);
@@ -2797,8 +2936,8 @@ JSON Structure:
                   </div>
                 </div>
               ) : (() => {
-                const data = dynamicMissionContent || fallbackTeachingMCQ;
-                const options = data.options || fallbackTeachingMCQ.options;
+                const data = dynamicMissionContent || fallback;
+                const options = data.options || fallback.options;
                 return (
                   <div>
                     {/* Topic Badge */}
@@ -2916,7 +3055,7 @@ JSON Structure:
                         setMissionSubmitted(true);
 
                         // ── Log MCQ attempt in dynamic user mistakes locker ──
-                        const data = dynamicMissionContent || fallbackTeachingMCQ;
+                        const data = dynamicMissionContent || fallback;
                         const isCorrect = missionAnswer === data.correctKey;
                         const selectedOptDesc = data.options.find(o => o.key === missionAnswer)?.desc || '';
                         const correctOptDesc = data.options.find(o => o.key === data.correctKey)?.desc || '';
@@ -2999,7 +3138,7 @@ JSON Structure:
                 ) : (
                   <button
                     onClick={() => {
-                      const data = dynamicMissionContent || fallbackTeachingMCQ;
+                      const data = dynamicMissionContent || fallback;
                       if (missionAnswer !== data.correctKey) {
                         // User got it wrong, let them try again
                         setMissionSubmitted(false);
@@ -3014,12 +3153,12 @@ JSON Structure:
                     className="btn btn-primary"
                     style={{
                       flex: 1, padding: '0.8rem 1rem', fontSize: '0.88rem', fontWeight: 800,
-                      background: (missionAnswer === (dynamicMissionContent || fallbackTeachingMCQ)?.correctKey)
+                      background: (missionAnswer === (dynamicMissionContent || fallback)?.correctKey)
                         ? 'linear-gradient(135deg, #10b981, #059669)'
                         : 'linear-gradient(135deg, var(--primary), var(--accent))'
                     }}
                   >
-                    {(missionAnswer === (dynamicMissionContent || fallbackTeachingMCQ)?.correctKey)
+                    {(missionAnswer === (dynamicMissionContent || fallback)?.correctKey)
                       ? "Submit & Complete Mission"
                       : "Try Another Option ➔"}
                   </button>
