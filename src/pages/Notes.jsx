@@ -79,6 +79,7 @@ export default function Notes() {
   const [subject, setSubject] = useState('');
   const [chapter, setChapter] = useState('');
   const [type, setType]       = useState('Short Notes');
+  const [noteLanguage, setNoteLanguage] = useState('English');
 
   const contentRef = useRef(null);
 
@@ -94,7 +95,7 @@ export default function Notes() {
     return [];
   })();
 
-  const handleBoardChange = (val) => { setBoard(val); setGrade(''); setStream(''); setSubject(''); };
+  const handleBoardChange = (val) => { setBoard(val); setGrade(''); setStream(''); setSubject(''); setNoteLanguage('English'); };
   const handleGradeChange = (val) => { setGrade(val); setStream(''); setSubject(''); };
   const handleStreamChange = (val) => { setStream(val); setSubject(''); };
 
@@ -108,11 +109,18 @@ export default function Notes() {
     setLoading(true); setError(null); setResult(null); setStatusMsg('thinking');
 
     const streamLabel = isSenior && stream ? ` (${stream} Stream)` : '';
+    
+    const languageInstruction = (board === 'RBSE' && noteLanguage === 'Hindi')
+      ? `You MUST write and generate all note content in Hindi language (using Devanagari script). Write clear, standard Hindi suitable for Rajasthan Board (RBSE) exam papers, but feel free to include complex scientific or mathematical terms in English inside parentheses, e.g., "प्रकाश संश्लेषण (Photosynthesis)".`
+      : `You MUST write and generate all note content in English language.`;
+
     const prompt = `You are an expert Indian school teacher for Class ${grade}${streamLabel} - ${board} Board.
 Generate ${type} for subject: ${subject}, chapter/topic: "${chapter}".
 Strictly follow ${board} syllabus for Class ${grade}.
+${languageInstruction}
 Format with Markdown — use headings, bullet points, bold key terms, tables where useful.
-Keep it student-friendly, concise, and exam-focused for ${board} Class ${grade} pattern.`;
+Keep it student-friendly, concise, and exam-focused for ${board} Class ${grade} pattern.
+Ensure that any scientific, mathematical, or numerical equations are properly formatted in Markdown using single '$' delimiters for KaTeX, e.g., $E = mc^2$ or $\\frac{a}{b}$.`;
 
     const onStatus = (msg) => setStatusMsg(msg || '');
     const response = await generateAIContent(prompt, onStatus);
@@ -124,7 +132,8 @@ Keep it student-friendly, concise, and exam-focused for ${board} Class ${grade} 
     }
 
     const streamTag = isSenior && stream ? ` [${stream}]` : '';
-    const docTitle = `[${board} Cl.${grade}${streamTag}] ${subject} — ${chapter} (${type})`;
+    const langTag = board === 'RBSE' ? ` [${noteLanguage}]` : '';
+    const docTitle = `[${board} Cl.${grade}${streamTag}${langTag}] ${subject} — ${chapter} (${type})`;
     setResult({ title: docTitle, content: fixMathFormatting(response.text) });
     setLoading(false); setStatusMsg(''); // ✅ Stop loading BEFORE saving to DB
 
@@ -205,6 +214,35 @@ Keep it student-friendly, concise, and exam-focused for ${board} Class ${grade} 
               ))}
             </div>
           </div>
+
+          {/* Language Selector (RBSE only) */}
+          {board === 'RBSE' && (
+            <div className="input-group">
+              <label className="input-label">Select Note Language</label>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.625rem' }}>
+                {['English', 'Hindi'].map(lang => (
+                  <button
+                    key={lang}
+                    type="button"
+                    onClick={() => setNoteLanguage(lang)}
+                    style={{
+                      padding: '0.75rem',
+                      borderRadius: 'var(--radius-sm)',
+                      border: `2px solid ${noteLanguage === lang ? 'var(--primary)' : 'var(--border)'}`,
+                      background: noteLanguage === lang ? 'var(--primary-light)' : 'var(--bg-tertiary)',
+                      color: noteLanguage === lang ? 'var(--primary)' : 'var(--text)',
+                      fontWeight: noteLanguage === lang ? 700 : 500,
+                      cursor: 'pointer',
+                      fontSize: '0.95rem',
+                      transition: 'all 0.18s ease'
+                    }}
+                  >
+                    {lang === 'English' ? '🇬🇧 English' : '🇮🇳 Hindi (हिंदी)'}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Class */}
           <div className="input-group">
