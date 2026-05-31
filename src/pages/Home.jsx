@@ -58,17 +58,546 @@ const standardSubjects = [
   { name: 'Informatics Practices', icon: '🖥️', color: '#06b6d4' }
 ];
 
-const fallbackConcept = {
-  conceptName: "Arithmetic Progression (AP)",
-  questionText: "In an Arithmetic Progression (AP), if the common difference ($d$) is $-4$, and the seventh term ($a_7$) is $4$, find the first term ($a$).",
-  options: [
-    { key: 'A', desc: "First term $a = 20$" },
-    { key: 'B', desc: "First term $a = 24$" },
-    { key: 'C', desc: "First term $a = 28$" },
-    { key: 'D', desc: "First term $a = 32$" }
+const CLASS_SYLLABUS = {
+  '9': {
+    'Mathematics': [
+      'Chapter 1: Number Systems',
+      'Chapter 2: Polynomials',
+      'Chapter 3: Coordinate Geometry',
+      'Chapter 4: Linear Equations in Two Variables',
+      'Chapter 5: Introduction to Euclid Geometry',
+      'Chapter 6: Lines and Angles',
+      'Chapter 7: Triangles',
+      'Chapter 8: Quadrilaterals',
+      'Chapter 9: Circles',
+      'Chapter 10: Herons Formula',
+      'Chapter 11: Surface Areas and Volumes',
+      'Chapter 12: Statistics'
+    ],
+    'Science': [
+      'Chapter 1: Matter in Our Surroundings',
+      'Chapter 2: Is Matter Around Us Pure?',
+      'Chapter 3: Atoms and Molecules',
+      'Chapter 4: Structure of the Atom',
+      'Chapter 5: The Fundamental Unit of Life',
+      'Chapter 6: Tissues',
+      'Chapter 7: Motion',
+      'Chapter 8: Force and Laws of Motion',
+      'Chapter 9: Gravitation',
+      'Chapter 10: Work and Energy',
+      'Chapter 11: Sound',
+      'Chapter 12: Improvement in Food Resources'
+    ],
+    'Physics': [
+      'Chapter 1: Motion',
+      'Chapter 2: Force and Laws of Motion',
+      'Chapter 3: Gravitation',
+      'Chapter 4: Work and Energy',
+      'Chapter 5: Sound'
+    ],
+    'Chemistry': [
+      'Chapter 1: Matter in Our Surroundings',
+      'Chapter 2: Is Matter Around Us Pure?',
+      'Chapter 3: Atoms and Molecules',
+      'Chapter 4: Structure of the Atom'
+    ],
+    'Biology': [
+      'Chapter 1: The Fundamental Unit of Life',
+      'Chapter 2: Tissues',
+      'Chapter 3: Improvement in Food Resources'
+    ],
+    'Social Science': [
+      'Chapter 1: The French Revolution',
+      'Chapter 2: Socialism in Europe and the Russian Revolution',
+      'Chapter 3: Nazism and the Rise of Hitler',
+      'Chapter 4: Size and Location of India',
+      'Chapter 5: Physical Features of India',
+      'Chapter 6: Drainage',
+      'Chapter 7: Climate',
+      'Chapter 8: Natural Vegetation and Wild Life',
+      'Chapter 9: Population',
+      'Chapter 10: What is Democracy? Why Democracy?',
+      'Chapter 11: Constitutional Design',
+      'Chapter 12: Electoral Politics',
+      'Chapter 13: Working of Institutions',
+      'Chapter 14: Democratic Rights',
+      'Chapter 15: The Story of Village Palampur',
+      'Chapter 16: People as Resource',
+      'Chapter 17: Poverty as a Challenge',
+      'Chapter 18: Food Security in India'
+    ],
+    'English': [
+      'Chapter 1: The Fun They Had',
+      'Chapter 2: The Sound of Music',
+      'Chapter 3: The Little Girl',
+      'Chapter 4: A Truly Beautiful Mind',
+      'Chapter 5: The Snake and the Mirror',
+      'Chapter 6: My Childhood',
+      'Chapter 7: Reach for the Top',
+      'Chapter 8: Kathmandu',
+      'Chapter 9: If I Were You'
+    ],
+    'Hindi': [
+      'Chapter 1: Do Bailon Ki Katha (Premchand)',
+      'Chapter 2: Lhasa Ki Aur (Rahul Sankrityayan)',
+      'Chapter 3: Upbhoktavad Ki Sanskriti (S. C. Dubey)',
+      'Chapter 4: Sawale Sapno Ki Yaad (Jabir Husain)',
+      'Chapter 5: Premchand Ke Phate Joote (Harishankar Parsai)',
+      'Chapter 6: Mere Bachpan Ke Din (Mahadevi Varma)',
+      'Chapter 7: Sakhiyan & Sabad (Kabir)',
+      'Chapter 8: Vakh (Laldyad)',
+      'Chapter 9: Sawaiye (Raskhan)',
+      'Chapter 10: Kaidi Aur Kokila (M. L. Chaturvedi)',
+      'Chapter 11: Gram Shree (Sumitranandan Pant)',
+      'Chapter 12: Megh Aaye (S. D. Saxena)',
+      'Chapter 13: Yamraj Ki Disha (Chandrakant Devtale)',
+      'Chapter 14: Bachche Kaam Par Ja Rahe Hain (Rajesh Joshi)',
+      'Chapter 15: Is Jal Pralay Mein (Phanishwar Nath Renu)',
+      'Chapter 16: Mere Sang Ki Auratein (Mridula Garg)',
+      'Chapter 17: Reedh Ki Haddi (J. C. Mathur)'
+    ],
+    'Computer Science': [
+      'Chapter 1: Introduction to IT-ITeS Industry',
+      'Chapter 2: Data Entry and Keyboarding Skills',
+      'Chapter 3: Digital Documentation (Word Processing)',
+      'Chapter 4: Electronic Spreadsheet',
+      'Chapter 5: Digital Presentation'
+    ]
+  },
+  '10': {
+    'Mathematics': [
+      'Chapter 1: Real Numbers',
+      'Chapter 2: Polynomials',
+      'Chapter 3: Pair of Linear Equations in Two Variables',
+      'Chapter 4: Quadratic Equations',
+      'Chapter 5: Arithmetic Progressions',
+      'Chapter 6: Triangles',
+      'Chapter 7: Coordinate Geometry',
+      'Chapter 8: Introduction to Trigonometry',
+      'Chapter 9: Some Applications of Trigonometry',
+      'Chapter 10: Circles',
+      'Chapter 11: Areas Related to Circles',
+      'Chapter 12: Surface Areas and Volumes',
+      'Chapter 13: Statistics',
+      'Chapter 14: Probability'
+    ],
+    'Science': [
+      'Chapter 1: Chemical Reactions and Equations',
+      'Chapter 2: Acids, Bases and Salts',
+      'Chapter 3: Metals and Non-Metals',
+      'Chapter 4: Carbon and its Compounds',
+      'Chapter 5: Life Processes',
+      'Chapter 6: Control and Coordination',
+      'Chapter 7: How do Organisms Reproduce?',
+      'Chapter 8: Heredity and Evolution',
+      'Chapter 9: Light - Reflection and Refraction',
+      'Chapter 10: The Human Eye and the Colorful World',
+      'Chapter 11: Electricity',
+      'Chapter 12: Magnetic Effects of Electric Current',
+      'Chapter 13: Our Environment'
+    ],
+    'Physics': [
+      'Chapter 1: Light - Reflection and Refraction',
+      'Chapter 2: The Human Eye and the Colorful World',
+      'Chapter 3: Electricity',
+      'Chapter 4: Magnetic Effects of Electric Current',
+      'Chapter 5: Our Environment'
+    ],
+    'Chemistry': [
+      'Chapter 1: Chemical Reactions and Equations',
+      'Chapter 2: Acids, Bases and Salts',
+      'Chapter 3: Metals and Non-Metals',
+      'Chapter 4: Carbon and its Compounds'
+    ],
+    'Biology': [
+      'Chapter 1: Life Processes',
+      'Chapter 2: Control and Coordination',
+      'Chapter 3: How do Organisms Reproduce?',
+      'Chapter 4: Heredity and Evolution'
+    ],
+    'Social Science': [
+      'Chapter 1: The Rise of Nationalism in Europe',
+      'Chapter 2: Nationalism in India',
+      'Chapter 3: The Making of a Global World',
+      'Chapter 4: The Age of Industrialisation',
+      'Chapter 5: Resources and Development',
+      'Chapter 6: Forest and Wildlife Resources',
+      'Chapter 7: Water Resources',
+      'Chapter 8: Agriculture',
+      'Chapter 9: Minerals and Energy Resources',
+      'Chapter 10: Manufacturing Industries',
+      'Chapter 11: Lifelines of National Economy',
+      'Chapter 12: Power Sharing',
+      'Chapter 13: Federalism',
+      'Chapter 14: Gender, Religion and Caste',
+      'Chapter 15: Political Parties',
+      'Chapter 16: Outcomes of Democracy',
+      'Chapter 17: Development',
+      'Chapter 18: Sectors of the Indian Economy',
+      'Chapter 19: Money and Credit',
+      'Chapter 20: Globalisation and the Indian Economy'
+    ],
+    'English': [
+      'Chapter 1: A Letter to God',
+      'Chapter 2: Nelson Mandela: Long Walk to Freedom',
+      'Chapter 3: Two Stories about Flying',
+      'Chapter 4: From the Diary of Anne Frank',
+      'Chapter 5: Glimpses of India',
+      'Chapter 6: Mijbil the Otter',
+      'Chapter 7: Madam Rides the Bus',
+      'Chapter 8: The Sermon at Benares',
+      'Chapter 9: The Proposal'
+    ],
+    'Hindi': [
+      'Chapter 1: Surdas ke Pad',
+      'Chapter 2: Ram Lakshman Parashuram Samvad',
+      'Chapter 3: Dev - Savaiya aur Kabitt',
+      'Chapter 4: Aatmakathya - Jaishankar Prasad',
+      'Chapter 5: Utsah aur At Nahi Rahi Hai',
+      'Chapter 6: Yeh Danturit Muskan aur Fasal',
+      'Chapter 7: Chhaya Mat Chhuna',
+      'Chapter 8: Kanyadan - Rituraj',
+      'Chapter 9: Sangatkar - Manglesh Dabral',
+      'Chapter 10: Netaji Ka Chashma (Swayam Prakash)',
+      'Chapter 11: Balgobin Bhagat (Ramvriksha Benipuri)',
+      'Chapter 12: Lakhnavi Andaaz (Yashpal)',
+      'Chapter 13: Ek Kahani Yeh Bhi (Mannu Bhandari)',
+      'Chapter 14: Naubat Khane Mein Ibadat (Yatindra Mishra)',
+      'Chapter 15: Sanskriti (Bhadant Anand Kausalyayan)',
+      'Chapter 16: Mata Ka Anchal (Shivpujan Sahay)',
+      'Chapter 17: Sana-Sana Hath Jodi (Madhu Kankariya)',
+      'Chapter 18: Main Kyon Likhta Hun? (Agyeya)'
+    ],
+    'Computer Science': [
+      'Chapter 1: Internet Basics & Networking',
+      'Chapter 2: HTML - I (Basic Tags, Images, Links)',
+      'Chapter 3: HTML - II (Tables, Lists, Forms)',
+      'Chapter 4: Cascading Style Sheets (CSS)',
+      'Chapter 5: Cyber Ethics',
+      'Chapter 6: Digital Documentation (Advanced)',
+      'Chapter 7: Electronic Spreadsheet (Advanced)',
+      'Chapter 8: Database Management System'
+    ]
+  },
+  '11': {
+    'Physics': [
+      'Chapter 1: Units and Measurements',
+      'Chapter 2: Motion in a Straight Line',
+      'Chapter 3: Motion in a Plane',
+      'Chapter 4: Laws of Motion',
+      'Chapter 5: Work, Energy and Power',
+      'Chapter 6: System of Particles and Rotational Motion',
+      'Chapter 7: Gravitation',
+      'Chapter 8: Mechanical Properties of Solids',
+      'Chapter 9: Mechanical Properties of Fluids',
+      'Chapter 10: Thermal Properties of Matter',
+      'Chapter 11: Thermodynamics',
+      'Chapter 12: Kinetic Theory',
+      'Chapter 13: Oscillations',
+      'Chapter 14: Waves'
+    ],
+    'Chemistry': [
+      'Chapter 1: Some Basic Concepts of Chemistry',
+      'Chapter 2: Structure of Atom',
+      'Chapter 3: Classification of Elements and Periodicity in Properties',
+      'Chapter 4: Chemical Bonding and Molecular Structure',
+      'Chapter 5: Chemical Thermodynamics',
+      'Chapter 6: Equilibrium',
+      'Chapter 7: Redox Reactions',
+      'Chapter 8: Organic Chemistry: Some Basic Principles and Techniques',
+      'Chapter 9: Hydrocarbons'
+    ],
+    'Biology': [
+      'Chapter 1: The Living World',
+      'Chapter 2: Biological Classification',
+      'Chapter 3: Plant Kingdom',
+      'Chapter 4: Animal Kingdom',
+      'Chapter 5: Morphology of Flowering Plants',
+      'Chapter 6: Anatomy of Flowering Plants',
+      'Chapter 7: Structural Organisation in Animals',
+      'Chapter 8: Cell: The Unit of Life',
+      'Chapter 9: Biomolecules',
+      'Chapter 10: Cell Cycle and Cell Division',
+      'Chapter 11: Photosynthesis in Higher Plants',
+      'Chapter 12: Respiration in Plants',
+      'Chapter 13: Plant Growth and Development',
+      'Chapter 14: Breathing and Exchange of Gases',
+      'Chapter 15: Body Fluids and Circulation',
+      'Chapter 16: Excretory Products and their Elimination',
+      'Chapter 17: Locomotion and Movement',
+      'Chapter 18: Neural Control and Coordination',
+      'Chapter 19: Chemical Coordination and Integration'
+    ],
+    'Mathematics': [
+      'Chapter 1: Sets',
+      'Chapter 2: Relations and Functions',
+      'Chapter 3: Trigonometric Functions',
+      'Chapter 4: Complex Numbers and Quadratic Equations',
+      'Chapter 5: Linear Inequalities',
+      'Chapter 6: Permutations and Combinations',
+      'Chapter 7: Binomial Theorem',
+      'Chapter 8: Sequences and Series',
+      'Chapter 9: Straight Lines',
+      'Chapter 10: Conic Sections',
+      'Chapter 11: Introduction to Three Dimensional Geometry',
+      'Chapter 12: Limits and Derivatives',
+      'Chapter 13: Statistics',
+      'Chapter 14: Probability'
+    ],
+    'English': [
+      'Chapter 1: The Portrait of a Lady',
+      'Chapter 2: We Are Not Afraid to Die...',
+      'Chapter 3: Discovering Tut: the Saga Continues',
+      'Chapter 4: The Adventure',
+      'Chapter 5: Silk Road'
+    ],
+    'Computer Science': [
+      'Chapter 1: Computer Systems and Organisation',
+      'Chapter 2: Computational Thinking and Python Programming',
+      'Chapter 3: Database Concepts and SQL',
+      'Chapter 4: Introduction to Computer Networks'
+    ],
+    'Informatics Practices': [
+      'Chapter 1: Computer System',
+      'Chapter 2: Introduction to Python',
+      'Chapter 3: Database Query using SQL',
+      'Chapter 4: Emerging Trends'
+    ],
+    'Accountancy': [
+      'Chapter 1: Introduction to Accounting',
+      'Chapter 2: Theory Base of Accounting',
+      'Chapter 3: Recording of Transactions - I',
+      'Chapter 4: Recording of Transactions - II',
+      'Chapter 5: Bank Reconciliation Statement',
+      'Chapter 6: Trial Balance and Rectification of Errors',
+      'Chapter 7: Depreciation, Provisions and Reserves',
+      'Chapter 8: Financial Statements - I',
+      'Chapter 9: Financial Statements - II'
+    ],
+    'Business Studies': [
+      'Chapter 1: Business, Trade and Commerce',
+      'Chapter 2: Forms of Business Organisations',
+      'Chapter 3: Private, Public and Global Enterprises',
+      'Chapter 4: Business Services',
+      'Chapter 5: Emerging Modes of Business',
+      'Chapter 6: Social Responsibility of Business and Business Ethics',
+      'Chapter 7: Sources of Business Finance',
+      'Chapter 8: Small Business',
+      'Chapter 9: Internal Trade',
+      'Chapter 10: International Business'
+    ],
+    'Economics': [
+      'Chapter 1: Introduction to Statistics',
+      'Chapter 2: Collection, Organisation and Presentation of Data',
+      'Chapter 3: Statistical Tools and Interpretation',
+      'Chapter 4: Introduction to Microeconomics',
+      'Chapter 5: Consumer Equilibrium and Demand',
+      'Chapter 6: Producer Behaviour and Supply',
+      'Chapter 7: Forms of Market and Price Determination'
+    ],
+    'Hindi': [
+      'Chapter 1: Namak Ka Daroga (Premchand)',
+      'Chapter 2: Miyan Naseeruddin (Krishna Sobti)',
+      'Chapter 3: Appu Ke Saath Dhai Saal (Satyajit Ray)',
+      'Chapter 4: Vidai-Sambhashan (Balmukund Gupt)',
+      'Chapter 5: Galta Loha (Shekhar Joshi)',
+      'Chapter 6: Rajani (Manu Bhandari)',
+      'Chapter 7: Jamun Ka Ped (Krishan Chander)',
+      'Chapter 8: Bharat Mata (Jawaharlal Nehru)',
+      'Chapter 9: Kabir ke Pad (Kabir)',
+      'Chapter 10: Meera ke Pad (Meera)',
+      'Chapter 11: Ghar Ki Yaad (Bhawani Prasad Mishra)',
+      'Chapter 12: Champa Kale Kale Achhar (Trilochan)',
+      'Chapter 13: Gajal (Dushyant Kumar)',
+      'Chapter 14: He Bhookh Mat Machal (Akka Mahadevi)',
+      'Chapter 15: Sabse Khatarnak (Avtar Singh Pash)',
+      'Chapter 16: Aao, Milkar Bachayein (Nirmala Putul)',
+      'Chapter 17: Bharatiya Gaayikaon Mein: Lata Mangeshkar',
+      'Chapter 18: Rajasthan Ki Rajat Boondein',
+      'Chapter 19: Alo Aandhari (Baby Halder)'
+    ]
+  },
+  '12': {
+    'Physics': [
+      'Chapter 1: Electric Charges and Fields',
+      'Chapter 2: Electrostatic Potential and Capacitance',
+      'Chapter 3: Current Electricity',
+      'Chapter 4: Moving Charges and Magnetism',
+      'Chapter 5: Magnetism and Matter',
+      'Chapter 6: Electromagnetic Induction',
+      'Chapter 7: Alternating Current',
+      'Chapter 8: Electromagnetic Waves',
+      'Chapter 9: Ray Optics and Optical Instruments',
+      'Chapter 10: Wave Optics',
+      'Chapter 11: Dual Nature of Radiation and Matter',
+      'Chapter 12: Atoms',
+      'Chapter 13: Nuclei',
+      'Chapter 14: Semiconductor Electronics: Materials, Devices and Simple Circuits'
+    ],
+    'Chemistry': [
+      'Chapter 1: Solutions',
+      'Chapter 2: Electrochemistry',
+      'Chapter 3: Chemical Kinetics',
+      'Chapter 4: The d-and f-Block Elements',
+      'Chapter 5: Coordination Compounds',
+      'Chapter 6: Haloalkanes and Haloarenes',
+      'Chapter 7: Alcohols, Phenols and Ethers',
+      'Chapter 8: Aldehydes, Ketones and Carboxylic Acids',
+      'Chapter 9: Amines',
+      'Chapter 10: Biomolecules'
+    ],
+    'Biology': [
+      'Chapter 1: Sexual Reproduction in Flowering Plants',
+      'Chapter 2: Human Reproduction',
+      'Chapter 3: Reproductive Health',
+      'Chapter 4: Principles of Inheritance and Variation',
+      'Chapter 5: Molecular Basis of Inheritance',
+      'Chapter 6: Evolution',
+      'Chapter 7: Human Health and Diseases',
+      'Chapter 8: Microbes in Human Welfare',
+      'Chapter 9: Biotechnology - Principles and Processes',
+      'Chapter 10: Biotechnology and its Applications',
+      'Chapter 11: Organisms and Populations',
+      'Chapter 12: Ecosystem',
+      'Chapter 13: Biodiversity and its Conservation'
+    ],
+    'Mathematics': [
+      'Chapter 1: Relations and Functions',
+      'Chapter 2: Inverse Trigonometric Functions',
+      'Chapter 3: Matrices',
+      'Chapter 4: Determinants',
+      'Chapter 5: Continuity and Differentiability',
+      'Chapter 6: Application of Derivatives',
+      'Chapter 7: Integrals',
+      'Chapter 8: Application of Integrals',
+      'Chapter 9: Differential Equations',
+      'Chapter 10: Vector Algebra',
+      'Chapter 11: Three Dimensional Geometry',
+      'Chapter 12: Linear Programming',
+      'Chapter 13: Probability'
+    ],
+    'English': [
+      'Chapter 1: The Last Lesson',
+      'Chapter 2: Lost Spring',
+      'Chapter 3: Deep Water',
+      'Chapter 4: The Rattrap',
+      'Chapter 5: Indigo',
+      'Chapter 6: Poets and Pancakes',
+      'Chapter 7: The Interview',
+      'Chapter 8: Going Places'
+    ],
+    'Computer Science': [
+      'Chapter 1: Computational Thinking and Programming - 2',
+      'Chapter 2: Computer Networks',
+      'Chapter 3: Database Management'
+    ],
+    'Informatics Practices': [
+      'Chapter 1: Data Handling using Pandas and Data Visualization',
+      'Chapter 2: Database Query using SQL',
+      'Chapter 3: Introduction to Computer Networks',
+      'Chapter 4: Societal Impacts'
+    ],
+    'Accountancy': [
+      'Chapter 1: Accounting for Partnership Firms - Basic Concepts',
+      'Chapter 2: Reconstitution of a Partnership Firm - Admission of a Partner',
+      'Chapter 3: Reconstitution of a Partnership Firm - Retirement/Death of a Partner',
+      'Chapter 4: Dissolution of a Partnership Firm',
+      'Chapter 5: Accounting for Share Capital',
+      'Chapter 6: Accounting for Debentures',
+      'Chapter 7: Financial Statements of a Company',
+      'Chapter 8: Analysis of Financial Statements',
+      'Chapter 9: Accounting Ratios',
+      'Chapter 10: Cash Flow Statement'
+    ],
+    'Business Studies': [
+      'Chapter 1: Nature and Significance of Management',
+      'Chapter 2: Principles of Management',
+      'Chapter 3: Business Environment',
+      'Chapter 4: Planning',
+      'Chapter 5: Organising',
+      'Chapter 6: Staffing',
+      'Chapter 7: Directing',
+      'Chapter 8: Controlling',
+      'Chapter 9: Financial Management',
+      'Chapter 10: Financial Markets',
+      'Chapter 11: Marketing Management',
+      'Chapter 12: Consumer Protection'
+    ],
+    'Economics': [
+      'Chapter 1: Development Experience (1947-90) and Economic Reforms since 1991',
+      'Chapter 2: Current Challenges Facing the Indian Economy',
+      'Chapter 3: Development Experience of India – A Comparison with Neighbours',
+      'Chapter 4: National Income and Related Aggregates',
+      'Chapter 5: Money and Banking',
+      'Chapter 6: Determination of Income and Employment',
+      'Chapter 7: Government Budget and the Economy',
+      'Chapter 8: Balance of Payments'
+    ],
+    'Hindi': [
+      'Chapter 1: Aatmparichay / Ek Geet (H. R. Bachchan)',
+      'Chapter 2: Patang (Alok Dhanwa)',
+      'Chapter 3: Kavita Ke Bahane / Baat Seedhi Thi Par (K. Narayan)',
+      'Chapter 4: Camere Mein Band Apahij (Raghuvir Sahay)',
+      'Chapter 5: Usha (Shamsher Bahadur Singh)',
+      'Chapter 6: Badal Raag (Suryakant Tripathi Nirala)',
+      'Chapter 7: Kavitavali / Laxman-murcha (Tulsidas)',
+      'Chapter 8: Rubaaiyaan / Ghazal (Firaq Gorakhpuri)',
+      'Chapter 9: Chota Mera Khet / Bangulo Ke Pankh (U. Joshi)',
+      'Chapter 10: Bhaktin (Mahadevi Verma)',
+      'Chapter 11: Bazar Darshan (Jainendra Kumar)',
+      'Chapter 12: Kaale Megha Paani De (Dharmavir Bharati)',
+      'Chapter 13: Pahelwan Ki Dholak (P. N. Renu)',
+      'Chapter 14: Shirish Ke Phool (Hazari Prasad Dwivedi)',
+      'Chapter 15: Shram Vibhajan aur Jati Pratha (B. R. Ambedkar)',
+      'Chapter 16: Silver Wedding (Manohar Shyam Joshi)',
+      'Chapter 17: Jooje (Anand Yadav)',
+      'Chapter 18: Ateet Mein Dabe Paon (Om Thanvi)'
+    ]
+  }
+};
+
+const fallbackMindMap = {
+  topic: "Chemical Reactions: Types of Reactions",
+  branches: [
+    {
+      title: "Combination Reactions",
+      description: "Two or more reactants combine to form a single product.",
+      points: [
+        "General form: $A + B \\rightarrow AB$",
+        "Example: Burning of coal: $C(s) + O_2(g) \\rightarrow CO_2(g)$",
+        "Example: Formation of water: $2H_2(g) + O_2(g) \\rightarrow 2H_2O(l)$"
+      ]
+    },
+    {
+      title: "Decomposition Reactions",
+      description: "A single reactant breaks down into two or more simpler products.",
+      points: [
+        "General form: $AB \\rightarrow A + B$",
+        "Requires energy in form of heat (Thermal), light (Photolytic), or electricity (Electrolytic).",
+        "Example: Heating Calcium Carbonate: $CaCO_3(s) \\xrightarrow{\\text{Heat}} CaO(s) + CO_2(g)$"
+      ]
+    },
+    {
+      title: "Displacement Reactions",
+      description: "A more reactive element displaces a less reactive element from its salt solution.",
+      points: [
+        "General form: $A + BC \\rightarrow AC + B$",
+        "Example: Iron nail in copper sulphate: $Fe(s) + CuSO_4(aq) \\rightarrow FeSO_4(aq) + Cu(s)$",
+        "Blue color of $CuSO_4$ fades to light green due to formation of $FeSO_4$."
+      ]
+    }
   ],
-  correctKey: 'C',
-  explanation: "Formula: $a_n = a + (n-1)d$. For the seventh term ($n=7$): $a_7 = a + 6d$. Substituting the values: $4 = a + 6(-4) \\implies 4 = a - 24 \\implies a = 28$."
+  verificationQuestion: "Which of the following reaction represents a thermal decomposition reaction?",
+  options: [
+    { key: "A", desc: "$2H_2(g) + O_2(g) \\rightarrow 2H_2O(l)$" },
+    { key: "B", desc: "$CaCO_3(s) \\xrightarrow{\\text{Heat}} CaO(s) + CO_2(g)$" },
+    { key: "C", desc: "$Fe(s) + CuSO_4(aq) \\rightarrow FeSO_4(aq) + Cu(s)$" },
+    { key: "D", desc: "$NaOH(aq) + HCl(aq) \\rightarrow NaCl(aq) + H_2O(l)$" }
+  ],
+  correctKey: "B",
+  explanation: "Heating Calcium Carbonate ($CaCO_3$) decomposes it into Calcium Oxide ($CaO$) and Carbon Dioxide ($CO_2$). Since it requires heat energy, it is a thermal decomposition reaction.",
+  shortQuestion: "Why are decomposition reactions called the opposite of combination reactions? Explain with reference to chemical equations.",
+  shortAnswer: "In a combination reaction, two or more substances combine to form a single new substance (e.g., $C + O_2 \\rightarrow CO_2$). In contrast, in a decomposition reaction, a single compound breaks down into two or more simpler substances (e.g., $CaCO_3 \\rightarrow CaO + CO_2$). Therefore, they are exact opposites."
 };
 
 const fallbackRevision = {
@@ -79,6 +608,19 @@ const fallbackRevision = {
     "**Power of Lens ($P$):** Reciprocal of focal length: $P = \\frac{1}{f}$ (f must be in meters). SI Unit is Dioptre (D).",
     "**Lens Sign Conventions:** Convex lenses have positive focal length ($+f$), Concave lenses have negative ($-f$)."
   ],
+  formulas: [
+    { name: "Refractive Index", formula: "$n = \\frac{c}{v}$" },
+    { name: "Snell's Law", formula: "$\\frac{\\sin i}{\\sin r} = n_{21}$" },
+    { name: "Power of Lens", formula: "$P = \\frac{1}{f \\text{ (in meters)}}$" }
+  ],
+  commonMistakes: [
+    "Forgetting to convert focal length to meters in Lens Power calculations.",
+    "Incorrectly assigning positive focal length to a concave lens."
+  ],
+  topperTips: [
+    "Always specify the unit 'Dioptre' or 'D' and specify lens convexity/concavity directly.",
+    "Draw accurate light ray diagrams to score full marks in numericals."
+  ],
   questionText: "If a doctor prescribes a lens of power $+2.0\\text{ D}$, what is its focal length and lens type?",
   options: [
     { key: 'A', desc: "$f = -0.5\\text{ m}$, Concave" },
@@ -87,7 +629,30 @@ const fallbackRevision = {
     { key: 'D', desc: "$f = -2.0\\text{ m}$, Concave" }
   ],
   correctKey: 'B',
-  explanation: "Power is positive $+2.0\\text{ D}$, so the lens is Convex. Focal length: $f = \\frac{1}{P} = \\frac{1}{2.0} = 0.5\\text{ m} = +0.5\\text{ m}$."
+  explanation: "Power is positive $+2.0\\text{ D}$, so the lens is Convex. Focal length: $f = \\frac{1}{P} = \\frac{1}{2.0} = 0.5\\text{ m} = +0.5\\text{ m}$.",
+  shortQuestion: "What is 1 Dioptre of power of a lens? Write its relation to focal length.",
+  shortAnswer: "One dioptre is the power of a lens whose focal length is exactly 1 meter ($1\\text{ D} = 1\\text{ m}^{-1}$). It is represented as $P = \\frac{1}{f}$, where $f$ is focal length in meters."
+};
+
+const fallbackActiveRecall = {
+  topic: "Life Processes: Nutrition & Digestion",
+  cards: [
+    {
+      id: 1,
+      question: "What is the function of gastric juice ($HCl$, pepsin, mucus) in the stomach?",
+      answer: "Gastric juice contains: \n1. **Hydrochloric Acid ($HCl$):** Creates an acidic medium ($pH \\approx 1.8$) necessary for the activation of pepsin, and kills harmful bacteria.\n2. **Pepsin:** An enzyme that digests proteins into peptones.\n3. **Mucus:** Protects the inner lining of the stomach from the corrosive action of the acid."
+    },
+    {
+      id: 2,
+      question: "Why is the length of the small intestine longer in herbivores compared to carnivores?",
+      answer: "Herbivores eat grass/cellulose which takes longer to digest, requiring a longer small intestine with more surface area for enzymes to act. Carnivores eat meat which is easier to digest, so their small intestine is shorter."
+    },
+    {
+      id: 3,
+      question: "What are villi, and what is their role in absorption?",
+      answer: "Villi are tiny, finger-like projections lining the inner walls of the small intestine. They increase the surface area for rapid absorption of digested food. They are richly supplied with blood vessels that carry nutrients to all cells of the body."
+    }
+  ]
 };
 
 const fallbackQuiz = {
@@ -98,7 +663,8 @@ const fallbackQuiz = {
       options: [
         { key: 'A', desc: "$2\\text{H}_2 + \\text{O}_2 \\longrightarrow 2\\text{H}_2\\text{O}$ (Combination)" },
         { key: 'B', desc: "$\\text{CaCO}_3 \\longrightarrow \\text{CaO} + \\text{CO}_2$ (Decomposition)" },
-        { key: 'C', desc: "$\\text{Zn} + \\text{CuSO}_4 \\longrightarrow \\text{ZnSO}_4 + \\text{Cu}$ (Displacement)" }
+        { key: 'C', desc: "$\\text{Zn} + \\text{CuSO}_4 \\longrightarrow \\text{ZnSO}_4 + \\text{Cu}$ (Displacement)" },
+        { key: 'D', desc: "None of the above" }
       ],
       correctKey: 'B',
       explanation: "A single reactant decomposes into multiple products. $\\text{CaCO}_3$ splits into $\\text{CaO}$ and $\\text{CO}_2$."
@@ -108,7 +674,8 @@ const fallbackQuiz = {
       options: [
         { key: 'A', desc: "Less than 7" },
         { key: 'B', desc: "Equal to 7" },
-        { key: 'C', desc: "Greater than 7" }
+        { key: 'C', desc: "Greater than 7" },
+        { key: 'D', desc: "Varies dynamically" }
       ],
       correctKey: 'A',
       explanation: "pH < 7 is acidic, pH = 7 is neutral, and pH > 7 is basic."
@@ -118,7 +685,8 @@ const fallbackQuiz = {
       options: [
         { key: 'A', desc: "Gold" },
         { key: 'B', desc: "Sodium" },
-        { key: 'C', desc: "Copper" }
+        { key: 'C', desc: "Copper" },
+        { key: 'D', desc: "Silver" }
       ],
       correctKey: 'B',
       explanation: "Sodium is highly reactive with air and water, so it is kept under kerosene."
@@ -128,7 +696,8 @@ const fallbackQuiz = {
       options: [
         { key: 'A', desc: "Aldehyde ($-\\text{CHO}$)" },
         { key: 'B', desc: "Alcohol ($-\\text{OH}$)" },
-        { key: 'C', desc: "Carboxylic Acid ($-\\text{COOH}$)" }
+        { key: 'C', desc: "Carboxylic Acid ($-\\text{COOH}$)" },
+        { key: 'D', desc: "Ketone ($-\\text{CO}-$)" }
       ],
       correctKey: 'B',
       explanation: "Ethanol ends in -ol and contains the hydroxyl ($-\\text{OH}$) functional group of alcohols."
@@ -138,10 +707,22 @@ const fallbackQuiz = {
       options: [
         { key: 'A', desc: "Copper and Zinc" },
         { key: 'B', desc: "Copper and Tin" },
-        { key: 'C', desc: "Lead and Tin" }
+        { key: 'C', desc: "Lead and Tin" },
+        { key: 'D', desc: "Iron and Carbon" }
       ],
       correctKey: 'B',
       explanation: "Bronze is made of copper and tin, while brass is made of copper and zinc."
+    },
+    {
+      questionText: "Which of the following is a neutral oxide?",
+      options: [
+        { key: 'A', desc: "Carbon Monoxide ($CO$)" },
+        { key: 'B', desc: "Carbon Dioxide ($CO_2$)" },
+        { key: 'C', desc: "Sulphur Dioxide ($SO_2$)" },
+        { key: 'D', desc: "Calcium Oxide ($CaO$)" }
+      ],
+      correctKey: 'A',
+      explanation: "Carbon Monoxide ($CO$) and Nitrous Oxide ($N_2O$) are neutral oxides, while non-metal oxides like $CO_2$ and $SO_2$ are acidic, and metal oxides like $CaO$ are basic."
     }
   ]
 };
@@ -167,6 +748,7 @@ export default function Home() {
   const [profileBoard, setProfileBoard] = useState('');
   const [profileClass, setProfileClass] = useState('');
   const [profileSubjects, setProfileSubjects] = useState([]);
+  const [activeChapters, setActiveChapters] = useState({});
   const [profileSetupDone, setProfileSetupDone] = useState(false);
   const [showProfileSetup, setShowProfileSetup] = useState(false);
 
@@ -185,6 +767,7 @@ export default function Home() {
   const [missionSubmitted, setMissionSubmitted] = useState(false);
   const [quizStep, setQuizStep] = useState(0);
   const [quizAnswers, setQuizAnswers] = useState({});
+  const [showShortAnswer, setShowShortAnswer] = useState(false);
 
   // ── DYNAMIC AI STUDY MISSIONS STATE ──
   const [dynamicMissionContent, setDynamicMissionContent] = useState(null);
@@ -217,29 +800,42 @@ export default function Home() {
   const [roadmapCopied, setRoadmapCopied] = useState(false);
 
   // ── MISSION GENERATOR (generates from student's actual subjects) ──
-  const generateMissionsFromProfile = (board, grade, subjects) => {
+  const generateMissionsFromProfile = (board, grade, subjects, activeChaptersMap = {}) => {
     if (!subjects || subjects.length === 0) return [];
 
     const missionTemplates = [
       {
-        type: 'concept',
-        labelFn: (s) => `Doubt Practice: Solve a ${s} concept`,
-        xp: 20,
-        promptFn: (s, g) => `Explain a key concept from ${s} simply for ${board} Class ${g} board exam context`,
+        type: 'mindmap',
+        labelFn: (s, ch) => `Interactive Mind Map: Explore ${s} - ${ch}`,
+        xp: 25,
       },
       {
         type: 'revision',
-        labelFn: (s) => `15-Min Revision: ${s} quick recap`,
+        labelFn: (s, ch) => `High-Density Revision: ${s} - ${ch}`,
         xp: 25,
-        topicFn: (s) => s,
+      },
+      {
+        type: 'active_recall',
+        labelFn: (s, ch) => `Active Recall Challenge: ${s} - ${ch}`,
+        xp: 30,
       },
       {
         type: 'quiz',
-        labelFn: (s) => `Quick Quiz: ${s} MCQ Test (5 Qs)`,
+        labelFn: (s, ch) => `Practice Quiz: Solve ${s} - ${ch}`,
         xp: 30,
-        linkFn: (s) => `/test?subject=${encodeURIComponent(s)}&topic=${encodeURIComponent(s)}&count=5`,
       },
     ];
+
+    const getChapterForSubject = (subj) => {
+      if (activeChaptersMap && activeChaptersMap[subj]) {
+        return activeChaptersMap[subj];
+      }
+      const chaptersList = CLASS_SYLLABUS[grade]?.[subj] || CLASS_SYLLABUS[grade.toString()]?.[subj];
+      if (chaptersList && chaptersList.length > 0) {
+        return chaptersList[0];
+      }
+      return "General Syllabus";
+    };
 
     // Rotate subjects each day using today's date so missions change daily
     const today = new Date().getDate();
@@ -251,19 +847,19 @@ export default function Home() {
     const dateKey = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
 
     const generated = picked.map((subj, idx) => {
-      const tmpl = missionTemplates[idx % missionTemplates.length];
+      const activeCh = getChapterForSubject(subj);
+      const tmplIdx = (idx + today) % missionTemplates.length;
+      const tmpl = missionTemplates[tmplIdx];
       const mission = {
         id: `m_${idx + 1}`,
         type: tmpl.type,
-        label: tmpl.labelFn(subj),
+        label: tmpl.labelFn(subj, activeCh.replace(/^Chapter \d+:\s*/, '')),
         xp: tmpl.xp,
         done: false,
         dateKey,
         subject: subj,
+        chapter: activeCh
       };
-      if (tmpl.promptFn) mission.prompt = tmpl.promptFn(subj, grade);
-      if (tmpl.topicFn) mission.topic = tmpl.topicFn(subj);
-      if (tmpl.linkFn) mission.link = tmpl.linkFn(subj);
       return mission;
     });
 
@@ -308,7 +904,7 @@ export default function Home() {
     localStorage.setItem('tanios_profile', JSON.stringify(profile));
 
     // Generate missions
-    const newMissions = generateMissionsFromProfile(setupBoard, setupClass, subjectsArray);
+    const newMissions = generateMissionsFromProfile(setupBoard, setupClass, subjectsArray, activeChapters);
     setMissions(newMissions);
     saveState('tanios_missions', newMissions);
 
@@ -386,6 +982,9 @@ export default function Home() {
         // ── DAILY MISSION RESET LOGIC ──
         const todayKey = new Date().toISOString().slice(0, 10);
         let missionsToUse;
+        const storedActiveChapters = localStorage.getItem('tanios_active_chapters');
+        const activeChaptersMap = storedActiveChapters ? JSON.parse(storedActiveChapters) : {};
+        setActiveChapters(activeChaptersMap);
 
         if (storedMissions) {
           const parsed = JSON.parse(storedMissions);
@@ -395,12 +994,12 @@ export default function Home() {
             missionsToUse = parsed;
           } else {
             // New day — fresh missions, streak/XP are preserved separately
-            missionsToUse = generateMissionsFromProfile(profile.board, profile.grade, profile.subjects);
+            missionsToUse = generateMissionsFromProfile(profile.board, profile.grade, profile.subjects, activeChaptersMap);
             localStorage.setItem('tanios_missions', JSON.stringify(missionsToUse));
           }
         } else {
           // No stored missions yet (fresh profile or wiped) — generate now
-          missionsToUse = generateMissionsFromProfile(profile.board, profile.grade, profile.subjects);
+          missionsToUse = generateMissionsFromProfile(profile.board, profile.grade, profile.subjects, activeChaptersMap);
           localStorage.setItem('tanios_missions', JSON.stringify(missionsToUse));
         }
 
@@ -584,33 +1183,68 @@ Your output task/material MUST be specifically and exclusively for the chapter c
 `;
 
     let prompt = '';
-    if (mission.type === 'concept') {
-      prompt = `You are an expert personal teacher built for Indian school students.
-Generate a conceptual, high-yield Multiple Choice Question (MCQ) for study practice.
+    const chapter = mission.chapter || 'General Syllabus';
 
-${studyInstructions}
+    if (mission.type === 'mindmap') {
+      prompt = `You are an elite syllabus-expert personal AI teacher built for Class ${grade} ${board} board students.
+SYSTEMATIC EDUCATION LAW:
+You MUST teach the student a highly structured, specific, and clear *new* concept from the syllabus of ${subject}, chapter: '${chapter}', starting from the fundamental principles.
+Make sure the target is educational, teaching them something new and engaging.
+In addition to the notes/material, you must ask a Multiple Choice Question (MCQ) to check understanding, AND a conceptual Short Question with a Topper model answer to test active recall.
 
+Generate a comprehensive, highly-structured, and beautiful interactive Mind Map (Hierarchical text diagram) for this chapter and topic.
 Your output MUST be a valid JSON object with the following keys. Do not include any conversational text or markdown code blocks (no \`\`\`json). Output raw JSON only.
 
 JSON Structure:
 {
-  "conceptName": "Name of the key chapter and concept being tested (e.g. Chapter 1: Basic Concepts - Mole Concept)",
-  "questionText": "The actual question. Wrap any math formulas, variables, chemical equations, or scientific notation in KaTeX dollar-sign delimiters (e.g., $v = u + at$, $H_2SO_4$). Wrap inline formulas in single $, block formulas in double $$.",
+  "topic": "Chapter Name and Central Concept (e.g. Chemical Reactions: Types of Reactions)",
+  "branches": [
+    {
+      "title": "Subtopic A Title",
+      "description": "A crisp, engaging overview description. Wrap any math formulas, variables, or chemical equations in LaTeX $ delimiters (e.g. $A + B \\rightarrow AB$).",
+      "points": [
+        "Key point 1 with LaTeX formulas.",
+        "Key point 2 with LaTeX formulas.",
+        "Key point 3 with LaTeX formulas."
+      ]
+    },
+    {
+      "title": "Subtopic B Title",
+      "description": "Description...",
+      "points": [
+        "Point 1...",
+        "Point 2..."
+      ]
+    },
+    {
+      "title": "Subtopic C Title",
+      "description": "Description...",
+      "points": [
+        "Point 1...",
+        "Point 2..."
+      ]
+    }
+  ],
+  "verificationQuestion": "A quick conceptual check MCQ to verify they read and understood the mind map.",
   "options": [
-    { "key": "A", "desc": "Option A description. Wrap any math in $ delimiters if needed." },
+    { "key": "A", "desc": "Option A description" },
     { "key": "B", "desc": "Option B description" },
     { "key": "C", "desc": "Option C description" },
     { "key": "D", "desc": "Option D description" }
   ],
   "correctKey": "A, B, C, or D",
-  "explanation": "A premium, step-by-step topper explanation of the solution. Wrap all equations, math, formulas in $ delimiters."
+  "explanation": "Topper explanation of the validation question. Wrap math in $.",
+  "shortQuestion": "A conceptual, deep, exam-style short question based on the concept taught above.",
+  "shortAnswer": "A premium, step-by-step topper model answer for the short question. Keep it concise, high-yield, and clear. Wrap math/equations in $."
 }`;
     } else if (mission.type === 'revision') {
-      prompt = `You are an expert personal teacher built for Indian school students.
-Generate a high-density, high-yield study sheet and a retention Multiple Choice Question (MCQ) for study practice.
+      prompt = `You are an elite syllabus-expert personal AI teacher built for Class ${grade} ${board} board students.
+SYSTEMATIC EDUCATION LAW:
+You MUST teach the student a highly structured, specific, and clear *new* concept from the syllabus of ${subject}, chapter: '${chapter}', starting from the fundamental principles.
+Make sure the target is educational, teaching them something new and engaging.
+In addition to the notes/material, you must ask a Multiple Choice Question (MCQ) to check understanding, AND a conceptual Short Question with a Topper model answer to test active recall.
 
-${studyInstructions}
-
+Generate a high-density, high-yield study sheet and a retention Multiple Choice Question (MCQ) for this topic.
 Your output MUST be a valid JSON object with the following keys. Do not include any conversational text or markdown code blocks (no \`\`\`json). Output raw JSON only.
 
 JSON Structure:
@@ -622,6 +1256,18 @@ JSON Structure:
     "Another high-density revision bullet point.",
     "One more high-density revision bullet point."
   ],
+  "formulas": [
+    { "name": "Formula/Equation Name (e.g. Power of Lens)", "formula": "LaTeX formula (e.g. $P = \\frac{1}{f}$)" },
+    { "name": "Formula/Equation Name 2", "formula": "LaTeX formula 2" }
+  ],
+  "commonMistakes": [
+    "Common mistake students make in this topic (e.g. Forgetting to convert focal length to meters in Lens Power calculations).",
+    "Another common exam mistake."
+  ],
+  "topperTips": [
+    "Topper tip for securing full marks (e.g. Always write SI units like Dioptre (D) and mention convexity/concavity explicitly).",
+    "Another topper study tip."
+  ],
   "questionText": "A quick conceptual check question based on the above revision points. Wrap all formulas/math/variables in KaTeX $ delimiters.",
   "options": [
     { "key": "A", "desc": "Option A description. Wrap any math in $ delimiters." },
@@ -630,69 +1276,118 @@ JSON Structure:
     { "key": "D", "desc": "Option D description" }
   ],
   "correctKey": "A, B, C, or D",
-  "explanation": "A clear, concise topper explanation of the solution. Wrap all math/equations in $ delimiters."
+  "explanation": "A clear, concise topper explanation of the solution. Wrap all math/equations in $ delimiters.",
+  "shortQuestion": "A high-yield conceptual short answer question to test active recall of this topic.",
+  "shortAnswer": "Topper model answer to the short answer question, highlighting key terms. Wrap math in $."
 }`;
-    } else if (mission.type === 'quiz') {
-      prompt = `You are an expert personal teacher built for Indian school students.
-Generate a 5-question high-yield Multiple Choice Quiz (MCQ) for study practice.
+    } else if (mission.type === 'active_recall') {
+      prompt = `You are an elite syllabus-expert personal AI teacher built for Class ${grade} ${board} board students.
+SYSTEMATIC EDUCATION LAW:
+You MUST teach the student a highly structured, specific, and clear *new* concept from the syllabus of ${subject}, chapter: '${chapter}', starting from the fundamental principles.
+Make sure the target is educational, teaching them something new and engaging.
 
-${studyInstructions}
-
+Generate 3 high-yield conceptual Active Recall Flashcards (conceptual short-answer questions and model answers) for this topic.
 Your output MUST be a valid JSON object with the following keys. Do not include any conversational text or markdown code blocks (no \`\`\`json). Output raw JSON only.
 
 JSON Structure:
 {
-  "quizTitle": "Engaging title for the quiz (e.g., Chapter 1: Motion Speed Quiz)",
+  "topic": "Topic Name: Active Recall Challenge",
+  "cards": [
+    {
+      "id": 1,
+      "question": "A conceptual, deep, exam-style question. Wrap any math formulas, variables, chemical equations, or scientific notation in KaTeX dollar-sign delimiters (e.g., $v = u + at$).",
+      "answer": "A premium, step-by-step model answer written in CBSE/State-board marking scheme style that gets full marks. Highlight key terms by wrapping them in bold (e.g. **pepsin**). Wrap all formulas, variables, and scientific expressions in LaTeX $ delimiters."
+    },
+    {
+      "id": 2,
+      "question": "Question 2 text...",
+      "answer": "Answer 2 text..."
+    },
+    {
+      "id": 3,
+      "question": "Question 3 text...",
+      "answer": "Answer 3 text..."
+    }
+  ]
+}`;
+    } else if (mission.type === 'quiz') {
+      prompt = `You are an elite syllabus-expert personal AI teacher built for Class ${grade} ${board} board students.
+SYSTEMATIC EDUCATION LAW:
+You MUST test the student on highly structured, specific, and clear concepts from the syllabus of ${subject}, chapter: '${chapter}'.
+Make sure the quiz is educational, testing their conceptual and application understanding.
+
+Generate a 6-question high-yield, syllabus-aligned Multiple Choice Quiz (MCQ) for this topic.
+Your output MUST be a valid JSON object with the following keys. Do not include any conversational text or markdown code blocks (no \`\`\`json). Output raw JSON only.
+
+JSON Structure:
+{
+  "quizTitle": "Engaging title for the quiz (e.g., Chemical Reactions MCQ Challenge)",
   "questions": [
     {
       "questionText": "Question 1 text. Wrap all math, variables, equations, chemical terms in LaTeX $ delimiters.",
       "options": [
         { "key": "A", "desc": "Option A text. Wrap any math in $." },
         { "key": "B", "desc": "Option B text" },
-        { "key": "C", "desc": "Option C text" }
+        { "key": "C", "desc": "Option C text" },
+        { "key": "D", "desc": "Option D text" }
       ],
-      "correctKey": "A, B, or C",
-      "explanation": "Brief solution explanation. Wrap math in $."
+      "correctKey": "A, B, C, or D",
+      "explanation": "Brief step-by-step explanation. Wrap math in $."
     },
     {
       "questionText": "Question 2 text. Wrap all math, variables, equations, chemical terms in LaTeX $ delimiters.",
       "options": [
-        { "key": "A", "desc": "Option A text. Wrap any math in $." },
+        { "key": "A", "desc": "Option A text" },
         { "key": "B", "desc": "Option B text" },
-        { "key": "C", "desc": "Option C text" }
+        { "key": "C", "desc": "Option C text" },
+        { "key": "D", "desc": "Option D text" }
       ],
-      "correctKey": "A, B, or C",
-      "explanation": "Brief solution explanation. Wrap math in $."
+      "correctKey": "A, B, C, or D",
+      "explanation": "Brief step-by-step explanation."
     },
     {
-      "questionText": "Question 3 text. Wrap all math, variables, equations, chemical terms in LaTeX $ delimiters.",
+      "questionText": "Question 3 text...",
       "options": [
-        { "key": "A", "desc": "Option A text. Wrap any math in $." },
+        { "key": "A", "desc": "Option A text" },
         { "key": "B", "desc": "Option B text" },
-        { "key": "C", "desc": "Option C text" }
+        { "key": "C", "desc": "Option C text" },
+        { "key": "D", "desc": "Option D text" }
       ],
-      "correctKey": "A, B, or C",
-      "explanation": "Brief solution explanation. Wrap math in $."
+      "correctKey": "A, B, C, or D",
+      "explanation": "Brief explanation."
     },
     {
-      "questionText": "Question 4 text. Wrap all math, variables, equations, chemical terms in LaTeX $ delimiters.",
+      "questionText": "Question 4 text...",
       "options": [
-        { "key": "A", "desc": "Option A text. Wrap any math in $." },
+        { "key": "A", "desc": "Option A text" },
         { "key": "B", "desc": "Option B text" },
-        { "key": "C", "desc": "Option C text" }
+        { "key": "C", "desc": "Option C text" },
+        { "key": "D", "desc": "Option D text" }
       ],
-      "correctKey": "A, B, or C",
-      "explanation": "Brief solution explanation. Wrap math in $."
+      "correctKey": "A, B, C, or D",
+      "explanation": "Brief explanation."
     },
     {
-      "questionText": "Question 5 text. Wrap all math, variables, equations, chemical terms in LaTeX $ delimiters.",
+      "questionText": "Question 5 text...",
       "options": [
-        { "key": "A", "desc": "Option A text. Wrap any math in $." },
+        { "key": "A", "desc": "Option A text" },
         { "key": "B", "desc": "Option B text" },
-        { "key": "C", "desc": "Option C text" }
+        { "key": "C", "desc": "Option C text" },
+        { "key": "D", "desc": "Option D text" }
       ],
-      "correctKey": "A, B, or C",
-      "explanation": "Brief solution explanation. Wrap math in $."
+      "correctKey": "A, B, C, or D",
+      "explanation": "Brief explanation."
+    },
+    {
+      "questionText": "Question 6 text...",
+      "options": [
+        { "key": "A", "desc": "Option A text" },
+        { "key": "B", "desc": "Option B text" },
+        { "key": "C", "desc": "Option C text" },
+        { "key": "D", "desc": "Option D text" }
+      ],
+      "correctKey": "A, B, C, or D",
+      "explanation": "Brief explanation."
     }
   ]
 }`;
@@ -723,6 +1418,7 @@ JSON Structure:
   const startStudyMission = (mission) => {
     setMissionAnswer(null);
     setMissionSubmitted(false);
+    setShowShortAnswer(false);
     setQuizStep(0);
     setQuizAnswers({});
     setActiveMission(mission);
@@ -1552,17 +2248,94 @@ JSON Structure:
                   }} />
                 </div>
 
+                {/* ── ACTIVE CHAPTERS SELECTOR ── */}
+                <div style={{
+                  background: 'rgba(255, 255, 255, 0.02)',
+                  border: '1px solid rgba(255, 255, 255, 0.05)',
+                  borderRadius: '12px',
+                  padding: '1rem',
+                  marginBottom: '1.25rem'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
+                    <span style={{ fontSize: '0.85rem' }}>🎯</span>
+                    <strong style={{ fontSize: '0.82rem', color: '#fff' }}>Set Your Active Class Chapters:</strong>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '0.75rem' }}>
+                    {profileSubjects.map(subj => {
+                      const currentCh = activeChapters[subj] || '';
+                      const chapters = CLASS_SYLLABUS[profileClass]?.[subj] || CLASS_SYLLABUS[profileClass.toString()]?.[subj] || [];
+                      
+                      return (
+                        <div key={subj} style={{ background: 'rgba(255,255,255,0.01)', border: '1px solid rgba(255,255,255,0.03)', borderRadius: '8px', padding: '0.5rem' }}>
+                          <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '0.25rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {subj}
+                          </span>
+                          {chapters.length > 0 ? (
+                            <select
+                              value={currentCh}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                const updated = { ...activeChapters, [subj]: val };
+                                setActiveChapters(updated);
+                                localStorage.setItem('tanios_active_chapters', JSON.stringify(updated));
+                                const newMissions = generateMissionsFromProfile(profileBoard, profileClass, profileSubjects, updated);
+                                setMissions(newMissions);
+                                localStorage.setItem('tanios_missions', JSON.stringify(newMissions));
+                              }}
+                              style={{ width: '100%', fontSize: '0.72rem', background: 'var(--bg-secondary)', border: '1px solid var(--border)', color: 'var(--text)', borderRadius: '4px', padding: '0.2rem' }}
+                            >
+                              <option value="">Select Chapter...</option>
+                              {chapters.map(ch => (
+                                <option key={ch} value={ch}>{ch}</option>
+                              ))}
+                            </select>
+                          ) : (
+                            <input
+                              type="text"
+                              value={currentCh}
+                              placeholder="Type active topic..."
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                const updated = { ...activeChapters, [subj]: val };
+                                setActiveChapters(updated);
+                                localStorage.setItem('tanios_active_chapters', JSON.stringify(updated));
+                                const newMissions = generateMissionsFromProfile(profileBoard, profileClass, profileSubjects, updated);
+                                setMissions(newMissions);
+                                localStorage.setItem('tanios_missions', JSON.stringify(newMissions));
+                              }}
+                              style={{ width: '100%', fontSize: '0.72rem', background: 'var(--bg-secondary)', border: '1px solid var(--border)', color: 'var(--text)', borderRadius: '4px', padding: '0.2rem 0.4rem' }}
+                            />
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
                 <div>
                 {missions.map(mission => (
                     <div key={mission.id} className={`mission-item ${mission.done ? 'completed' : ''}`}>
                       <button 
-                        onClick={() => toggleMission(mission.id)}
+                        onClick={() => {
+                          if (mission.type === 'login') {
+                            toggleMission(mission.id);
+                          } else if (!mission.done) {
+                            startStudyMission(mission);
+                          }
+                        }}
                         disabled={mission.done}
                         style={{ background: 'none', border: 'none', color: mission.done ? 'var(--success)' : 'var(--text-secondary)', cursor: mission.done ? 'default' : 'pointer', flexShrink: 0 }}
                       >
                         <CheckCircle2 size={20} style={mission.done ? {} : { opacity: 0.4 }} />
                       </button>
-                      <div style={{ flex: 1, minWidth: 0 }}>
+                      <div 
+                        onClick={() => {
+                          if (!mission.done && mission.type !== 'login') {
+                            startStudyMission(mission);
+                          }
+                        }}
+                        style={{ flex: 1, minWidth: 0, cursor: (!mission.done && mission.type !== 'login') ? 'pointer' : 'default' }}
+                      >
                         <div style={{
                           fontSize: '0.88rem',
                           fontWeight: 600,
@@ -2127,111 +2900,196 @@ JSON Structure:
                 </div>
               ) : (
                 <>
-                  {/* 1. CONCEPT (Mathematics / Concept Doubt practice) */}
-                  {activeMission.type === 'concept' && (() => {
-                    const data = dynamicMissionContent || fallbackConcept;
+                  {/* 1. MINDMAP (Interactive Mind Map with validation MCQ) */}
+                  {activeMission.type === 'mindmap' && (() => {
+                    const data = dynamicMissionContent || fallbackMindMap;
+                    const branches = data.branches || fallbackMindMap.branches;
                     return (
                       <div>
-                        <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '1.25rem' }}>
-                          💡 <strong style={{ color: '#fff' }}>{data.conceptName || "Concept"} Practice:</strong> Solve this high-yield CBSE/State-board MCQ to earn your XP!
+                        <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '1.25rem' }}>
+                          🧠 Explore the interactive mind map for <strong>{data.topic || "this topic"}</strong>:
                         </p>
-
-                        <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '12px', padding: '1.25rem', marginBottom: '1.25rem' }}>
-                          <div style={{ fontSize: '0.92rem', fontWeight: 700, color: '#fff', lineHeight: 1.5 }}>
-                            <ReactMarkdown
-                              remarkPlugins={[remarkGfm, remarkMath]}
-                              rehypePlugins={[rehypeKatex]}
-                              components={markdownComponents}
-                            >{data.questionText}</ReactMarkdown>
-                          </div>
-                        </div>
-
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                          {data.options.map(opt => {
-                            const isSelected = missionAnswer === opt.key;
-                            return (
-                              <button
-                                key={opt.key}
-                                onClick={() => !missionSubmitted && setMissionAnswer(opt.key)}
-                                disabled={missionSubmitted}
-                                style={{
-                                  display: 'flex', alignItems: 'center', gap: '1rem',
-                                  width: '100%', padding: '0.85rem 1rem',
-                                  background: isSelected ? 'rgba(108, 99, 255, 0.12)' : 'rgba(255, 255, 255, 0.01)',
-                                  border: isSelected ? '1px solid var(--primary)' : '1px solid rgba(255,255,255,0.05)',
-                                  borderRadius: '10px', color: '#fff', textAlign: 'left',
-                                  cursor: missionSubmitted ? 'default' : 'pointer',
-                                  transition: 'all 0.2s'
-                                }}
-                              >
-                                <div style={{
-                                  width: '24px', height: '24px', borderRadius: '50%',
-                                  background: isSelected ? 'var(--primary)' : 'rgba(255,255,255,0.05)',
-                                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                  fontSize: '0.75rem', fontWeight: 800, color: isSelected ? '#fff' : 'var(--text-secondary)'
-                                }}>
-                                  {opt.key}
-                                </div>
-                                <span style={{ fontSize: '0.88rem', fontWeight: 600 }}>
-                                  <ReactMarkdown
-                                    remarkPlugins={[remarkGfm, remarkMath]}
-                                    rehypePlugins={[rehypeKatex]}
-                                    components={markdownComponents}
-                                  >{opt.desc || opt.text}</ReactMarkdown>
-                                </span>
-                              </button>
-                            );
-                          })}
-                        </div>
-
-                        {missionSubmitted && (
-                          <div style={{
-                            marginTop: '1.25rem', padding: '1rem',
-                            background: missionAnswer === data.correctKey ? 'rgba(16, 185, 129, 0.08)' : 'rgba(239, 68, 68, 0.08)',
-                            border: missionAnswer === data.correctKey ? '1px solid rgba(16, 185, 129, 0.2)' : '1px solid rgba(239, 68, 68, 0.2)',
-                            borderRadius: '10px', fontSize: '0.82rem', lineHeight: 1.5, color: 'var(--text-secondary)'
-                          }}>
-                            {missionAnswer === data.correctKey ? (
-                              <>
-                                🎉 <strong style={{ color: '#10b981' }}>Correct Answer!</strong> Good job! <br />
+                        
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1.5rem' }}>
+                          {branches.map((branch, bIdx) => (
+                            <div key={bIdx} style={{
+                              background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(167, 139, 250, 0.08))',
+                              border: '1px solid rgba(99, 102, 241, 0.15)',
+                              borderRadius: '12px', padding: '1rem',
+                              position: 'relative'
+                            }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                                <span style={{ fontSize: '1rem' }}>📍</span>
+                                <strong style={{ color: '#fff', fontSize: '0.9rem' }}>{branch.title}</strong>
+                              </div>
+                              <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
                                 <ReactMarkdown
                                   remarkPlugins={[remarkGfm, remarkMath]}
                                   rehypePlugins={[rehypeKatex]}
                                   components={markdownComponents}
-                                >{data.explanation}</ReactMarkdown>
-                              </>
-                            ) : (
-                              <>
-                                ❌ <strong style={{ color: '#f87171' }}>Incorrect Option.</strong> <br />
-                                Select option <strong>{data.correctKey}</strong> to solve!
-                              </>
-                            )}
+                                >{branch.description}</ReactMarkdown>
+                              </p>
+                              <ul style={{ paddingLeft: '1.2rem', margin: 0, fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                                {branch.points.map((pt, pIdx) => (
+                                  <li key={pIdx} style={{ marginBottom: '0.25rem' }}>
+                                    <ReactMarkdown
+                                      remarkPlugins={[remarkGfm, remarkMath]}
+                                      rehypePlugins={[rehypeKatex]}
+                                      components={markdownComponents}
+                                    >{pt}</ReactMarkdown>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          ))}
+                        </div>
+
+                        <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '1.25rem' }}>
+                          <span style={{ fontSize: '0.68rem', fontWeight: 800, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '1px', display: 'block', marginBottom: '0.5rem' }}>
+                            ⚡ MIND MAP CHECKPOINT
+                          </span>
+                          <div style={{ fontSize: '0.88rem', fontWeight: 700, color: '#fff', marginBottom: '0.75rem', lineHeight: 1.4 }}>
+                            <ReactMarkdown
+                              remarkPlugins={[remarkGfm, remarkMath]}
+                              rehypePlugins={[rehypeKatex]}
+                              components={markdownComponents}
+                            >{data.verificationQuestion || data.questionText}</ReactMarkdown>
                           </div>
-                        )}
+
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+                            {data.options.map(opt => {
+                              const isSelected = missionAnswer === opt.key;
+                              return (
+                                <button
+                                  key={opt.key}
+                                  onClick={() => !missionSubmitted && setMissionAnswer(opt.key)}
+                                  disabled={missionSubmitted}
+                                  style={{
+                                    display: 'flex', alignItems: 'center', gap: '1rem',
+                                    width: '100%', padding: '0.75rem 1rem',
+                                    background: isSelected ? 'rgba(108, 99, 255, 0.12)' : 'rgba(255, 255, 255, 0.01)',
+                                    border: isSelected ? '1px solid var(--primary)' : '1px solid rgba(255,255,255,0.05)',
+                                    borderRadius: '10px', color: '#fff', textAlign: 'left',
+                                    cursor: missionSubmitted ? 'default' : 'pointer',
+                                    transition: 'all 0.2s'
+                                  }}
+                                >
+                                  <div style={{
+                                    width: '22px', height: '22px', borderRadius: '50%',
+                                    background: isSelected ? 'var(--primary)' : 'rgba(255,255,255,0.05)',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    fontSize: '0.72rem', fontWeight: 800, color: isSelected ? '#fff' : 'var(--text-secondary)'
+                                  }}>
+                                    {opt.key}
+                                  </div>
+                                  <span style={{ fontSize: '0.8rem', fontWeight: 600 }}>
+                                    <ReactMarkdown
+                                      remarkPlugins={[remarkGfm, remarkMath]}
+                                      rehypePlugins={[rehypeKatex]}
+                                      components={markdownComponents}
+                                    >{opt.desc || opt.text}</ReactMarkdown>
+                                  </span>
+                                </button>
+                              );
+                            })}
+                          </div>
+
+                          {missionSubmitted && (
+                            <div style={{
+                              marginTop: '1.25rem', padding: '1rem',
+                              background: missionAnswer === data.correctKey ? 'rgba(16, 185, 129, 0.08)' : 'rgba(239, 68, 68, 0.08)',
+                              border: missionAnswer === data.correctKey ? '1px solid rgba(16, 185, 129, 0.2)' : '1px solid rgba(239, 68, 68, 0.2)',
+                              borderRadius: '10px', fontSize: '0.82rem', lineHeight: 1.5, color: 'var(--text-secondary)'
+                            }}>
+                              {missionAnswer === data.correctKey ? (
+                                <>
+                                  🎉 <strong style={{ color: '#10b981' }}>Correct Answer!</strong> <br />
+                                  <div style={{ marginBottom: '1rem' }}>
+                                    <ReactMarkdown
+                                      remarkPlugins={[remarkGfm, remarkMath]}
+                                      rehypePlugins={[rehypeKatex]}
+                                      components={markdownComponents}
+                                    >{data.explanation}</ReactMarkdown>
+                                  </div>
+
+                                  {/* Conceptual Short Question */}
+                                  <div style={{
+                                    marginTop: '1rem', paddingTop: '1rem',
+                                    borderTop: '1px solid rgba(255,255,255,0.06)'
+                                  }}>
+                                    <span style={{ fontSize: '0.68rem', fontWeight: 800, color: '#a78bfa', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: '0.35rem' }}>
+                                      ⚡ ACTIVE RECALL: CONCEPTUAL SHORT QUESTION
+                                    </span>
+                                    <div style={{ fontWeight: 700, color: '#fff', marginBottom: '0.5rem' }}>
+                                      <ReactMarkdown
+                                        remarkPlugins={[remarkGfm, remarkMath]}
+                                        rehypePlugins={[rehypeKatex]}
+                                        components={markdownComponents}
+                                      >{data.shortQuestion || "Explain how this core concept works in your own words."}</ReactMarkdown>
+                                    </div>
+                                    {!showShortAnswer ? (
+                                      <button
+                                        onClick={() => setShowShortAnswer(true)}
+                                        className="btn"
+                                        style={{
+                                          padding: '0.4rem 0.8rem', fontSize: '0.72rem', fontWeight: 700,
+                                          background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
+                                          color: '#fff', borderRadius: '6px', cursor: 'pointer'
+                                        }}
+                                      >
+                                        Reveal Topper Model Answer 👁️
+                                      </button>
+                                    ) : (
+                                      <div style={{ marginTop: '0.5rem', background: 'rgba(255,255,255,0.02)', padding: '0.5rem', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.04)' }}>
+                                        <strong style={{ color: '#fbbf24', fontSize: '0.72rem', display: 'block', textTransform: 'uppercase', marginBottom: '0.2rem' }}>
+                                          🥇 topper model answer:
+                                        </strong>
+                                        <div style={{ color: '#fff', fontSize: '0.78rem' }}>
+                                          <ReactMarkdown
+                                            remarkPlugins={[remarkGfm, remarkMath]}
+                                            rehypePlugins={[rehypeKatex]}
+                                            components={markdownComponents}
+                                          >{data.shortAnswer || "Identify key points and compare with your mental notes."}</ReactMarkdown>
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                </>
+                              ) : (
+                                <>
+                                  ❌ <strong style={{ color: '#f87171' }}>Wrong Answer.</strong> <br />
+                                  Select option <strong>{data.correctKey}</strong> to solve!
+                                </>
+                              )}
+                            </div>
+                          )}
+                        </div>
                       </div>
                     );
                   })()}
 
-                  {/* 2. REVISION (Physics / Science quick card + retention question) */}
+                  {/* 2. REVISION (High-Density Revision & Formula Card) */}
                   {activeMission.type === 'revision' && (() => {
                     const data = dynamicMissionContent || fallbackRevision;
+                    const formulas = data.formulas || [];
+                    const commonMistakes = data.commonMistakes || [];
+                    const topperTips = data.topperTips || [];
                     return (
                       <div>
                         <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '1rem' }}>
                           📚 Read this high-density study card and solve the retention question:
                         </p>
 
-                        {/* Bullet sheet */}
                         <div style={{
                           background: 'linear-gradient(135deg, rgba(167, 139, 250, 0.05), rgba(108, 99, 255, 0.08))',
                           border: '1px solid rgba(167, 139, 250, 0.15)',
                           borderRadius: '12px', padding: '1rem 1.25rem', marginBottom: '1.25rem',
-                          fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.6
+                          fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.6
                         }}>
-                          <strong style={{ color: '#fff', fontSize: '0.85rem', display: 'block', marginBottom: '0.5rem' }}>
+                          <strong style={{ color: '#fff', fontSize: '0.9rem', display: 'block', marginBottom: '0.5rem' }}>
                             ⚡ {data.title}
                           </strong>
-                          <ul style={{ paddingLeft: '1.25rem', margin: 0 }}>
+                          <ul style={{ paddingLeft: '1.25rem', margin: '0 0 1rem 0' }}>
                             {data.revisionPoints.map((pt, idx) => (
                               <li key={idx} style={{ marginBottom: '0.35rem' }}>
                                 <ReactMarkdown
@@ -2242,6 +3100,52 @@ JSON Structure:
                               </li>
                             ))}
                           </ul>
+
+                          {formulas.length > 0 && (
+                            <div style={{ marginBottom: '1rem' }}>
+                              <strong style={{ color: 'var(--accent)', fontSize: '0.75rem', display: 'block', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '0.35rem' }}>
+                                📐 Core Formulas / Equations
+                              </strong>
+                              <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '0.4rem' }}>
+                                {formulas.map((f, idx) => (
+                                  <div key={idx} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)', borderRadius: '6px', padding: '0.4rem 0.6rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <span style={{ fontWeight: 600, color: 'var(--text-secondary)', fontSize: '0.72rem' }}>{f.name}</span>
+                                    <span style={{ color: '#fff', fontSize: '0.75rem' }}>
+                                      <ReactMarkdown
+                                        remarkPlugins={[remarkGfm, remarkMath]}
+                                        rehypePlugins={[rehypeKatex]}
+                                        components={markdownComponents}
+                                      >{f.formula}</ReactMarkdown>
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.75rem' }}>
+                            {commonMistakes.length > 0 && (
+                              <div style={{ background: 'rgba(239, 68, 68, 0.03)', border: '1px solid rgba(239, 68, 68, 0.1)', borderRadius: '8px', padding: '0.6rem' }}>
+                                <span style={{ color: '#f87171', fontWeight: 800, fontSize: '0.72rem', textTransform: 'uppercase', display: 'block', marginBottom: '0.25rem' }}>
+                                  ⚠️ Avoid These Exam Mistakes
+                                </span>
+                                <ul style={{ paddingLeft: '1rem', margin: 0, fontSize: '0.7rem', color: '#fca5a5' }}>
+                                  {commonMistakes.map((m, idx) => <li key={idx} style={{ marginBottom: '0.2rem' }}>{m}</li>)}
+                                </ul>
+                              </div>
+                            )}
+
+                            {topperTips.length > 0 && (
+                              <div style={{ background: 'rgba(245, 158, 11, 0.03)', border: '1px solid rgba(245, 158, 11, 0.1)', borderRadius: '8px', padding: '0.6rem' }}>
+                                <span style={{ color: '#fbbf24', fontWeight: 800, fontSize: '0.72rem', textTransform: 'uppercase', display: 'block', marginBottom: '0.25rem' }}>
+                                  🥇 Board Topper Tips
+                                </span>
+                                <ul style={{ paddingLeft: '1rem', margin: 0, fontSize: '0.7rem', color: '#fde047' }}>
+                                  {topperTips.map((t, idx) => <li key={idx} style={{ marginBottom: '0.2rem' }}>{t}</li>)}
+                                </ul>
+                              </div>
+                            )}
+                          </div>
                         </div>
 
                         <div style={{ fontSize: '0.88rem', fontWeight: 700, color: '#fff', marginBottom: '0.75rem', lineHeight: 1.4 }}>
@@ -2300,11 +3204,56 @@ JSON Structure:
                             {missionAnswer === data.correctKey ? (
                               <>
                                 🎉 <strong style={{ color: '#10b981' }}>Correct Answer!</strong> <br />
-                                <ReactMarkdown
-                                  remarkPlugins={[remarkGfm, remarkMath]}
-                                  rehypePlugins={[rehypeKatex]}
-                                  components={markdownComponents}
-                                >{data.explanation}</ReactMarkdown>
+                                <div style={{ marginBottom: '1rem' }}>
+                                  <ReactMarkdown
+                                    remarkPlugins={[remarkGfm, remarkMath]}
+                                    rehypePlugins={[rehypeKatex]}
+                                    components={markdownComponents}
+                                  >{data.explanation}</ReactMarkdown>
+                                </div>
+
+                                {/* Conceptual Short Question */}
+                                <div style={{
+                                  marginTop: '1rem', paddingTop: '1rem',
+                                  borderTop: '1px solid rgba(255,255,255,0.06)'
+                                }}>
+                                  <span style={{ fontSize: '0.68rem', fontWeight: 800, color: '#a78bfa', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: '0.35rem' }}>
+                                    ⚡ ACTIVE RECALL: CONCEPTUAL SHORT QUESTION
+                                  </span>
+                                  <div style={{ fontWeight: 700, color: '#fff', marginBottom: '0.5rem' }}>
+                                    <ReactMarkdown
+                                      remarkPlugins={[remarkGfm, remarkMath]}
+                                      rehypePlugins={[rehypeKatex]}
+                                      components={markdownComponents}
+                                    >{data.shortQuestion || "Explain how this core concept works in your own words."}</ReactMarkdown>
+                                  </div>
+                                  {!showShortAnswer ? (
+                                    <button
+                                      onClick={() => setShowShortAnswer(true)}
+                                      className="btn"
+                                      style={{
+                                        padding: '0.4rem 0.8rem', fontSize: '0.72rem', fontWeight: 700,
+                                        background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
+                                        color: '#fff', borderRadius: '6px', cursor: 'pointer'
+                                      }}
+                                    >
+                                      Reveal Topper Model Answer 👁️
+                                    </button>
+                                  ) : (
+                                    <div style={{ marginTop: '0.5rem', background: 'rgba(255,255,255,0.02)', padding: '0.5rem', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.04)' }}>
+                                      <strong style={{ color: '#fbbf24', fontSize: '0.72rem', display: 'block', textTransform: 'uppercase', marginBottom: '0.2rem' }}>
+                                        🥇 topper model answer:
+                                      </strong>
+                                      <div style={{ color: '#fff', fontSize: '0.78rem' }}>
+                                        <ReactMarkdown
+                                          remarkPlugins={[remarkGfm, remarkMath]}
+                                          rehypePlugins={[rehypeKatex]}
+                                          components={markdownComponents}
+                                        >{data.shortAnswer || "Identify key points and compare with your mental notes."}</ReactMarkdown>
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
                               </>
                             ) : (
                               <>
@@ -2318,23 +3267,167 @@ JSON Structure:
                     );
                   })()}
 
-                  {/* 3. QUIZ (Chemistry / 5 Question Quiz) */}
+                  {/* 3. ACTIVE RECALL FLASHCARDS (Slide challenge with Reveal answer) */}
+                  {activeMission.type === 'active_recall' && (() => {
+                    const data = dynamicMissionContent || fallbackActiveRecall;
+                    const cards = data.cards || fallbackActiveRecall.cards;
+                    const currentCard = cards[quizStep] || cards[0];
+                    const isRevealed = quizAnswers[quizStep] === 'revealed';
+
+                    return (
+                      <div>
+                        {quizStep < 3 ? (
+                          <div>
+                            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '1.25rem' }}>
+                              ⚡ Active Recall Challenge: Read the question, think of your answer, reveal the topper answer, and self-assess!
+                            </p>
+
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 700 }}>
+                                Flashcard {quizStep + 1} of 3
+                              </span>
+                              <div style={{ width: '80px', height: '4px', background: 'rgba(255,255,255,0.05)', borderRadius: '10px', overflow: 'hidden' }}>
+                                <div style={{ width: `${((quizStep + 1) / 3) * 100}%`, height: '100%', background: 'var(--accent)' }} />
+                              </div>
+                            </div>
+
+                            <div style={{
+                              background: 'linear-gradient(135deg, rgba(245,158,11,0.05), rgba(99,102,241,0.05))',
+                              border: '1px solid rgba(245,158,11,0.15)',
+                              borderRadius: '12px', padding: '1.5rem',
+                              minHeight: '120px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              textAlign: 'center', marginBottom: '1.25rem'
+                            }}>
+                              <div style={{ fontSize: '1rem', fontWeight: 800, color: '#fff', lineHeight: 1.45 }}>
+                                <ReactMarkdown
+                                  remarkPlugins={[remarkGfm, remarkMath]}
+                                  rehypePlugins={[rehypeKatex]}
+                                  components={markdownComponents}
+                                >{currentCard.question}</ReactMarkdown>
+                              </div>
+                            </div>
+
+                            {!isRevealed ? (
+                              <button
+                                onClick={() => setQuizAnswers(prev => ({ ...prev, [quizStep]: 'revealed' }))}
+                                style={{
+                                  width: '100%', padding: '1rem',
+                                  background: 'rgba(255,255,255,0.02)',
+                                  border: '2px dashed rgba(255,255,255,0.1)',
+                                  borderRadius: '12px', color: 'var(--primary)',
+                                  fontSize: '0.85rem', fontWeight: 800,
+                                  cursor: 'pointer', textAlign: 'center',
+                                  transition: 'all 0.2s', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem'
+                                }}
+                              >
+                                <span>🔍 Click to Reveal Topper Model Answer</span>
+                                <span style={{ fontSize: '0.68rem', color: 'var(--text-secondary)' }}>(Formulated according to CBSE/RBSE grading schemes)</span>
+                              </button>
+                            ) : (
+                              <div style={{
+                                background: 'rgba(16, 185, 129, 0.04)',
+                                border: '1px solid rgba(16, 185, 129, 0.15)',
+                                borderRadius: '12px', padding: '1.25rem',
+                                fontSize: '0.82rem', lineHeight: 1.6, color: 'var(--text-secondary)',
+                                marginBottom: '1.25rem', position: 'relative'
+                              }}>
+                                <span style={{
+                                  position: 'absolute', top: '-10px', left: '15px',
+                                  background: '#059669', color: '#fff',
+                                  fontSize: '0.6rem', fontWeight: 800, padding: '0.1rem 0.4rem',
+                                  borderRadius: '4px', textTransform: 'uppercase'
+                                }}>
+                                  TOPPER RESPONSE
+                                </span>
+                                <div style={{ color: '#fff', marginTop: '0.25rem' }}>
+                                  <ReactMarkdown
+                                    remarkPlugins={[remarkGfm, remarkMath]}
+                                    rehypePlugins={[rehypeKatex]}
+                                    components={markdownComponents}
+                                  >{currentCard.answer}</ReactMarkdown>
+                                </div>
+                                
+                                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginTop: '1rem', borderTop: '1px solid rgba(16, 185, 129, 0.1)', paddingTop: '0.75rem' }}>
+                                  <button
+                                    onClick={() => {
+                                      if (quizStep < 2) {
+                                        setQuizStep(s => s + 1);
+                                      } else {
+                                        setQuizStep(3);
+                                      }
+                                    }}
+                                    className="btn btn-secondary"
+                                    style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}
+                                  >
+                                    I Understand, Next Card ➔
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <div style={{ textAlign: 'center' }}>
+                            <span style={{ fontSize: '2.5rem' }}>⚡</span>
+                            <h4 style={{ color: '#10b981', margin: '0.5rem 0', fontWeight: 800, fontSize: '1.25rem' }}>
+                              Active Recall Complete!
+                            </h4>
+                            <p style={{ margin: '0 0 1.25rem 0', fontSize: '0.88rem', color: 'var(--text-secondary)' }}>
+                              You reviewed all 3 topper model answers for <strong>{activeMission.subject}</strong>. Good job!
+                            </p>
+                            <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>
+                              Ready to submit and unlock <strong style={{ color: '#a78bfa' }}>+30 XP</strong>?
+                            </p>
+                            <div style={{ display: 'flex', gap: '0.75rem' }}>
+                              <button
+                                onClick={() => {
+                                  toggleMission(activeMission.id);
+                                  setActiveMission(null);
+                                  setDynamicMissionContent(null);
+                                }}
+                                className="btn btn-primary"
+                                style={{ flex: 1, padding: '0.8rem 1rem', fontSize: '0.88rem', fontWeight: 800 }}
+                              >
+                                Submit & Complete Mission
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setActiveMission(null);
+                                  setDynamicMissionContent(null);
+                                }}
+                                style={{
+                                  background: 'rgba(255,255,255,0.03)',
+                                  border: '1px solid rgba(255,255,255,0.05)',
+                                  color: 'var(--text-secondary)',
+                                  borderRadius: '8px', padding: '0.6rem 1rem',
+                                  fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer'
+                                }}
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
+
+                  {/* 4. QUIZ (Syllabus Aligned Quiz with passing gate) */}
                   {activeMission.type === 'quiz' && (() => {
                     const data = dynamicMissionContent || fallbackQuiz;
                     const questions = data.questions || fallbackQuiz.questions;
                     const quizTitle = data.quizTitle || fallbackQuiz.quizTitle;
 
-                    if (quizStep < 5) {
+                    if (quizStep < 6) {
                       const currentQ = questions[quizStep] || fallbackQuiz.questions[quizStep];
                       const selectedOpt = quizAnswers[quizStep];
                       return (
                         <div>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                             <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 700 }}>
-                              Question {quizStep + 1} of 5
+                              Question {quizStep + 1} of 6
                             </span>
                             <div style={{ width: '80px', height: '4px', background: 'rgba(255,255,255,0.05)', borderRadius: '10px', overflow: 'hidden' }}>
-                              <div style={{ width: `${((quizStep + 1) / 5) * 100}%`, height: '100%', background: 'var(--primary)' }} />
+                              <div style={{ width: `${((quizStep + 1) / 6) * 100}%`, height: '100%', background: 'var(--primary)' }} />
                             </div>
                           </div>
 
@@ -2392,7 +3485,7 @@ JSON Structure:
                                 cursor: selectedOpt ? 'pointer' : 'not-allowed', opacity: selectedOpt ? 1 : 0.5
                               }}
                             >
-                              {quizStep === 4 ? "Review Answers" : "Next Question ➔"}
+                              {quizStep === 5 ? "Review Answers" : "Next Question ➔"}
                             </button>
                           </div>
                         </div>
@@ -2405,6 +3498,91 @@ JSON Structure:
                         if (quizAnswers[idx] === correctKey) correctCount++;
                       });
 
+                      const hasPassed = correctCount >= 4;
+
+                      if (!hasPassed) {
+                        return (
+                          <div style={{ textAlign: 'center' }}>
+                            <span style={{ fontSize: '2.5rem' }}>❌</span>
+                            <h4 style={{ color: '#f87171', margin: '0.5rem 0', fontWeight: 800, fontSize: '1.25rem' }}>
+                              Practice Quiz Failed
+                            </h4>
+                            <p style={{ margin: '0 0 1.25rem 0', fontSize: '0.88rem', color: 'var(--text-secondary)' }}>
+                              You scored <strong style={{ color: '#fff' }}>{correctCount} / 6 Correct</strong> ({Math.round((correctCount / 6) * 100)}% Score).
+                            </p>
+                            <div style={{ background: 'rgba(239, 68, 68, 0.05)', border: '1px solid rgba(239, 68, 68, 0.1)', borderRadius: '12px', padding: '1rem', margin: '1rem 0 1.5rem 0', textAlign: 'left' }}>
+                              <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#f87171', display: 'block', marginBottom: '0.35rem' }}>
+                                💡 Study Tip:
+                              </span>
+                              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+                                You need at least <strong>4 / 6 correct answers</strong> (66%) to pass this daily target mission. Read the explanations below, identify your learning gap, and try again!
+                              </span>
+                            </div>
+
+                            {/* Brief details checklist */}
+                            <div style={{
+                              background: 'rgba(255,255,255,0.02)',
+                              border: '1px solid rgba(255,255,255,0.05)',
+                              borderRadius: '12px', padding: '1rem',
+                              textAlign: 'left', marginBottom: '1.5rem',
+                              display: 'flex', flexDirection: 'column', gap: '0.75rem',
+                              maxHeight: '220px', overflowY: 'auto'
+                            }}>
+                              {questions.map((q, i) => {
+                                const userAns = quizAnswers[i];
+                                const correctKey = q.correctKey || q.correct;
+                                const isCorrect = userAns === correctKey;
+                                return (
+                                  <div key={i} style={{ display: 'flex', flexDirection: 'column', fontSize: '0.78rem', borderBottom: '1px solid rgba(255,255,255,0.03)', paddingBottom: '0.5rem' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem' }}>
+                                      <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>
+                                        Q{i+1}: <span style={{ color: '#fff' }}>{q.questionText.replace(/[$#*\-_]/g, '').substring(0, 50)}...</span>
+                                      </span>
+                                      <span style={{ color: isCorrect ? '#10b981' : '#f87171', fontWeight: 800, flexShrink: 0 }}>
+                                        {isCorrect ? "✓ Correct" : `✗ Wrong (Ans: ${correctKey})`}
+                                      </span>
+                                    </div>
+                                    {!isCorrect && (
+                                      <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginTop: '0.25rem', fontStyle: 'italic', background: 'rgba(255,255,255,0.01)', padding: '0.25rem', borderRadius: '4px' }}>
+                                        Explanation: {q.explanation}
+                                      </span>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+
+                            <div style={{ display: 'flex', gap: '0.75rem' }}>
+                              <button
+                                onClick={() => {
+                                  setQuizStep(0);
+                                  setQuizAnswers({});
+                                }}
+                                className="btn btn-primary"
+                                style={{ flex: 1, padding: '0.8rem 1rem', fontSize: '0.88rem', fontWeight: 800 }}
+                              >
+                                Restart Practice Quiz 🔄
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setActiveMission(null);
+                                  setDynamicMissionContent(null);
+                                }}
+                                style={{
+                                  background: 'rgba(255,255,255,0.03)',
+                                  border: '1px solid rgba(255,255,255,0.05)',
+                                  color: 'var(--text-secondary)',
+                                  borderRadius: '8px', padding: '0.6rem 1rem',
+                                  fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer'
+                                }}
+                              >
+                                Close
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      }
+
                       return (
                         <div style={{ textAlign: 'center' }}>
                           <span style={{ fontSize: '2.5rem' }}>🏆</span>
@@ -2412,7 +3590,7 @@ JSON Structure:
                             {quizTitle} Completed!
                           </h4>
                           <p style={{ margin: '0 0 1.25rem 0', fontSize: '0.88rem', color: 'var(--text-secondary)' }}>
-                            You scored <strong style={{ color: '#fff' }}>{correctCount} / 5 Correct</strong> ({correctCount * 20}% Score)
+                            You scored <strong style={{ color: '#fff' }}>{correctCount} / 6 Correct</strong> ({Math.round((correctCount / 6) * 100)}% Score)
                           </p>
 
                           {/* Brief details checklist */}
@@ -2421,7 +3599,8 @@ JSON Structure:
                             border: '1px solid rgba(255,255,255,0.05)',
                             borderRadius: '12px', padding: '1rem',
                             textAlign: 'left', marginBottom: '1.5rem',
-                            display: 'flex', flexDirection: 'column', gap: '0.5rem'
+                            display: 'flex', flexDirection: 'column', gap: '0.5rem',
+                            maxHeight: '200px', overflowY: 'auto'
                           }}>
                             {questions.map((q, i) => {
                               const userAns = quizAnswers[i];
@@ -2440,9 +3619,38 @@ JSON Structure:
                             })}
                           </div>
 
-                          <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
+                          <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '1.25rem' }}>
                             Ready to submit and unlock <strong style={{ color: '#a78bfa' }}>+30 XP</strong>?
                           </p>
+
+                          <div style={{ display: 'flex', gap: '0.75rem' }}>
+                            <button
+                              onClick={() => {
+                                toggleMission(activeMission.id);
+                                setActiveMission(null);
+                                setDynamicMissionContent(null);
+                              }}
+                              className="btn btn-primary"
+                              style={{ flex: 1, padding: '0.8rem 1rem', fontSize: '0.88rem', fontWeight: 800 }}
+                            >
+                              Submit & Complete Mission
+                            </button>
+                            <button
+                              onClick={() => {
+                                setActiveMission(null);
+                                setDynamicMissionContent(null);
+                              }}
+                              style={{
+                                background: 'rgba(255,255,255,0.03)',
+                                border: '1px solid rgba(255,255,255,0.05)',
+                                color: 'var(--text-secondary)',
+                                borderRadius: '8px', padding: '0.6rem 1rem',
+                                fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer'
+                              }}
+                            >
+                              Close
+                            </button>
+                          </div>
                         </div>
                       );
                     }
@@ -2452,12 +3660,12 @@ JSON Structure:
             </div>
 
             {/* Modal Bottom Actions */}
-            {!missionLoading && activeMission.type !== 'quiz' && (
+            {!missionLoading && activeMission.type !== 'quiz' && activeMission.type !== 'active_recall' && (
               <div style={{ display: 'flex', gap: '0.75rem', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '1.25rem' }}>
                 {!missionSubmitted ? (
                   <button
                     onClick={() => {
-                      const data = dynamicMissionContent || (activeMission.type === 'concept' ? fallbackConcept : fallbackRevision);
+                      const data = dynamicMissionContent || (activeMission.type === 'mindmap' ? fallbackMindMap : fallbackRevision);
                       if (missionAnswer) setMissionSubmitted(true);
                     }}
                     disabled={!missionAnswer}
@@ -2472,13 +3680,21 @@ JSON Structure:
                 ) : (
                   <button
                     onClick={() => {
-                      const data = dynamicMissionContent || (activeMission.type === 'concept' ? fallbackConcept : fallbackRevision);
+                      const data = dynamicMissionContent || (activeMission.type === 'mindmap' ? fallbackMindMap : fallbackRevision);
                       if (missionAnswer !== data.correctKey) {
                         // User got it wrong, let them try again
                         setMissionSubmitted(false);
                         setMissionAnswer(null);
                         return;
                       }
+
+                      // Check if short question needs to be revealed
+                      const needShortAnswerReveal = (activeMission.type === 'mindmap' || activeMission.type === 'revision') && !showShortAnswer;
+                      if (needShortAnswerReveal) {
+                        alert("⚠️ Active Recall Check: Please read the short question and click 'Reveal Topper Model Answer' first to complete your daily target.");
+                        return;
+                      }
+
                       // Correct selection: Mark completed on dashboard!
                       toggleMission(activeMission.id);
                       setActiveMission(null);
@@ -2487,13 +3703,17 @@ JSON Structure:
                     className="btn btn-primary"
                     style={{
                       flex: 1, padding: '0.8rem 1rem', fontSize: '0.88rem', fontWeight: 800,
-                      background: (missionAnswer === (dynamicMissionContent || (activeMission.type === 'concept' ? fallbackConcept : fallbackRevision))?.correctKey)
-                        ? 'linear-gradient(135deg, #10b981, #059669)'
+                      background: (missionAnswer === (dynamicMissionContent || (activeMission.type === 'mindmap' ? fallbackMindMap : fallbackRevision))?.correctKey)
+                        ? ((activeMission.type === 'mindmap' || activeMission.type === 'revision') && !showShortAnswer
+                          ? 'linear-gradient(135deg, #fbbf24, #d97706)'
+                          : 'linear-gradient(135deg, #10b981, #059669)')
                         : 'linear-gradient(135deg, var(--primary), var(--accent))'
                     }}
                   >
-                    {(missionAnswer === (dynamicMissionContent || (activeMission.type === 'concept' ? fallbackConcept : fallbackRevision))?.correctKey)
-                      ? "Submit & Complete Mission"
+                    {(missionAnswer === (dynamicMissionContent || (activeMission.type === 'mindmap' ? fallbackMindMap : fallbackRevision))?.correctKey)
+                      ? ((activeMission.type === 'mindmap' || activeMission.type === 'revision') && !showShortAnswer
+                        ? "Solve Short Question First ➔"
+                        : "Submit & Complete Mission")
                       : "Try Correct Option ➔"}
                   </button>
                 )}
@@ -2515,36 +3735,7 @@ JSON Structure:
               </div>
             )}
 
-            {!missionLoading && activeMission.type === 'quiz' && quizStep === 5 && (
-              <div style={{ display: 'flex', gap: '0.75rem', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '1.25rem' }}>
-                <button
-                  onClick={() => {
-                    toggleMission(activeMission.id);
-                    setActiveMission(null);
-                    setDynamicMissionContent(null);
-                  }}
-                  className="btn btn-primary"
-                  style={{ flex: 1, padding: '0.8rem 1rem', fontSize: '0.88rem', fontWeight: 800 }}
-                >
-                  Submit & Complete Mission
-                </button>
-                <button
-                  onClick={() => {
-                    setActiveMission(null);
-                    setDynamicMissionContent(null);
-                  }}
-                  style={{
-                    background: 'rgba(255,255,255,0.03)',
-                    border: '1px solid rgba(255,255,255,0.05)',
-                    color: 'var(--text-secondary)',
-                    borderRadius: '8px', padding: '0.6rem 1rem',
-                    fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer'
-                  }}
-                >
-                  Close
-                </button>
-              </div>
-            )}
+
 
           </div>
         </div>,
