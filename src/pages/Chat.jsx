@@ -45,6 +45,33 @@ const WELCOME_MSG = {
   text: "Hello! I am your personal AI teacher. Ask me any doubt — I'll explain it in depth with examples, steps, and analogies. You can ask in **English or Hindi**!"
 };
 
+const targetDoubts = [
+  {
+    icon: "🎯",
+    title: "CBSE / RBSE Board Repeats",
+    desc: "Fetch top 5 repeated board questions & perfect marking scheme answers.",
+    prompt: "Give me the top 5 highly repeated Class 10 CBSE/RBSE board questions for my subjects with detailed marking-scheme style answers."
+  },
+  {
+    icon: "⚡",
+    title: "Tricky Concept Analogy",
+    desc: "Explain complex science or economics topics with simple daily life analogies.",
+    prompt: "Explain a highly complex topic from my syllabus using creative, easy real-life analogies and topper tricks so I can memorize it forever."
+  },
+  {
+    icon: "📐",
+    title: "Formula & Reaction Sheet",
+    desc: "Generate high-density quick revision summaries in clean tables.",
+    prompt: "Create a complete, high-density exam revision sheet of all critical formulas, key dates, and chemical reactions for my subjects in a neat table."
+  },
+  {
+    icon: "🏆",
+    title: "Topper 100/100 Paper Secrets",
+    desc: "Get presentation keywords and diagrams to secure full marks.",
+    prompt: "Give me the exact keywords, presentation tips, and diagram guidelines required to get full 100% marks in my board exam papers."
+  }
+];
+
 // LocalStorage helpers for guests
 const LS_KEY = 'guest_chat_sessions';
 const loadGuestSessions = () => {
@@ -518,44 +545,101 @@ export default function Chat() {
               </button>
             </div>
 
-            {messages.filter(msg => (msg.text && msg.text.trim() !== '') || msg.image).map(msg => (
-              <div key={msg.id} className={`message ${msg.role}`}>
-                <div className="avatar" style={msg.isError ? { background: 'rgba(239,68,68,0.15)', color: '#ef4444' } : {}}>
-                  {msg.role === 'ai' ? <Sparkles size={16} /> : <User size={16} />}
-                </div>
-                <div
-                  className="message-content generated-content"
-                  style={{
-                    margin: 0,
-                    padding: '1rem 1.25rem',
-                    width: '100%',
-                    overflowX: 'auto',
-                    ...(msg.isError ? {
-                      background: 'rgba(239,68,68,0.08)',
-                      borderColor: 'rgba(239,68,68,0.2)',
-                      color: '#ef4444'
-                    } : {})
-                  }}
-                >
-                  {msg.role === 'ai' ? (
-                    <ReactMarkdown
-                      remarkPlugins={[remarkGfm, remarkMath]}
-                      rehypePlugins={[rehypeKatex]}
-                      components={markdownComponents}
-                    >{msg.text}</ReactMarkdown>
-                  ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                      {msg.image && (
-                        <div style={{ maxWidth: '300px', borderRadius: '8px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)', marginBottom: '0.25rem' }}>
-                          <img src={msg.image.url} alt="Uploaded doubt" style={{ width: '100%', height: 'auto', display: 'block' }} />
+            {messages.filter(msg => (msg.text && msg.text.trim() !== '') || msg.image).map(msg => {
+              const isWelcome = msg.id === 'welcome';
+              return (
+                <React.Fragment key={msg.id}>
+                  <div className={`message ${msg.role}`}>
+                    <div className="avatar" style={msg.isError ? { background: 'rgba(239,68,68,0.15)', color: '#ef4444' } : {}}>
+                      {msg.role === 'ai' ? <Sparkles size={16} /> : <User size={16} />}
+                    </div>
+                    <div
+                      className="message-content generated-content"
+                      style={{
+                        margin: 0,
+                        padding: '1rem 1.25rem',
+                        width: '100%',
+                        overflowX: 'auto',
+                        ...(msg.isError ? {
+                          background: 'rgba(239,68,68,0.08)',
+                          borderColor: 'rgba(239,68,68,0.2)',
+                          color: '#ef4444'
+                        } : {})
+                      }}
+                    >
+                      {msg.role === 'ai' ? (
+                        <ReactMarkdown
+                          remarkPlugins={[remarkGfm, remarkMath]}
+                          rehypePlugins={[rehypeKatex]}
+                          components={markdownComponents}
+                        >{msg.text}</ReactMarkdown>
+                      ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                          {msg.image && (
+                            <div style={{ maxWidth: '300px', borderRadius: '8px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)', marginBottom: '0.25rem' }}>
+                              <img src={msg.image.url} alt="Uploaded doubt" style={{ width: '100%', height: 'auto', display: 'block' }} />
+                            </div>
+                          )}
+                          {msg.text && <span>{msg.text}</span>}
                         </div>
                       )}
-                      {msg.text && <span>{msg.text}</span>}
+                    </div>
+                  </div>
+                  {isWelcome && messages.length === 1 && (
+                    <div className="target-doubts-section" style={{
+                      margin: '1.5rem 0.5rem 1.5rem 3.5rem',
+                      animation: 'fadeUp 0.4s ease both'
+                    }}>
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        marginBottom: '1rem',
+                        color: 'var(--primary)'
+                      }}>
+                        <Sparkles size={16} />
+                        <span style={{ fontSize: '0.8rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                          Target CBSE / RBSE Doubts Solvers
+                        </span>
+                      </div>
+                      <div className="target-doubts-grid" style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+                        gap: '0.75rem'
+                      }}>
+                        {targetDoubts.map(doubt => (
+                          <div
+                            key={doubt.title}
+                            onClick={() => {
+                              setInput(doubt.prompt);
+                              setTimeout(() => inputRef.current?.focus(), 50);
+                            }}
+                            className="target-doubt-card"
+                          >
+                            <div style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.6rem',
+                              marginBottom: '0.35rem'
+                            }}>
+                              <span style={{ fontSize: '1.25rem', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                                {doubt.icon}
+                              </span>
+                              <h4 style={{ margin: 0, color: '#fff', fontSize: '0.85rem', fontWeight: 700 }}>
+                                {doubt.title}
+                              </h4>
+                            </div>
+                            <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.75rem', lineHeight: 1.4 }}>
+                              {doubt.desc}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
-                </div>
-              </div>
-            ))}
+                </React.Fragment>
+              );
+            })}
 
             {/* Live status bubble */}
             {showStatus && (
@@ -763,11 +847,41 @@ export default function Chat() {
         /* Desktop: top toggle visible, FAB hidden */
         .chat-top-toggle { display: flex; }
 
+        .target-doubt-card {
+          background: rgba(255, 255, 255, 0.015);
+          border: 1px solid rgba(255, 255, 255, 0.05);
+          border-radius: 12px;
+          padding: 1rem 1.15rem;
+          cursor: pointer;
+          transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+          display: flex;
+          flex-direction: column;
+          position: relative;
+          overflow: hidden;
+        }
+        .target-doubt-card:hover {
+          background: rgba(108, 99, 255, 0.07) !important;
+          border-color: rgba(108, 99, 255, 0.3) !important;
+          transform: translateY(-2px);
+          box-shadow: 0 4px 16px rgba(108, 99, 255, 0.12);
+        }
+        .target-doubt-card:hover h4 {
+          color: var(--primary) !important;
+        }
+        
+        @keyframes fadeUp {
+          from { opacity: 0; transform: translateY(8px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+
         @media (max-width: 768px) {
           /* Mobile: hide the top toggle, show the FAB */
           .chat-top-toggle { display: none !important; }
           .chat-history-fab { display: flex; }
           .chat-mobile-overlay { display: block !important; }
+          .target-doubts-section {
+            margin: 1.25rem 0.5rem !important;
+          }
         }
       `}</style>
     </div>

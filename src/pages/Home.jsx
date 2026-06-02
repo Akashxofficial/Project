@@ -947,12 +947,8 @@ export default function Home() {
       return "General Syllabus";
     };
 
-    // Rotate subjects each day using today's date so missions change daily
-    const today = new Date().getDate();
-    const shuffled = [...subjects].sort(
-      (a, b) => ((a.charCodeAt(0) + today) % 7) - ((b.charCodeAt(0) + today) % 7)
-    );
-    const picked = shuffled.slice(0, Math.min(3, subjects.length));
+    // Ensure all chosen subjects receive daily targets (missions) every day as requested by manager
+    const picked = subjects;
 
     const dateKey = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
 
@@ -1391,10 +1387,10 @@ export default function Home() {
     const completedTopicsInChapter = progressMap[subject]?.[currentChapter] || 0;
     const currentTopicDay = completedTopicsInChapter + 1;
 
-    let prompt = `You are an elite syllabus-expert personal AI teacher built for Class ${grade} ${board} board students.
+    let prompt = `You are an elite syllabus-expert personal AI teacher built specifically for Class ${grade} students of the ${board} board, with extreme expertise in both CBSE and RBSE textbook curricula, past exam papers, and question patterns.
 
 SYSTEMATIC TOPIC-TEACHING MCQ LAW:
-Your goal is to fully teach a student a specific core topic of the subject ${subject}, chapter: "${currentChapter}" using EXACTLY ONE highly educational Multiple Choice Question (MCQ).
+Your goal is to teach a student a SINGLE specific sub-topic or chronological section of the subject ${subject}, chapter: "${currentChapter}" using EXACTLY ONE highly educational Multiple Choice Question (MCQ). The question, options, and explanation MUST be designed with 100% precision for CBSE and RBSE board standards, focusing heavily on high-yield, exam-repeated concepts.
 
 SYLLABUS PACING SUMMARY:
 * Subject: ${subject}
@@ -1404,18 +1400,18 @@ SYLLABUS PACING SUMMARY:
 * Target Completion Pace: Exactly ${daysPerChapter} days allocated to complete each remaining chapter to guarantee 100% syllabus completion on time.
 * Chapter Study Day Progress: Today is Day ${currentTopicDay} out of ${daysPerChapter} allocated days for "${currentChapter}".
 
-Systematic Pacing Directive:
-Please teach the student exactly the chronological sub-topic that corresponds to the fractional progress of Day ${currentTopicDay} of ${daysPerChapter} through "${currentChapter}".
-- If today is Day 1, teach the absolute foundational concept or introductory definitions of "${currentChapter}". E.g., for Chemistry Ch 1, 'Introduction to chemical reactions and writing equations'; for Math Ch 1, 'Introduction to Real/Rational Numbers'.
-- If today is in the middle (e.g. Day ${Math.max(1, Math.round(daysPerChapter / 2))} of ${daysPerChapter}), teach a core intermediate concept. E.g. for Chemistry Ch 1, 'Types of Chemical Reactions - Combination & Decomposition'; for Math Ch 1, 'Fundamental Theorem of Arithmetic'.
-- If today is near the end (e.g. Day ${daysPerChapter} of ${daysPerChapter}), teach the final/advanced concept or practical application/critical exam-repeated question of this chapter.
-This ensures the student systematically covers all topics and finishes the chapter exactly on time!
+Systematic Topic-Focused Pacing Directive:
+Please identify exactly ONE highly specific chronological sub-topic or section from the start/middle/end of "${currentChapter}" that corresponds to the fractional progress of Day ${currentTopicDay} of ${daysPerChapter} through this chapter.
+- Day 1: Target the absolute introductory sub-topic / foundational definitions (starting from the very beginning of the chapter).
+- Middle Days: Target a core intermediate concept / core mechanisms or theorems.
+- Final Days: Target the final advanced sub-topic or a critical board-exam hot-spot.
+- IMPORTANT: Do NOT ask a broad question about the entire chapter, and do NOT summarize the whole chapter. You must select ONLY that specific sub-topic. All question texts, options, and explanations must be 100% focused on teaching ONLY that single sub-topic.
 
 Your output must be a single master Multiple Choice Question (MCQ) that:
 1. Question: Renders a highly detailed, clear, concept-introducing scenario or problem. Wrap any math formulas, variables, or chemical equations in LaTeX $ delimiters (e.g. $A + B \\rightarrow AB$).
 2. Options: The options (A, B, C, D) should represent distinct sub-topics or conceptual states, clearly teaching the key distinctions.
-3. Explanation: Provide an absolute MASTERCLASS topper explanation. This explanation must be a beautiful, comprehensive, Markdown-styled mini-lesson that fully teaches the entire topic, including:
-   - "💡 Core Concepts & Definitions" (detailed bullets, with formulas in KaTeX $)
+3. Explanation: Provide an absolute MASTERCLASS topper explanation. This explanation must be a beautiful, comprehensive, Markdown-styled mini-lesson that acts as a high-density, topic-focused summary solely for this specific sub-topic (just like the chapter summary, but strictly limited to this sub-topic). It must include:
+   - "💡 Core Concepts & Definitions" (detailed bullets of this sub-topic, with formulas in KaTeX $)
    - "🥇 Topper Tricks & Sign Conventions"
    - "⚠️ Common Mistakes to Avoid in Exams"
    - Why the selected correct option is correct and why other options are incorrect.
@@ -1424,8 +1420,8 @@ Your output MUST be a valid JSON object with the following keys. Do not include 
 
 JSON Structure:
 {
-  "topic": "Specific Topic Name (e.g. Balancing Chemical Equations Masterclass)",
-  "questionText": "Highly detailed, conceptual, and concept-introducing question text. Wrap all math/equations in $ delimiters.",
+  "topic": "Specific Sub-Topic Name (e.g. Balancing Chemical Equations, not the broad chapter name)",
+  "questionText": "Highly detailed, conceptual, and concept-introducing question text focusing strictly on this single sub-topic. Wrap all math/equations in $ delimiters.",
   "options": [
     { "key": "A", "desc": "Option A explanation. Wrap any math/formulas in $." },
     { "key": "B", "desc": "Option B explanation." },
@@ -1433,7 +1429,7 @@ JSON Structure:
     { "key": "D", "desc": "Option D explanation." }
   ],
   "correctKey": "A, B, C, or D",
-  "explanation": "Markdown-styled comprehensive mini-lesson masterclass teaching the entire topic. Use markdown headers (###), bold, list bullets, and KaTeX $ for all math/scientific expressions to make it gorgeous and extremely premium."
+  "explanation": "Markdown-styled comprehensive mini-lesson masterclass teaching ONLY the selected sub-topic. Use markdown headers (###), bold, list bullets, and KaTeX $ for all math/scientific expressions to make it gorgeous and extremely premium."
 }`;
 
     try {

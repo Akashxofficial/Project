@@ -20,6 +20,8 @@ import RAGUpload from './pages/RAGUpload';
 import AdminDashboard from './pages/AdminDashboard';
 import Subscribe from './pages/Subscribe';
 
+
+
 const navItems = [
   { to: '/', icon: <LayoutDashboard size={18} />, label: 'Dashboard', end: true },
   { to: '/chat', icon: <MessageSquare size={18} />, label: 'AI Doubt Solver' },
@@ -31,14 +33,16 @@ const navItems = [
   { to: '/history', icon: <Bookmark size={18} />, label: 'Saved Materials' },
 ];
 
+
+
 // Secure Subscription Guard Component
 const SubscriptionRoute = ({ children }) => {
   const { currentUser, subscription } = useAuth();
 
   // Admins bypass subscription checks
   const isAdmin = currentUser && (
-    currentUser.email === 'admin@tanios.ai' || 
-    currentUser.email === 'akashxofficial.in@gmail.com' || 
+    currentUser.email === 'admin@tanios.ai' ||
+    currentUser.email === 'akashxofficial.in@gmail.com' ||
     localStorage.getItem('tanios_user_role') === 'admin'
   );
 
@@ -62,14 +66,14 @@ const SubscriptionRoute = ({ children }) => {
 // Secure Role-Based Private Route Guard Component
 const AdminRoute = ({ children }) => {
   const { currentUser } = useAuth();
-  
+
   // Real-world role security checks
   const isAdmin = currentUser && (
-    currentUser.email === 'admin@tanios.ai' || 
-    currentUser.email === 'akashxofficial.in@gmail.com' || 
+    currentUser.email === 'admin@tanios.ai' ||
+    currentUser.email === 'akashxofficial.in@gmail.com' ||
     localStorage.getItem('tanios_user_role') === 'admin'
   );
-  
+
   if (!isAdmin) {
     console.warn(`[UNAUTHORIZED] Access denied to admin routes for user: ${currentUser?.email || 'guest'}`);
     return (
@@ -138,28 +142,28 @@ function MainApp() {
             </NavLink>
           ))}
           {currentUser && (
-            currentUser.email === 'admin@tanios.ai' || 
-            currentUser.email === 'akashxofficial.in@gmail.com' || 
+            currentUser.email === 'admin@tanios.ai' ||
+            currentUser.email === 'akashxofficial.in@gmail.com' ||
             localStorage.getItem('tanios_user_role') === 'admin'
           ) && (
-            <NavLink
-              to="/admin"
-              className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
-              style={{ borderLeft: '3px solid #ef4444', background: 'rgba(239, 68, 68, 0.03)', marginTop: '0.5rem' }}
-              onClick={() => setSidebarOpen(false)}
-            >
-              <LayoutDashboard size={18} color="#ef4444" />
-              <span style={{ color: '#ef4444', fontWeight: 'bold' }}>Admin Control ⚙️</span>
-            </NavLink>
-          )}
+              <NavLink
+                to="/admin"
+                className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
+                style={{ borderLeft: '3px solid #ef4444', background: 'rgba(239, 68, 68, 0.03)', marginTop: '0.5rem' }}
+                onClick={() => setSidebarOpen(false)}
+              >
+                <LayoutDashboard size={18} color="#ef4444" />
+                <span style={{ color: '#ef4444', fontWeight: 'bold' }}>Admin Control ⚙️</span>
+              </NavLink>
+            )}
         </nav>
 
         {/* Dynamic Premium Upgrade Sidebar Card */}
         {currentUser && !currentUser.isGuest && (
-          <div 
+          <div
             onClick={() => { navigate('/subscribe'); setSidebarOpen(false); }}
             style={{
-              background: subscription?.active 
+              background: subscription?.active
                 ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.06), rgba(5, 150, 105, 0.08))'
                 : 'linear-gradient(135deg, rgba(108, 99, 255, 0.1), rgba(167, 139, 250, 0.15))',
               border: subscription?.active
@@ -175,22 +179,22 @@ function MainApp() {
               animation: 'fadeUp 0.3s'
             }}
           >
-            <div style={{ 
-              fontSize: '0.78rem', 
-              fontWeight: 800, 
-              color: subscription?.active ? '#10b981' : '#fff', 
-              marginBottom: '0.25rem', 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center', 
-              gap: '0.35rem' 
+            <div style={{
+              fontSize: '0.78rem',
+              fontWeight: 800,
+              color: subscription?.active ? '#10b981' : '#fff',
+              marginBottom: '0.25rem',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '0.35rem'
             }}>
               <Sparkles size={14} color={subscription?.active ? '#10b981' : '#a78bfa'} />
               {subscription?.active ? 'Pro Active Member 👑' : 'Unlock TaniOS Pro ⚡'}
             </div>
             <p style={{ fontSize: '0.68rem', color: 'var(--text-secondary)', margin: 0 }}>
-              {subscription?.active 
-                ? 'Enjoy unlimited premium doubt solver & smart notes!' 
+              {subscription?.active
+                ? 'Enjoy unlimited premium doubt solver & smart notes!'
                 : 'Instant textbook upload & infinite doubt solver. Learn more!'}
             </p>
           </div>
@@ -292,7 +296,7 @@ function MainApp() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/subscribe" element={<Subscribe />} />
-          
+
           {/* Protected Study Tools routes under SubscriptionRoute lock */}
           <Route path="/chat" element={<SubscriptionRoute><Chat /></SubscriptionRoute>} />
           <Route path="/notes" element={<SubscriptionRoute><Notes /></SubscriptionRoute>} />
@@ -300,7 +304,7 @@ function MainApp() {
           <Route path="/revision" element={<SubscriptionRoute><Revision /></SubscriptionRoute>} />
           <Route path="/timetable" element={<SubscriptionRoute><Timetable /></SubscriptionRoute>} />
           <Route path="/test" element={<SubscriptionRoute><TestGenerator /></SubscriptionRoute>} />
-          
+
           <Route path="/history" element={<History />} />
           <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
         </Routes>
