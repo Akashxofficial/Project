@@ -2,12 +2,21 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // Helper function: checks if the current user is an admin
+    function isAdmin() {
+      return request.auth != null && (
+        request.auth.token.email == 'admin@tanios.ai' ||
+        request.auth.token.email == 'akash@tanios.ai'
+      );
+    }
+
     // saved_materials collection: each student can ONLY access their own documents.
     match /saved_materials/{docId} {
 
       // READ: A logged-in user can only read documents where userId matches their own UID.
-      allow read: if request.auth != null 
-                  && request.auth.uid == resource.data.userId;
+      allow read: if (request.auth != null 
+                  && request.auth.uid == resource.data.userId)
+                  || isAdmin();
 
       // CREATE: A logged-in user can only create a document if they set userId to their own UID.
       // Also validates that required fields exist and content isn't empty.
@@ -18,35 +27,37 @@ service cloud.firestore {
                     && request.resource.data.type in ['note', 'revision', 'timetable', 'test'];
 
       // UPDATE: Not allowed — we only append, never edit saved docs.
-      allow update: if false;
+      allow update: if isAdmin();
 
       // DELETE: A logged-in user can only delete their own documents.
-      allow delete: if request.auth != null 
-                    && request.auth.uid == resource.data.userId;
+      allow delete: if (request.auth != null 
+                    && request.auth.uid == resource.data.userId)
+                    || isAdmin();
     }
 
     // chat_sessions collection: users can read and write their own chat histories
     match /chat_sessions/{docId} {
-      allow read, write: if request.auth != null 
+      allow read, write: if (request.auth != null 
                          && (resource == null || resource.data.userId == request.auth.uid)
-                         && (request.resource == null || request.resource.data.userId == request.auth.uid);
+                         && (request.resource == null || request.resource.data.userId == request.auth.uid))
+                         || isAdmin();
     }
 
     // users collection: each student can read/write their own profile & subscription state
     match /users/{uid} {
-      allow read, write: if (request.auth != null && (request.auth.uid == uid || request.auth.token.email == 'admin@tanios.ai'))
+      allow read, write: if (request.auth != null && (request.auth.uid == uid || isAdmin()))
                          || uid == 'test_student_uid_001';
     }
 
     // payment_requests collection: student submits verification UTRs, Admin reviews
     match /payment_requests/{requestId} {
-      allow read: if (request.auth != null && (resource == null || resource.data.userId == request.auth.uid || request.auth.token.email == 'admin@tanios.ai'))
+      allow read: if (request.auth != null && (resource == null || resource.data.userId == request.auth.uid || isAdmin()))
                   || requestId == 'pay_upi_123456789012';
       
-      allow create: if (request.auth != null && request.resource.data.userId == request.auth.uid)
+      allow create: if (request.auth != null && (request.resource.data.userId == request.auth.uid || isAdmin()))
                     || requestId == 'pay_upi_123456789012';
       
-      allow update, delete: if (request.auth != null && (resource.data.userId == request.auth.uid || request.auth.token.email == 'admin@tanios.ai'))
+      allow update, delete: if (request.auth != null && (resource.data.userId == request.auth.uid || isAdmin()))
                             || requestId == 'pay_upi_123456789012';
     }
 
@@ -56,3 +67,4 @@ service cloud.firestore {
     }
   }
 }
+

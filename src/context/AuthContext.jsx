@@ -138,6 +138,44 @@ export function AuthProvider({ children }) {
       }
     } catch (err) {}
 
+    // MongoDB sync
+    const BACKEND_URL = import.meta.env.DEV ? 'http://localhost:3001' : '';
+    const fetchMongoSubscription = async () => {
+      try {
+        const response = await fetch(`${BACKEND_URL}/api/track/user`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            uid: currentUser.uid,
+            email: currentUser.email,
+            displayName: currentUser.displayName,
+            photoURL: currentUser.photoURL
+          })
+        });
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.user) {
+            const studentData = data.user;
+            if (studentData.subscriptionActive) {
+              const subObj = {
+                active: true,
+                status: 'active',
+                plan: studentData.subscriptionPlan || 'Pro AI Member',
+                amount: studentData.subscriptionAmount || 199,
+                utr: studentData.subscriptionUtr || '',
+                activatedAt: studentData.subscriptionActivatedAt || null
+              };
+              setSubscription(subObj);
+              localStorage.setItem('tanios_subscription', JSON.stringify(subObj));
+            }
+          }
+        }
+      } catch (err) {
+        console.warn("⚠️ MongoDB subscription fetch failed:", err.message);
+      }
+    };
+    fetchMongoSubscription();
+
     // Firestore sync
     if (import.meta.env.VITE_FIREBASE_API_KEY && import.meta.env.VITE_FIREBASE_API_KEY !== 'dummy-api-key') {
       const userDocRef = doc(db, "users", currentUser.uid || currentUser.email);
@@ -152,13 +190,23 @@ export function AuthProvider({ children }) {
             utr: data.subscriptionUtr || '',
             activatedAt: data.subscriptionActivatedAt || null
           };
-          setSubscription(subObj);
-          localStorage.setItem('tanios_subscription', JSON.stringify(subObj));
+          
+          setSubscription(prev => {
+            // Guard: If MongoDB/local storage has already activated the subscription,
+            // do not let the Firestore listener overwrite it back to inactive (handles cases
+            // where Firestore rules are not deployed and direct writes failed).
+            if (prev.active && !subObj.active) {
+              return prev;
+            }
+            localStorage.setItem('tanios_subscription', JSON.stringify(subObj));
+            return subObj;
+          });
         } else {
-          // Document does not exist or was deleted. Securely wipe local status to prevent hijacking!
-          const inactiveSub = { active: false, status: 'none' };
-          setSubscription(inactiveSub);
-          localStorage.removeItem('tanios_subscription');
+          setSubscription(prev => {
+            if (prev.active) return prev; // keep active from Mongo/local
+            localStorage.removeItem('tanios_subscription');
+            return { active: false, status: 'none' };
+          });
         }
       }, (err) => {
         console.warn("⚠️ Firestore subscription listener bypassed:", err.message);

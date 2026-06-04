@@ -81,29 +81,46 @@ export default function AdminDashboard() {
 
   const fetchRequests = async () => {
     setFetchingReqs(true);
+    const BACKEND_URL = import.meta.env.DEV ? 'http://localhost:3001' : '';
     try {
-      if (import.meta.env.VITE_FIREBASE_API_KEY && import.meta.env.VITE_FIREBASE_API_KEY !== 'dummy-api-key') {
-        const q = query(collection(db, "payment_requests"), orderBy("createdAt", "desc"));
-        const snap = await getDocs(q);
-        const list = [];
-        snap.forEach(docSnap => {
-          list.push({ id: docSnap.id, ...docSnap.data() });
-        });
-        setRequests(list);
+      // 1. Try to fetch payment requests from backend server (MongoDB)
+      const res = await fetch(`${BACKEND_URL}/api/admin/payments`);
+      if (res.ok) {
+        const data = await res.json();
+        setRequests(data);
       } else {
-        // Fallback offline mock payment logs
+        throw new Error("Backend responded with error: " + res.status);
+      }
+    } catch (backendErr) {
+      console.warn("Backend payment fetch failed, trying Firestore fallback:", backendErr.message);
+      
+      // 2. Fallback to Firestore client SDK query
+      try {
+        if (import.meta.env.VITE_FIREBASE_API_KEY && import.meta.env.VITE_FIREBASE_API_KEY !== 'dummy-api-key') {
+          const q = query(collection(db, "payment_requests"), orderBy("createdAt", "desc"));
+          const snap = await getDocs(q);
+          const list = [];
+          snap.forEach(docSnap => {
+            list.push({ id: docSnap.id, ...docSnap.data() });
+          });
+          setRequests(list);
+        } else {
+          // Fallback offline mock payment logs
+          const localLogs = [
+            { id: 'pay_1', userId: 'mock_user_1', userName: 'Akash Sharma', userEmail: 'akash@tanios.ai', utr: '627192837416', amount: 199, status: 'pending', createdAt: new Date() },
+            { id: 'pay_2', userId: 'mock_user_2', userName: 'Rajesh Kumar', userEmail: 'rajesh@rediff.com', utr: '817293847291', amount: 199, status: 'approved', createdAt: new Date(Date.now() - 3600000) }
+          ];
+          setRequests(localLogs);
+        }
+      } catch (fsErr) {
+        console.error("Firestore fallback failed:", fsErr.message);
+        // Final offline fallback logs
         const localLogs = [
-          { id: 'pay_1', userName: 'Akash Sharma', userEmail: 'akash@tanios.ai', utr: '627192837416', amount: 199, status: 'pending', createdAt: new Date() },
-          { id: 'pay_2', userName: 'Rajesh Kumar', userEmail: 'rajesh@rediff.com', utr: '817293847291', amount: 199, status: 'approved', createdAt: new Date(Date.now() - 3600000) }
+          { id: 'pay_1', userId: 'mock_user_1', userName: 'Akash Sharma', userEmail: 'akash@tanios.ai', utr: '627192837416', amount: 199, status: 'pending', createdAt: new Date() },
+          { id: 'pay_2', userId: 'mock_user_2', userName: 'Rajesh Kumar', userEmail: 'rajesh@rediff.com', utr: '817293847291', amount: 199, status: 'approved', createdAt: new Date(Date.now() - 3600000) }
         ];
         setRequests(localLogs);
       }
-    } catch (e) {
-      console.warn("Error fetching subscriptions:", e);
-      // Fallback
-      setRequests([
-        { id: 'pay_1', userName: 'Akash Sharma', userEmail: 'akash@tanios.ai', utr: '627192837416', amount: 199, status: 'pending', createdAt: new Date() }
-      ]);
     }
     setFetchingReqs(false);
   };
@@ -121,81 +138,167 @@ export default function AdminDashboard() {
   const handleApprove = async (req) => {
     if (!window.confirm(`Are you sure you want to APPROVE UTR ${req.utr} for ${req.userName}?`)) return;
 
+    const BACKEND_URL = import.meta.env.DEV ? 'http://localhost:3001' : '';
+
     try {
-      if (import.meta.env.VITE_FIREBASE_API_KEY && import.meta.env.VITE_FIREBASE_API_KEY !== 'dummy-api-key') {
-        // 1. Update payment_request document status to 'approved'
-        await updateDoc(doc(db, "payment_requests", req.id), {
-          status: 'approved',
-          updatedAt: new Date()
-        });
+      // ── PRIMARY: Try server-side approval (bypasses Firestore permissions) ──
+      const serverRes = await fetch(`${BACKEND_URL}/api/admin/approve-subscription`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          requestId: req.id,
+          userId: req.userId || '',
+          userName: req.userName,
+          userEmail: req.userEmail,
+          utr: req.utr,
+          amount: req.amount
+        })
+      });
 
-        // 2. Update user profile document to set subscription Active in Firestore
-        await setDoc(doc(db, "users", req.userId), {
-          subscriptionActive: true,
-          subscriptionStatus: 'active',
-          subscriptionPlan: 'Pro AI Member',
-          subscriptionAmount: req.amount,
-          subscriptionUtr: req.utr,
-          subscriptionActivatedAt: new Date()
-        }, { merge: true });
+      if (serverRes.ok) {
+        // ── Also try Firestore update (best-effort, may fail if rules block it) ──
+        try {
+          if (import.meta.env.VITE_FIREBASE_API_KEY && import.meta.env.VITE_FIREBASE_API_KEY !== 'dummy-api-key') {
+            const firestoreDocId = req.id && req.id.startsWith('pay_') ? req.id : `pay_upi_${req.utr}`;
+            await updateDoc(doc(db, "payment_requests", firestoreDocId), {
+              status: 'approved',
+              updatedAt: new Date()
+            });
+            if (req.userId) {
+              await setDoc(doc(db, "users", req.userId), {
+                subscriptionActive: true,
+                subscriptionStatus: 'active',
+                subscriptionPlan: 'Pro AI Member',
+                subscriptionAmount: req.amount,
+                subscriptionUtr: req.utr,
+                subscriptionActivatedAt: new Date()
+              }, { merge: true });
+            }
+          }
+        } catch (fsErr) {
+          console.warn('[Firestore] Best-effort update skipped:', fsErr.message);
+        }
 
-        // 3. ✅ Also sync subscription to MongoDB Atlas so student registry stays current
-        await trackSubscriptionInMongo(req.userId, {
-          subscriptionActive: true,
-          subscriptionPlan: 'Pro AI Member',
-          subscriptionAmount: req.amount,
-          subscriptionUtr: req.utr,
-          subscriptionActivatedAt: new Date().toISOString()
-        });
-        
-        alert("✅ Subscription approved and successfully activated for " + req.userName + "!");
+        alert("✅ Subscription approved and activated for " + req.userName + "!");
+        fetchRequests();
+        return;
       } else {
-        // Simulating approval offline
-        setRequests(prev => prev.map(item => item.id === req.id ? { ...item, status: 'approved' } : item));
-        alert("💻 [Offline Sandbox Mode] Approved subscription locally for " + req.userName + "!");
+        const errorData = await serverRes.json();
+        throw new Error(errorData.error || `Server responded with status ${serverRes.status}`);
       }
-      fetchRequests();
     } catch (e) {
-      console.error("Approval error:", e);
-      alert("❌ Error processing approval: " + e.message);
+      console.warn("Server approval failed, attempting direct Firestore fallback:", e.message);
+      
+      // ── FALLBACK: Direct Firestore if server is down or error occurred ──
+      try {
+        if (import.meta.env.VITE_FIREBASE_API_KEY && import.meta.env.VITE_FIREBASE_API_KEY !== 'dummy-api-key') {
+          const firestoreDocId = req.id && req.id.startsWith('pay_') ? req.id : `pay_upi_${req.utr}`;
+          await updateDoc(doc(db, "payment_requests", firestoreDocId), {
+            status: 'approved',
+            updatedAt: new Date()
+          });
+          if (req.userId) {
+            await setDoc(doc(db, "users", req.userId), {
+              subscriptionActive: true,
+              subscriptionStatus: 'active',
+              subscriptionPlan: 'Pro AI Member',
+              subscriptionAmount: req.amount,
+              subscriptionUtr: req.utr,
+              subscriptionActivatedAt: new Date()
+            }, { merge: true });
+          }
+          await trackSubscriptionInMongo(req.userId || req.userEmail, {
+            subscriptionActive: true,
+            subscriptionPlan: 'Pro AI Member',
+            subscriptionAmount: req.amount,
+            subscriptionUtr: req.utr,
+            subscriptionActivatedAt: new Date().toISOString()
+          });
+          alert("✅ Subscription approved and successfully activated for " + req.userName + "!");
+        } else {
+          setRequests(prev => prev.map(item => item.id === req.id ? { ...item, status: 'approved' } : item));
+          alert("💻 [Offline Sandbox Mode] Approved subscription locally for " + req.userName + "!");
+        }
+        fetchRequests();
+      } catch (fsErr) {
+        console.error("Direct Firestore approval fallback failed:", fsErr);
+        alert("❌ Error processing approval: " + fsErr.message);
+      }
     }
   };
 
   const handleReject = async (req) => {
     if (!window.confirm(`Are you sure you want to REJECT UTR ${req.utr} for ${req.userName}?`)) return;
 
+    const BACKEND_URL = import.meta.env.DEV ? 'http://localhost:3001' : '';
+
     try {
-      if (import.meta.env.VITE_FIREBASE_API_KEY && import.meta.env.VITE_FIREBASE_API_KEY !== 'dummy-api-key') {
-        // 1. Update payment_request document status to 'rejected'
-        await updateDoc(doc(db, "payment_requests", req.id), {
-          status: 'rejected',
-          updatedAt: new Date()
-        });
+      // ── PRIMARY: Try server-side rejection ──
+      const serverRes = await fetch(`${BACKEND_URL}/api/admin/reject-subscription`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          requestId: req.id,
+          userId: req.userId || '',
+          userName: req.userName,
+          userEmail: req.userEmail,
+          utr: req.utr
+        })
+      });
 
-        // 2. Set user status to none/rejected in Firestore
-        await setDoc(doc(db, "users", req.userId), {
-          subscriptionActive: false,
-          subscriptionStatus: 'rejected',
-          subscriptionPlan: 'None (Rejected)'
-        }, { merge: true });
-
-        // 3. ✅ Sync rejection to MongoDB Atlas as well
-        await trackSubscriptionInMongo(req.userId, {
-          subscriptionActive: false,
-          subscriptionPlan: 'None (Rejected)',
-          subscriptionAmount: 0,
-          subscriptionUtr: req.utr
-        });
-        
-        alert("❌ Subscription request rejected.");
+      if (serverRes.ok) {
+        try {
+          if (import.meta.env.VITE_FIREBASE_API_KEY && import.meta.env.VITE_FIREBASE_API_KEY !== 'dummy-api-key') {
+            const firestoreDocId = req.id && req.id.startsWith('pay_') ? req.id : `pay_upi_${req.utr}`;
+            await updateDoc(doc(db, "payment_requests", firestoreDocId), {
+              status: 'rejected',
+              updatedAt: new Date()
+            });
+          }
+        } catch (fsErr) {
+          console.warn('[Firestore] Best-effort reject update skipped:', fsErr.message);
+        }
+        alert("❌ Subscription request rejected for " + req.userName + ".");
+        fetchRequests();
+        return;
       } else {
-        setRequests(prev => prev.map(item => item.id === req.id ? { ...item, status: 'rejected' } : item));
-        alert("💻 [Offline Sandbox Mode] Rejected locally.");
+        const errorData = await serverRes.json();
+        throw new Error(errorData.error || `Server responded with status ${serverRes.status}`);
       }
-      fetchRequests();
     } catch (e) {
-      console.error("Rejection error:", e);
-      alert("❌ Error processing rejection: " + e.message);
+      console.warn("Server rejection failed, attempting direct Firestore fallback:", e.message);
+      
+      // ── FALLBACK: Direct Firestore ──
+      try {
+        if (import.meta.env.VITE_FIREBASE_API_KEY && import.meta.env.VITE_FIREBASE_API_KEY !== 'dummy-api-key') {
+          const firestoreDocId = req.id && req.id.startsWith('pay_') ? req.id : `pay_upi_${req.utr}`;
+          await updateDoc(doc(db, "payment_requests", firestoreDocId), {
+            status: 'rejected',
+            updatedAt: new Date()
+          });
+          if (req.userId) {
+            await setDoc(doc(db, "users", req.userId), {
+              subscriptionActive: false,
+              subscriptionStatus: 'rejected',
+              subscriptionPlan: 'None (Rejected)'
+            }, { merge: true });
+          }
+          await trackSubscriptionInMongo(req.userId || req.userEmail, {
+            subscriptionActive: false,
+            subscriptionPlan: 'None (Rejected)',
+            subscriptionAmount: 0,
+            subscriptionUtr: req.utr
+          });
+          alert("❌ Subscription request rejected.");
+        } else {
+          setRequests(prev => prev.map(item => item.id === req.id ? { ...item, status: 'rejected' } : item));
+          alert("💻 [Offline Sandbox Mode] Rejected locally.");
+        }
+        fetchRequests();
+      } catch (fsErr) {
+        console.error("Direct Firestore rejection fallback failed:", fsErr);
+        alert("❌ Error processing rejection: " + fsErr.message);
+      }
     }
   };
 
