@@ -129,18 +129,43 @@ function MainApp() {
 
         <nav className="nav-menu">
           <span className="nav-section-label">Study Tools</span>
-          {navItems.map(item => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.end}
-              className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
-              onClick={() => setSidebarOpen(false)}
-            >
-              {item.icon}
-              <span>{item.label}</span>
-            </NavLink>
-          ))}
+          {navItems.map(item => {
+            const isDoubtSolver = item.to === '/chat';
+            return (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                end={item.end}
+                className={({ isActive }) => `nav-item${isActive ? ' active' : ''}${isDoubtSolver ? ' doubt-nav-highlight' : ''}`}
+                onClick={() => setSidebarOpen(false)}
+                style={isDoubtSolver ? {
+                  position: 'relative',
+                  overflow: 'visible'
+                } : undefined}
+              >
+                {item.icon}
+                <span>{item.label}</span>
+                {isDoubtSolver && (
+                  <span style={{
+                    marginLeft: 'auto',
+                    background: 'rgba(139, 92, 246, 0.15)',
+                    border: '1px solid rgba(139, 92, 246, 0.3)',
+                    color: '#a78bfa',
+                    fontSize: '0.62rem',
+                    padding: '1px 5px',
+                    borderRadius: '4px',
+                    fontWeight: 700,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px',
+                    whiteSpace: 'nowrap',
+                    flexShrink: 0
+                  }}>
+                    AI
+                  </span>
+                )}
+              </NavLink>
+            );
+          })}
           {currentUser && (
             currentUser.email === 'admin@tanios.ai' ||
             currentUser.email === 'akashxofficial.in@gmail.com' ||

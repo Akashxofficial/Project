@@ -5,7 +5,7 @@ import {
   BookOpen, MessageSquare, Clock, FileText, GraduationCap, ArrowRight,
   Flame, Star, Trophy, Award, Target, CheckCircle2, ChevronRight, 
   AlertCircle, RefreshCw, Plus, Trash2, Sparkles, Zap, Play, Copy, Check, Calendar,
-  Loader2, X
+  Loader2, X, Lock
 } from 'lucide-react';
 import { generateAIContent, generateExamRoadmapPrompt, generateOneClickPrompt, fixMathFormatting } from '../lib/ai';
 import ReactMarkdown from 'react-markdown';
@@ -59,6 +59,159 @@ const standardSubjects = [
 ];
 
 const CLASS_SYLLABUS = {
+  '8': {
+    'Mathematics': [
+      'Chapter 1: Rational Numbers',
+      'Chapter 2: Linear Equations in One Variable',
+      'Chapter 3: Understanding Quadrilaterals',
+      'Chapter 4: Practical Geometry',
+      'Chapter 5: Data Handling',
+      'Chapter 6: Squares and Square Roots',
+      'Chapter 7: Cubes and Cube Roots',
+      'Chapter 8: Comparing Quantities',
+      'Chapter 9: Algebraic Expressions and Identities',
+      'Chapter 10: Visualising Solid Shapes',
+      'Chapter 11: Mensuration',
+      'Chapter 12: Exponents and Powers',
+      'Chapter 13: Direct and Inverse Proportions',
+      'Chapter 14: Factorisation',
+      'Chapter 15: Introduction to Graphs',
+      'Chapter 16: Playing with Numbers'
+    ],
+    'Science': [
+      'Chapter 1: Crop Production and Management',
+      'Chapter 2: Microorganisms: Friend and Foe',
+      'Chapter 3: Synthetic Fibres and Plastics',
+      'Chapter 4: Materials: Metals and Non-Metals',
+      'Chapter 5: Coal and Petroleum',
+      'Chapter 6: Combustion and Flame',
+      'Chapter 7: Conservation of Plants and Animals',
+      'Chapter 8: Cell - Structure and Functions',
+      'Chapter 9: Reproduction in Animals',
+      'Chapter 10: Reaching the Age of Adolescence',
+      'Chapter 11: Force and Pressure',
+      'Chapter 12: Friction',
+      'Chapter 13: Sound',
+      'Chapter 14: Chemical Effects of Electric Current',
+      'Chapter 15: Some Natural Phenomena',
+      'Chapter 16: Light',
+      'Chapter 17: Stars and the Solar System',
+      'Chapter 18: Pollution of Air and Water'
+    ],
+    'Physics': [
+      'Chapter 1: Force and Pressure',
+      'Chapter 2: Friction',
+      'Chapter 3: Sound',
+      'Chapter 4: Chemical Effects of Electric Current',
+      'Chapter 5: Some Natural Phenomena',
+      'Chapter 6: Light',
+      'Chapter 7: Stars and the Solar System'
+    ],
+    'Chemistry': [
+      'Chapter 1: Synthetic Fibres and Plastics',
+      'Chapter 2: Materials: Metals and Non-Metals',
+      'Chapter 3: Coal and Petroleum',
+      'Chapter 4: Combustion and Flame',
+      'Chapter 5: Pollution of Air and Water'
+    ],
+    'Biology': [
+      'Chapter 1: Crop Production and Management',
+      'Chapter 2: Microorganisms: Friend and Foe',
+      'Chapter 3: Conservation of Plants and Animals',
+      'Chapter 4: Cell - Structure and Functions',
+      'Chapter 5: Reproduction in Animals',
+      'Chapter 6: Reaching the Age of Adolescence'
+    ],
+    'English': [
+      'Chapter 1: The Best Christmas Present in the World',
+      'Chapter 2: The Tsunami',
+      'Chapter 3: Glimpses of the Past',
+      'Chapter 4: Bepin Choudhury\'s Lapse of Memory',
+      'Chapter 5: The Summit Within',
+      'Chapter 6: This is Jody\'s Fawn',
+      'Chapter 7: A Visit to Cambridge',
+      'Chapter 8: A Short Monsoon Diary',
+      'Chapter 9: The Great Stone Face',
+      'Chapter 10: Honeydew Poems (The Ant and Cricket, Geography Lesson, Macavity, Last Bargain, School Boy, Grasshopper & Cricket)',
+      'Chapter 11: How the Camel got his hump (Supplementary)',
+      'Chapter 12: Children at work (Supplementary)',
+      'Chapter 13: The Selfish Giant (Supplementary)',
+      'Chapter 14: The Treasure Within (Supplementary)',
+      'Chapter 15: Princess September (Supplementary)',
+      'Chapter 16: The Fight (Supplementary)',
+      'Chapter 17: The Open Window (Supplementary)',
+      'Chapter 18: Jalebis (Supplementary)',
+      'Chapter 19: The Comet (Supplementary)',
+      'Chapter 20: Ancient Education System of India (Supplementary)'
+    ],
+    'Social Science': [
+      'Chapter 1: How, When and Where',
+      'Chapter 2: From Trade to Territory',
+      'Chapter 3: Ruling the Countryside',
+      'Chapter 4: Tribals, Dikus and the Vision of a Golden Age',
+      'Chapter 5: When People Rebel: 1857 and After',
+      'Chapter 6: Women, Caste and Reform',
+      'Chapter 7: The Making of the National Movement: 1870s-1947',
+      'Chapter 8: India After Independence',
+      'Chapter 9: Resources',
+      'Chapter 10: Land, Soil, Water, Natural Vegetation and Wildlife Resources',
+      'Chapter 11: Agriculture',
+      'Chapter 12: Industries',
+      'Chapter 13: Human Resources',
+      'Chapter 14: The Indian Constitution',
+      'Chapter 15: Understanding Secularism',
+      'Chapter 16: Parliamentary Government and the Judiciary',
+      'Chapter 17: Understanding Our Criminal Justice System',
+      'Chapter 18: Confronting Marginalisation',
+      'Chapter 19: Public Facilities',
+      'Chapter 20: Law and Social Justice'
+    ],
+    'Computer Science': [
+      'Chapter 1: Computer Systems & Functions',
+      'Chapter 2: Introduction to MS Access (Databases)',
+      'Chapter 3: HTML & Web Design Basics',
+      'Chapter 4: Algorithms & Flowcharts',
+      'Chapter 5: Intro to Programming (Python/Scratch)',
+      'Chapter 6: Cyber Safety & Security'
+    ],
+    'Informatics Practices': [
+      'Chapter 1: Computer Systems & Functions',
+      'Chapter 2: Data Representation',
+      'Chapter 3: Intro to Databases',
+      'Chapter 4: Cyber Safety'
+    ],
+    'Accountancy': [
+      'Chapter 1: Basics of Accounting',
+      'Chapter 2: Ledger and Trial Balance'
+    ],
+    'Business Studies': [
+      'Chapter 1: Intro to Business and Trade',
+      'Chapter 2: Basics of Management'
+    ],
+    'Economics': [
+      'Chapter 1: Basics of Economics & Markets',
+      'Chapter 2: Economic Resources'
+    ],
+    'Hindi': [
+      'Chapter 1: Dhwani (Suryakant Tripathi Nirala)',
+      'Chapter 2: Lakh ki Chudiyan (Kamtahnath)',
+      'Chapter 3: Bus ki Yatra (Harishankar Parsai)',
+      'Chapter 4: Deewanon ki Hasti (Bhagwaticharan Verma)',
+      'Chapter 5: Chithiyon ki Anokhi Duniya (Arvind Kumar Singh)',
+      'Chapter 6: Bhagwan ke Dakiye (Ramdhari Singh Dinkar)',
+      'Chapter 7: Kya Nirash Hua Jaye (Hazari Prasad Dwivedi)',
+      'Chapter 8: Yeh Sabse Kathin Samay Nahi (Jaya Jadaun)',
+      'Chapter 9: Kabir ki Sakhiyan (Kabir)',
+      'Chapter 10: Kamchor (Ismat Chughtai)',
+      'Chapter 11: Sudama Charit (Narottam Das)',
+      'Chapter 12: Jahaan Pahiya Hai (P. Sainath)',
+      'Chapter 13: Akbari Lota (Annapurnanand Verma)',
+      'Chapter 14: Soor ke Pad (Surdas)',
+      'Chapter 15: Paani ki Kahani (Ramchandra Tiwari)',
+      'Chapter 16: Baaj aur Saanp (Nirmal Verma)',
+      'Chapter 17: Topi (Sanjay)'
+    ]
+  },
   '9': {
     'Mathematics': [
       'Chapter 1: Number Systems',
@@ -127,15 +280,32 @@ const CLASS_SYLLABUS = {
       'Chapter 18: Food Security in India'
     ],
     'English': [
-      'Chapter 1: The Fun They Had',
-      'Chapter 2: The Sound of Music',
-      'Chapter 3: The Little Girl',
-      'Chapter 4: A Truly Beautiful Mind',
-      'Chapter 5: The Snake and the Mirror',
-      'Chapter 6: My Childhood',
-      'Chapter 7: Reach for the Top',
-      'Chapter 8: Kathmandu',
-      'Chapter 9: If I Were You'
+      'Chapter 1: The Fun They Had (Beehive)',
+      'Chapter 2: The Sound of Music (Beehive)',
+      'Chapter 3: The Little Girl (Beehive)',
+      'Chapter 4: A Truly Beautiful Mind (Beehive)',
+      'Chapter 5: The Snake and the Mirror (Beehive)',
+      'Chapter 6: My Childhood (Beehive)',
+      'Chapter 7: Reach for the Top (Beehive)',
+      'Chapter 8: Kathmandu (Beehive)',
+      'Chapter 9: If I Were You (Beehive)',
+      'Chapter 10: The Road Not Taken (Poem)',
+      'Chapter 11: Wind (Poem)',
+      'Chapter 12: Rain on the Roof (Poem)',
+      'Chapter 13: The Lake Isle of Innisfree (Poem)',
+      'Chapter 14: A Legend of the Northland (Poem)',
+      'Chapter 15: No Men Are Foreign (Poem)',
+      'Chapter 16: On Killing a Tree (Poem)',
+      'Chapter 17: A Slumber Did My Spirit Seal (Poem)',
+      'Chapter 18: The Lost Child (Moments)',
+      'Chapter 19: The Adventures of Toto (Moments)',
+      'Chapter 20: Iswaran the Storyteller (Moments)',
+      'Chapter 21: In the Kingdom of Fools (Moments)',
+      'Chapter 22: The Happy Prince (Moments)',
+      'Chapter 23: Weathering the Storm in Ersama (Moments)',
+      'Chapter 24: The Last Leaf (Moments)',
+      'Chapter 25: A House Is Not a Home (Moments)',
+      'Chapter 26: The Beggar (Moments)'
     ],
     'Hindi': [
       'Chapter 1: Do Bailon Ki Katha (Premchand)',
@@ -238,15 +408,34 @@ const CLASS_SYLLABUS = {
       'Chapter 20: Globalisation and the Indian Economy'
     ],
     'English': [
-      'Chapter 1: A Letter to God',
-      'Chapter 2: Nelson Mandela: Long Walk to Freedom',
-      'Chapter 3: Two Stories about Flying',
-      'Chapter 4: From the Diary of Anne Frank',
-      'Chapter 5: Glimpses of India',
-      'Chapter 6: Mijbil the Otter',
-      'Chapter 7: Madam Rides the Bus',
-      'Chapter 8: The Sermon at Benares',
-      'Chapter 9: The Proposal'
+      'Chapter 1: A Letter to God (First Flight)',
+      'Chapter 2: Nelson Mandela: Long Walk to Freedom (First Flight)',
+      'Chapter 3: Two Stories about Flying (First Flight)',
+      'Chapter 4: From the Diary of Anne Frank (First Flight)',
+      'Chapter 5: Glimpses of India (First Flight)',
+      'Chapter 6: Mijbil the Otter (First Flight)',
+      'Chapter 7: Madam Rides the Bus (First Flight)',
+      'Chapter 8: The Sermon at Benares (First Flight)',
+      'Chapter 9: The Proposal (First Flight)',
+      'Chapter 10: Dust of Snow (Poem)',
+      'Chapter 11: Fire and Ice (Poem)',
+      'Chapter 12: A Tiger in the Zoo (Poem)',
+      'Chapter 13: How to Tell Wild Animals (Poem)',
+      'Chapter 14: The Ball Poem (Poem)',
+      'Chapter 15: Amanda! (Poem)',
+      'Chapter 16: The Trees (Poem)',
+      'Chapter 17: Fog (Poem)',
+      'Chapter 18: The Tale of Custard the Dragon (Poem)',
+      'Chapter 19: For Anne Gregory (Poem)',
+      'Chapter 20: A Triumph of Surgery (Footprints)',
+      'Chapter 21: The Thief\'s Story (Footprints)',
+      'Chapter 22: The Midnight Visitor (Footprints)',
+      'Chapter 23: A Question of Trust (Footprints)',
+      'Chapter 24: Footprints Without Feet (Footprints)',
+      'Chapter 25: The Making of a Scientist (Footprints)',
+      'Chapter 26: The Necklace (Footprints)',
+      'Chapter 27: Bholi (Footprints)',
+      'Chapter 28: The Book That Saved the Earth (Footprints)'
     ],
     'Hindi': [
       'Chapter 1: Surdas ke Pad',
@@ -345,11 +534,21 @@ const CLASS_SYLLABUS = {
       'Chapter 14: Probability'
     ],
     'English': [
-      'Chapter 1: The Portrait of a Lady',
-      'Chapter 2: We Are Not Afraid to Die...',
-      'Chapter 3: Discovering Tut: the Saga Continues',
-      'Chapter 4: The Adventure',
-      'Chapter 5: Silk Road'
+      'Chapter 1: The Portrait of a Lady (Hornbill)',
+      'Chapter 2: We Are Not Afraid to Die... (Hornbill)',
+      'Chapter 3: Discovering Tut: the Saga Continues (Hornbill)',
+      'Chapter 4: The Adventure (Hornbill)',
+      'Chapter 5: Silk Road (Hornbill)',
+      'Chapter 6: A Photograph (Poem)',
+      'Chapter 7: The Laburnum Top (Poem)',
+      'Chapter 8: The Voice of the Rain (Poem)',
+      'Chapter 9: Childhood (Poem)',
+      'Chapter 10: Father to Son (Poem)',
+      'Chapter 11: The Summer of the Beautiful White Horse (Snapshots)',
+      'Chapter 12: The Address (Snapshots)',
+      'Chapter 13: Mother\'s Day (Snapshots)',
+      'Chapter 14: Birth (Snapshots)',
+      'Chapter 15: The Tale of Melon City (Snapshots)'
     ],
     'Computer Science': [
       'Chapter 1: Computer Systems and Organisation',
@@ -477,14 +676,24 @@ const CLASS_SYLLABUS = {
       'Chapter 13: Probability'
     ],
     'English': [
-      'Chapter 1: The Last Lesson',
-      'Chapter 2: Lost Spring',
-      'Chapter 3: Deep Water',
-      'Chapter 4: The Rattrap',
-      'Chapter 5: Indigo',
-      'Chapter 6: Poets and Pancakes',
-      'Chapter 7: The Interview',
-      'Chapter 8: Going Places'
+      'Chapter 1: The Last Lesson (Flamingo)',
+      'Chapter 2: Lost Spring (Flamingo)',
+      'Chapter 3: Deep Water (Flamingo)',
+      'Chapter 4: The Rattrap (Flamingo)',
+      'Chapter 5: Indigo (Flamingo)',
+      'Chapter 6: Poets and Pancakes (Flamingo)',
+      'Chapter 7: The Interview (Flamingo)',
+      'Chapter 8: Going Places (Flamingo)',
+      'Chapter 9: My Mother at Sixty-Six (Poem)',
+      'Chapter 10: Keeping Quiet (Poem)',
+      'Chapter 11: A Thing of Beauty (Poem)',
+      'Chapter 12: A Roadside Stand (Poem)',
+      'Chapter 13: Aunt Jennifer\'s Tigers (Poem)',
+      'Chapter 14: The Third Level (Vistas)',
+      'Chapter 15: The Enemy (Vistas)',
+      'Chapter 16: Journey to the End of the Earth (Vistas)',
+      'Chapter 17: On the Face of It (Vistas)',
+      'Chapter 18: Memories of Childhood (Vistas)'
     ],
     'Computer Science': [
       'Chapter 1: Computational Thinking and Programming - 2',
@@ -854,7 +1063,8 @@ const AttemptItem = ({ att }) => {
 
 
 export default function Home() {
-  const { currentUser } = useAuth();
+  const { currentUser, subscription } = useAuth();
+  const [showUpgradePopup, setShowUpgradePopup] = useState(false);
   const navigate = useNavigate();
 
   const firstName = currentUser?.displayName?.split(' ')[0] || 'Student';
@@ -876,6 +1086,7 @@ export default function Home() {
   const [profileBoard, setProfileBoard] = useState('');
   const [profileClass, setProfileClass] = useState('');
   const [profileSubjects, setProfileSubjects] = useState([]);
+  const [profileExamDate, setProfileExamDate] = useState('');
   const [activeChapters, setActiveChapters] = useState({});
   const [profileSetupDone, setProfileSetupDone] = useState(false);
   const [showProfileSetup, setShowProfileSetup] = useState(false);
@@ -885,6 +1096,7 @@ export default function Home() {
   const [setupClass, setSetupClass] = useState('10');
   const [setupSubjects, setSetupSubjects] = useState('');
   const [selectedSubjects, setSelectedSubjects] = useState([]);
+  const [setupExamDate, setSetupExamDate] = useState('');
 
   // ── 2. STUDY MISSIONS STATE (starts EMPTY — generated from profile) ──
   const [missions, setMissions] = useState([]);
@@ -903,6 +1115,9 @@ export default function Home() {
   const [missionError, setMissionError] = useState('');
   const [mcqAttempts, setMcqAttempts] = useState([]);
   const [netScore, setNetScore] = useState(0);
+
+  const completedNonLogin = missions.filter(m => m.type !== 'login' && m.done).length;
+  const isPro = subscription?.active;
 
   // Subject-aware dynamic fallback MCQ based on active mission
   const fallback = getFallbackMCQ(activeMission?.subject || '');
@@ -940,7 +1155,8 @@ export default function Home() {
       if (activeChaptersMap && activeChaptersMap[subj]) {
         return activeChaptersMap[subj];
       }
-      const chaptersList = CLASS_SYLLABUS[grade]?.[subj] || CLASS_SYLLABUS[grade.toString()]?.[subj];
+      const cleanGrade = (grade || '10').toString().replace(/\D/g, '') || '10';
+      const chaptersList = CLASS_SYLLABUS[cleanGrade]?.[subj];
       if (chaptersList && chaptersList.length > 0) {
         return chaptersList[0];
       }
@@ -1001,20 +1217,22 @@ export default function Home() {
     setProfileBoard(setupBoard);
     setProfileClass(setupClass);
     setProfileSubjects(subjectsArray);
+    setProfileExamDate(setupExamDate);
     setProfileSetupDone(true);
     setShowProfileSetup(false);
 
     // Initialize active chapters to Chapter 1 for all subjects
     const initialActiveChapters = {};
     subjectsArray.forEach(subj => {
-      const chaptersList = CLASS_SYLLABUS[setupClass]?.[subj] || CLASS_SYLLABUS[setupClass.toString()]?.[subj] || [];
+      const cleanSetupClass = (setupClass || '10').toString().replace(/\D/g, '') || '10';
+      const chaptersList = CLASS_SYLLABUS[cleanSetupClass]?.[subj] || [];
       initialActiveChapters[subj] = chaptersList.length > 0 ? chaptersList[0] : '';
     });
     setActiveChapters(initialActiveChapters);
     localStorage.setItem(getUserKey('tanios_active_chapters'), JSON.stringify(initialActiveChapters));
 
     // Persist profile
-    const profile = { board: setupBoard, grade: setupClass, subjects: subjectsArray };
+    const profile = { board: setupBoard, grade: setupClass, subjects: subjectsArray, examDate: setupExamDate };
     localStorage.setItem(getUserKey('tanios_profile'), JSON.stringify(profile));
 
     // Generate missions
@@ -1076,9 +1294,11 @@ export default function Home() {
         setProfileBoard(profile.board);
         setProfileClass(profile.grade);
         setProfileSubjects(profile.subjects);
+        setProfileExamDate(profile.examDate || '');
         setProfileSetupDone(true);
         setSetupBoard(profile.board);
         setSetupClass(profile.grade);
+        setSetupExamDate(profile.examDate || '');
 
         // Restore subject chip selections for the edit form
         const standardList = [
@@ -1106,7 +1326,8 @@ export default function Home() {
         // Auto-initialize missing or invalid subjects with Chapter 1 by default
         let chaptersMapChanged = false;
         profile.subjects.forEach(subj => {
-          const chaptersList = CLASS_SYLLABUS[profile.grade]?.[subj] || CLASS_SYLLABUS[profile.grade.toString()]?.[subj] || [];
+          const cleanProfileGrade = (profile.grade || '10').toString().replace(/\D/g, '') || '10';
+          const chaptersList = CLASS_SYLLABUS[cleanProfileGrade]?.[subj] || [];
           const currentCh = activeChaptersMap[subj];
           
           if (!currentCh || !chaptersList.includes(currentCh)) {
@@ -1154,6 +1375,8 @@ export default function Home() {
         setProfileSubjects([]);
         setSelectedSubjects([]);
         setSetupSubjects('');
+        setProfileExamDate('');
+        setSetupExamDate('');
         setMissions([]);
         setMcqAttempts([]);
         setNetScore(0);
@@ -1261,23 +1484,29 @@ export default function Home() {
 
       // 3. Calculate exam target pacing
       const now = new Date();
-      const EXAM_DATES = {
-        CBSE: { '10': { month: 1, day: 15 }, '12': { month: 1, day: 15 }, '8': { month: 2, day: 1 }, '9': { month: 2, day: 1 }, '11': { month: 2, day: 1 } },
-        RBSE: { '10': { month: 2, day: 5 }, '12': { month: 2, day: 5 }, '8': { month: 2, day: 10 }, '9': { month: 2, day: 10 }, '11': { month: 2, day: 10 } }
-      };
-      const classNum = grade.toString().replace(/\D/g, '') || '10';
-      const examInfo = EXAM_DATES[board]?.[classNum] || EXAM_DATES['CBSE']['10'];
+      let examDate;
+      if (profileExamDate) {
+        examDate = new Date(profileExamDate);
+      } else {
+        const EXAM_DATES = {
+          CBSE: { '10': { month: 1, day: 15 }, '12': { month: 1, day: 15 }, '8': { month: 2, day: 1 }, '9': { month: 2, day: 1 }, '11': { month: 2, day: 1 } },
+          RBSE: { '10': { month: 2, day: 5 }, '12': { month: 2, day: 5 }, '8': { month: 2, day: 10 }, '9': { month: 2, day: 10 }, '11': { month: 2, day: 10 } }
+        };
+        const classNum = grade.toString().replace(/\D/g, '') || '10';
+        const examInfo = EXAM_DATES[board]?.[classNum] || EXAM_DATES['CBSE']['10'];
 
-      let examYear = now.getFullYear();
-      const examDate = new Date(examYear, examInfo.month, examInfo.day);
-      if (examDate <= now) {
-        examYear += 1;
-        examDate.setFullYear(examYear);
+        let examYear = now.getFullYear();
+        examDate = new Date(examYear, examInfo.month, examInfo.day);
+        if (examDate <= now) {
+          examYear += 1;
+          examDate.setFullYear(examYear);
+        }
       }
       const diffMs = examDate - now;
       const diffDays = Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
 
-      const chaptersList = CLASS_SYLLABUS[grade]?.[subject] || CLASS_SYLLABUS[grade.toString()]?.[subject] || [];
+      const cleanGrade = (grade || '10').toString().replace(/\D/g, '') || '10';
+      const chaptersList = CLASS_SYLLABUS[cleanGrade]?.[subject] || [];
       const totalChapters = chaptersList.length || 1;
       const chapterIdx = chaptersList.indexOf(currentChapter);
       
@@ -1341,36 +1570,41 @@ export default function Home() {
 
     // ── Calculate days remaining dynamically ──
     const now = new Date();
-    const EXAM_DATES = {
-      CBSE: {
-        '10': { month: 1, day: 15 },
-        '12': { month: 1, day: 15 },
-        '8':  { month: 2, day: 1 },
-        '9':  { month: 2, day: 1 },
-        '11': { month: 2, day: 1 },
-      },
-      RBSE: {
-        '10': { month: 2, day: 5 },
-        '12': { month: 2, day: 5 },
-        '8':  { month: 2, day: 10 },
-        '9':  { month: 2, day: 10 },
-        '11': { month: 2, day: 10 },
-      },
-    };
-    const classNum = grade.toString().replace(/\D/g, '') || '10';
-    const examInfo = EXAM_DATES[board]?.[classNum] || EXAM_DATES['CBSE']['10'];
+    let examDate;
+    if (profileExamDate) {
+      examDate = new Date(profileExamDate);
+    } else {
+      const EXAM_DATES = {
+        CBSE: {
+          '10': { month: 1, day: 15 },
+          '12': { month: 1, day: 15 },
+          '8':  { month: 2, day: 1 },
+          '9':  { month: 2, day: 1 },
+          '11': { month: 2, day: 1 },
+        },
+        RBSE: {
+          '10': { month: 2, day: 5 },
+          '12': { month: 2, day: 5 },
+          '8':  { month: 2, day: 10 },
+          '9':  { month: 2, day: 10 },
+          '11': { month: 2, day: 10 },
+        },
+      };
+      const classNum = grade.toString().replace(/\D/g, '') || '10';
+      const examInfo = EXAM_DATES[board]?.[classNum] || EXAM_DATES['CBSE']['10'];
 
-    let examYear = now.getFullYear();
-    const examDate = new Date(examYear, examInfo.month, examInfo.day);
-    if (examDate <= now) {
-      examYear += 1;
-      examDate.setFullYear(examYear);
+      let examYear = now.getFullYear();
+      examDate = new Date(examYear, examInfo.month, examInfo.day);
+      if (examDate <= now) {
+        examYear += 1;
+        examDate.setFullYear(examYear);
+      }
     }
     const diffMs = examDate - now;
     const diffDays = Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
 
-    // ── Calculate chapter indexing & dynamic pacing for complete syllabus coverage ──
-    const chaptersList = CLASS_SYLLABUS[grade]?.[subject] || CLASS_SYLLABUS[grade.toString()]?.[subject] || [];
+    const cleanGrade = (grade || '10').toString().replace(/\D/g, '') || '10';
+    const chaptersList = CLASS_SYLLABUS[cleanGrade]?.[subject] || [];
     const totalChapters = chaptersList.length || 1;
     const currentChapter = mission.chapter || 'General Syllabus';
     const chapterIdx = chaptersList.indexOf(currentChapter);
@@ -1706,6 +1940,16 @@ JSON Structure:
           border-color: rgba(16, 185, 129, 0.2);
           opacity: 0.85;
         }
+        .mission-item.locked {
+          background: rgba(255, 255, 255, 0.02) !important;
+          border-color: rgba(239, 68, 68, 0.15) !important;
+          opacity: 0.7;
+          cursor: pointer;
+        }
+        .mission-item.locked:hover {
+          border-color: rgba(239, 68, 68, 0.4) !important;
+          background: rgba(239, 68, 68, 0.04) !important;
+        }
         .quick-action-grid {
           display: grid;
           grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
@@ -1952,9 +2196,93 @@ JSON Structure:
             border: 1px solid rgba(108, 99, 255, 0.2);
             box-shadow: 0 25px 50px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.05);
             padding: 2.5rem 2rem;
-            margin: auto;
             box-sizing: border-box;
           }
+        }
+
+        @keyframes shine-sweep {
+          0% {
+            left: -100%;
+          }
+          100% {
+            left: 200%;
+          }
+        }
+        @keyframes gradient-flow {
+          0% {
+            background-position: 0% 50%;
+          }
+          50% {
+            background-position: 100% 50%;
+          }
+          100% {
+            background-position: 0% 50%;
+          }
+        }
+        @keyframes radar-ripple {
+          0% {
+            box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.7), 0 4px 15px rgba(139, 92, 246, 0.3);
+          }
+          70% {
+            box-shadow: 0 0 0 16px rgba(139, 92, 246, 0), 0 4px 15px rgba(139, 92, 246, 0.3);
+          }
+          100% {
+            box-shadow: 0 0 0 0 rgba(139, 92, 246, 0), 0 4px 15px rgba(139, 92, 246, 0.3);
+          }
+        }
+        @keyframes icon-wiggle {
+          0%, 90%, 100% {
+            transform: rotate(0) scale(1);
+          }
+          93% {
+            transform: rotate(-12deg) scale(1.15);
+          }
+          96% {
+            transform: rotate(12deg) scale(1.15);
+          }
+        }
+        .ai-doubt-solver-btn {
+          position: relative !important;
+          overflow: hidden !important;
+          background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 50%, #8b5cf6 100%) !important;
+          background-size: 200% auto !important;
+          border: none !important;
+          color: white !important;
+          animation: gradient-flow 4s ease infinite, radar-ripple 2s infinite cubic-bezier(0.25, 0, 0, 1) !important;
+          transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
+        }
+        .ai-doubt-solver-btn::after {
+          content: '' !important;
+          position: absolute !important;
+          top: 0 !important;
+          left: -100% !important;
+          width: 50% !important;
+          height: 100% !important;
+          background: linear-gradient(
+            90deg,
+            rgba(255, 255, 255, 0) 0%,
+            rgba(255, 255, 255, 0.35) 50%,
+            rgba(255, 255, 255, 0) 100%
+          ) !important;
+          transform: skewX(-25deg) !important;
+          animation: shine-sweep 3.5s infinite ease-in-out !important;
+          pointer-events: none !important;
+          opacity: 1 !important;
+          inset: auto !important;
+        }
+        .ai-doubt-solver-btn svg {
+          animation: icon-wiggle 6s infinite ease-in-out;
+          transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+        }
+        .ai-doubt-solver-btn:hover {
+          transform: translateY(-3px) scale(1.04) !important;
+          background-position: right center !important;
+          box-shadow: 0 8px 25px rgba(139, 92, 246, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.2) !important;
+          animation-play-state: paused !important;
+        }
+        .ai-doubt-solver-btn:hover svg {
+          transform: rotate(-15deg) scale(1.2) !important;
+          animation-play-state: paused !important;
         }
       `}</style>
 
@@ -2025,7 +2353,7 @@ JSON Structure:
               }} className="btn btn-primary">
                 <Target size={16} /> Complete Daily Mission
               </button>
-              <Link to="/chat" className="btn btn-primary" style={{ background: 'linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%)', border: 'none', color: 'white', boxShadow: '0 4px 15px rgba(139, 92, 246, 0.3)' }}>
+              <Link to="/chat" className="btn btn-primary ai-doubt-solver-btn">
                 <MessageSquare size={16} /> AI Doubt Solver
               </Link>
               <Link to="/notes" className="btn btn-secondary">
@@ -2153,6 +2481,7 @@ JSON Structure:
                         <option value="ICSE">ICSE Board</option>
                         <option value="UP Board">UP Board</option>
                         <option value="Bihar Board">Bihar Board</option>
+                        <option value="Non-Board">Non-Board (School Exams)</option>
                       </select>
                     </div>
                     <div>
@@ -2162,7 +2491,15 @@ JSON Structure:
                       <select 
                         className="input-field" 
                         value={setupClass} 
-                        onChange={e => setSetupClass(e.target.value)} 
+                        onChange={e => {
+                          const val = e.target.value;
+                          setSetupClass(val);
+                          if (!['10', '12'].includes(val.toString().replace(/\D/g, ''))) {
+                            setSetupBoard('Non-Board');
+                          } else if (setupBoard === 'Non-Board') {
+                            setSetupBoard('CBSE');
+                          }
+                        }} 
                         style={{ padding: '0.6rem 0.75rem', fontSize: '0.88rem', background: 'var(--bg-secondary)', border: '1px solid var(--border)', color: 'var(--text)', borderRadius: '6px', width: '100%' }}
                       >
                         <option value="8">Class 8</option>
@@ -2172,6 +2509,26 @@ JSON Structure:
                         <option value="12">Class 12</option>
                       </select>
                     </div>
+                  </div>
+
+                  <div style={{ marginBottom: '1rem' }}>
+                    <label className="input-label" style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text)', display: 'block', marginBottom: '0.35rem' }}>
+                      📅 Exam Start Date (Custom Target Pacing)
+                    </label>
+                    <input 
+                      type="date"
+                      className="input-field"
+                      value={setupExamDate}
+                      onChange={e => setSetupExamDate(e.target.value)}
+                      required={!['10', '12'].includes(setupClass.toString().replace(/\D/g, ''))}
+                      min={new Date().toISOString().split('T')[0]}
+                      style={{ padding: '0.6rem 0.75rem', fontSize: '0.88rem', background: 'var(--bg-secondary)', border: '1px solid var(--border)', color: 'var(--text)', borderRadius: '6px', width: '100%', boxSizing: 'border-box' }}
+                    />
+                    <small style={{ display: 'block', color: 'var(--text-secondary)', fontSize: '0.68rem', marginTop: '0.25rem' }}>
+                      {!['10', '12'].includes(setupClass.toString().replace(/\D/g, '')) 
+                        ? 'Required: Select your exam start date to calculate your remaining target study pacing.'
+                        : 'Optional: Overrides the standard Board exam date if customized.'}
+                    </small>
                   </div>
 
                   <div>
@@ -2277,9 +2634,16 @@ JSON Structure:
                     >
                       Edit Profile ⚙️
                     </button>
-                    <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
-                      {missions.filter(m => m.done).length} / {missions.length} Complete
-                    </span>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.1rem' }}>
+                      <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
+                        {missions.filter(m => m.done).length} / {missions.length} Complete
+                      </span>
+                      {!isPro && (
+                        <span style={{ fontSize: '0.68rem', color: completedNonLogin >= 1 ? '#ff6b6b' : '#f59e0b', fontWeight: 700 }}>
+                          Free Tier: {completedNonLogin}/1 Daily Target Used
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
 
@@ -2294,155 +2658,296 @@ JSON Structure:
                 </div>
 
                 {/* ── ACTIVE CHAPTERS SELECTOR ── */}
-                <div style={{
-                  background: 'rgba(255, 255, 255, 0.02)',
-                  border: '1px solid rgba(255, 255, 255, 0.05)',
-                  borderRadius: '12px',
-                  padding: '1rem',
-                  marginBottom: '1.25rem'
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
-                    <span style={{ fontSize: '0.85rem' }}>🎯</span>
-                    <strong style={{ fontSize: '0.82rem', color: '#fff' }}>Set Your Active Class Chapters:</strong>
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '0.75rem' }}>
-                    {profileSubjects.map(subj => {
-                      const currentCh = activeChapters[subj] || '';
-                      const chapters = CLASS_SYLLABUS[profileClass]?.[subj] || CLASS_SYLLABUS[profileClass.toString()]?.[subj] || [];
-                      
-                      // Calculate days remaining dynamically
-                      const now = new Date();
-                      const EXAM_DATES = {
-                        CBSE: { '10': { month: 1, day: 15 }, '12': { month: 1, day: 15 }, '8': { month: 2, day: 1 }, '9': { month: 2, day: 1 }, '11': { month: 2, day: 1 } },
-                        RBSE: { '10': { month: 2, day: 5 }, '12': { month: 2, day: 5 }, '8': { month: 2, day: 10 }, '9': { month: 2, day: 10 }, '11': { month: 2, day: 10 } }
-                      };
-                      const classNum = (profileClass || '10').toString().replace(/\D/g, '') || '10';
-                      const examInfo = EXAM_DATES[profileBoard]?.[classNum] || EXAM_DATES['CBSE']['10'];
+                {(() => {
+                  const now = new Date();
+                  const EXAM_DATES = {
+                    CBSE: { '10': { month: 1, day: 15 }, '12': { month: 1, day: 15 }, '8': { month: 2, day: 1 }, '9': { month: 2, day: 1 }, '11': { month: 2, day: 1 } },
+                    RBSE: { '10': { month: 2, day: 5 }, '12': { month: 2, day: 5 }, '8': { month: 2, day: 10 }, '9': { month: 2, day: 10 }, '11': { month: 2, day: 10 } }
+                  };
+                  const classNum = (profileClass || '10').toString().replace(/\D/g, '') || '10';
+                  const examInfo = EXAM_DATES[profileBoard]?.[classNum] || EXAM_DATES['CBSE']['10'];
 
-                      let examYear = now.getFullYear();
-                      const examDate = new Date(examYear, examInfo.month, examInfo.day);
-                      if (examDate <= now) {
-                        examYear += 1;
-                        examDate.setFullYear(examYear);
-                      }
-                      const diffMs = examDate - now;
-                      const diffDays = Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+                  let examDate;
+                  if (profileExamDate) {
+                    examDate = new Date(profileExamDate);
+                  } else {
+                    let examYear = now.getFullYear();
+                    examDate = new Date(examYear, examInfo.month, examInfo.day);
+                    if (examDate <= now) {
+                      examYear += 1;
+                      examDate.setFullYear(examYear);
+                    }
+                  }
+                  const diffMs = examDate - now;
+                  const diffDays = Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
 
-                      const totalChapters = chapters.length || 1;
-                      const chapterIdx = chapters.indexOf(currentCh);
-                      const resolvedChapterIdx = chapterIdx !== -1 ? chapterIdx + 1 : 1;
-                      const chaptersRemaining = Math.max(1, totalChapters - resolvedChapterIdx + 1);
-                      const daysPerChapter = Math.max(1, Math.round(diffDays / chaptersRemaining));
-
-                      // Retrieve progress
-                      const progressMap = JSON.parse(localStorage.getItem(getUserKey('tanios_chapter_progress')) || '{}');
-                      const completedTopics = progressMap[subj]?.[currentCh] || 0;
-                      
-                      return (
-                        <div key={subj} style={{ background: 'rgba(255,255,255,0.01)', border: '1px solid rgba(255,255,255,0.03)', borderRadius: '8px', padding: '0.5rem' }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
-                            <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '65%' }}>
-                              {subj}
-                            </span>
-                            <span style={{ fontSize: '0.62rem', color: 'var(--success)', fontWeight: 700 }} title="Topics completed in this chapter / Days allocated to complete it">
-                              Day {completedTopics}/{daysPerChapter} ⏱️
-                            </span>
-                          </div>
-                          {chapters.length > 0 ? (
-                            <select
-                              value={currentCh}
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                if (!val) return; // Prevent empty selection
-                                const updated = { ...activeChapters, [subj]: val };
-                                setActiveChapters(updated);
-                                localStorage.setItem(getUserKey('tanios_active_chapters'), JSON.stringify(updated));
-                                const newMissions = generateMissionsFromProfile(profileBoard, profileClass, profileSubjects, updated);
-                                setMissions(newMissions);
-                                localStorage.setItem(getUserKey('tanios_missions'), JSON.stringify(newMissions));
-                              }}
-                              style={{ width: '100%', fontSize: '0.72rem', background: 'var(--bg-secondary)', border: '1px solid var(--border)', color: 'var(--text)', borderRadius: '4px', padding: '0.2rem' }}
-                            >
-                              {chapters.map(ch => (
-                                <option key={ch} value={ch}>{ch}</option>
-                              ))}
-                            </select>
-                          ) : (
-                            <input
-                              type="text"
-                              value={currentCh}
-                              placeholder="Type active topic..."
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                const updated = { ...activeChapters, [subj]: val };
-                                setActiveChapters(updated);
-                                localStorage.setItem(getUserKey('tanios_active_chapters'), JSON.stringify(updated));
-                                const newMissions = generateMissionsFromProfile(profileBoard, profileClass, profileSubjects, updated);
-                                setMissions(newMissions);
-                                localStorage.setItem(getUserKey('tanios_missions'), JSON.stringify(newMissions));
-                              }}
-                              style={{ width: '100%', fontSize: '0.72rem', background: 'var(--bg-secondary)', border: '1px solid var(--border)', color: 'var(--text)', borderRadius: '4px', padding: '0.2rem 0.4rem' }}
-                            />
-                          )}
+                  return (
+                    <div style={{
+                      background: 'rgba(255, 255, 255, 0.02)',
+                      border: '1px solid rgba(255, 255, 255, 0.05)',
+                      borderRadius: '12px',
+                      padding: '1rem',
+                      marginBottom: '1.25rem'
+                    }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <span style={{ fontSize: '0.85rem' }}>🎯</span>
+                          <strong style={{ fontSize: '0.82rem', color: '#fff' }}>Set Your Active Class Chapters:</strong>
                         </div>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <div>
-                {missions.map(mission => (
-                    <div key={mission.id} className={`mission-item ${mission.done ? 'completed' : ''}`}>
-                      <button 
-                        onClick={() => {
-                          if (mission.type === 'login') {
-                            toggleMission(mission.id);
-                          } else if (!mission.done) {
-                            startStudyMission(mission);
-                          }
-                        }}
-                        disabled={mission.done}
-                        style={{ background: 'none', border: 'none', color: mission.done ? 'var(--success)' : 'var(--text-secondary)', cursor: mission.done ? 'default' : 'pointer', flexShrink: 0 }}
-                      >
-                        <CheckCircle2 size={20} style={mission.done ? {} : { opacity: 0.4 }} />
-                      </button>
-                      <div 
-                        onClick={() => {
-                          if (!mission.done && mission.type !== 'login') {
-                            startStudyMission(mission);
-                          }
-                        }}
-                        style={{ flex: 1, minWidth: 0, cursor: (!mission.done && mission.type !== 'login') ? 'pointer' : 'default' }}
-                      >
-                        <div style={{
-                          fontSize: '0.88rem',
-                          fontWeight: 600,
-                          textDecoration: mission.done ? 'line-through' : 'none',
-                          color: mission.done ? 'var(--text-secondary)' : 'var(--text)',
-                          wordBreak: 'break-word',
-                        }}>
-                          {mission.label}
-                        </div>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexShrink: 0 }}>
-                        <span style={{ fontSize: '0.72rem', background: 'rgba(99, 102, 241, 0.1)', color: 'var(--primary)', padding: '0.2rem 0.5rem', borderRadius: '4px', fontWeight: 700, whiteSpace: 'nowrap' }}>
-                          +{mission.xp} XP
+                        <span style={{ fontSize: '0.72rem', background: 'rgba(99, 102, 241, 0.1)', color: 'var(--primary)', padding: '0.2rem 0.5rem', borderRadius: '4px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                          ⏳ {diffDays} Days Remaining
                         </span>
-                        {!mission.done && mission.type !== 'login' && (
-                          <button 
-                            onClick={() => startStudyMission(mission)}
-                            className="btn btn-secondary" 
-                            style={{ padding: '0.3rem 0.6rem', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.25rem', whiteSpace: 'nowrap' }}
-                          >
-                            Start <Play size={10} />
-                          </button>
-                        )}
-                        {mission.done && mission.type !== 'login' && (
-                          <span style={{ fontSize: '0.72rem', color: 'var(--success)', fontWeight: 700 }}>✓ Done</span>
-                        )}
+                      </div>
+                      
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '0.75rem' }}>
+                        {profileSubjects.map(subj => {
+                          const currentCh = activeChapters[subj] || '';
+                          const cleanProfileClass = (profileClass || '10').toString().replace(/\D/g, '') || '10';
+                          const chapters = CLASS_SYLLABUS[cleanProfileClass]?.[subj] || [];
+                          
+                          const totalChapters = chapters.length || 1;
+                          const chapterIdx = chapters.indexOf(currentCh);
+                          const resolvedChapterIdx = chapterIdx !== -1 ? chapterIdx + 1 : 1;
+                          const chaptersRemaining = Math.max(1, totalChapters - resolvedChapterIdx + 1);
+                          const daysPerChapter = Math.max(1, Math.round(diffDays / chaptersRemaining));
+
+                          // Retrieve progress
+                          const progressMap = JSON.parse(localStorage.getItem(getUserKey('tanios_chapter_progress')) || '{}');
+                          const completedTopics = progressMap[subj]?.[currentCh] || 0;
+                          
+                          return (
+                            <div key={subj} style={{ background: 'rgba(255,255,255,0.01)', border: '1px solid rgba(255,255,255,0.03)', borderRadius: '8px', padding: '0.5rem' }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+                                <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '65%' }}>
+                                  {subj}
+                                </span>
+                                <span style={{ fontSize: '0.62rem', color: 'var(--success)', fontWeight: 700 }} title="Topics completed in this chapter / Days allocated to complete it">
+                                  Day {completedTopics}/{daysPerChapter} ⏱️
+                                </span>
+                              </div>
+                              {chapters.length > 0 ? (
+                                <select
+                                  value={currentCh}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    if (!val) return; // Prevent empty selection
+                                    const updated = { ...activeChapters, [subj]: val };
+                                    setActiveChapters(updated);
+                                    localStorage.setItem(getUserKey('tanios_active_chapters'), JSON.stringify(updated));
+                                    const newMissions = generateMissionsFromProfile(profileBoard, profileClass, profileSubjects, updated);
+                                    setMissions(newMissions);
+                                    localStorage.setItem(getUserKey('tanios_missions'), JSON.stringify(newMissions));
+                                  }}
+                                  style={{ width: '100%', fontSize: '0.72rem', background: 'var(--bg-secondary)', border: '1px solid var(--border)', color: 'var(--text)', borderRadius: '4px', padding: '0.2rem 0.4rem' }}
+                                >
+                                  {chapters.map(ch => (
+                                    <option key={ch} value={ch}>{ch}</option>
+                                  ))}
+                                </select>
+                              ) : (
+                                <input
+                                  type="text"
+                                  value={currentCh}
+                                  placeholder="Type active topic..."
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    const updated = { ...activeChapters, [subj]: val };
+                                    setActiveChapters(updated);
+                                    localStorage.setItem(getUserKey('tanios_active_chapters'), JSON.stringify(updated));
+                                    const newMissions = generateMissionsFromProfile(profileBoard, profileClass, profileSubjects, updated);
+                                    setMissions(newMissions);
+                                    localStorage.setItem(getUserKey('tanios_missions'), JSON.stringify(newMissions));
+                                  }}
+                                  style={{ width: '100%', fontSize: '0.72rem', background: 'var(--bg-secondary)', border: '1px solid var(--border)', color: 'var(--text)', borderRadius: '4px', padding: '0.2rem 0.4rem' }}
+                                />
+                              )}
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
-                  ))}
+                  );
+                })()}
+
+                {/* ── TaniOS Pro Promo Card for Unsubscribed users ── */}
+                {!isPro && (
+                  completedNonLogin >= 1 ? (
+                    <div style={{
+                      background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(108, 99, 255, 0.05))',
+                      border: '1px solid rgba(239, 68, 68, 0.3)',
+                      borderRadius: '12px',
+                      padding: '1.25rem',
+                      marginBottom: '1.25rem',
+                      textAlign: 'left',
+                      position: 'relative',
+                      overflow: 'hidden',
+                      boxShadow: '0 4px 20px rgba(239, 68, 68, 0.15)'
+                    }}>
+                      <div style={{
+                        position: 'absolute', top: '-20px', right: '-20px',
+                        width: '80px', height: '80px',
+                        background: 'radial-gradient(circle, rgba(239, 68, 68, 0.25) 0%, rgba(239, 68, 68, 0) 70%)',
+                        borderRadius: '50%'
+                      }} />
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                        <span style={{ fontSize: '1.25rem' }}>⚠️</span>
+                        <strong style={{ fontSize: '0.88rem', color: '#ff6b6b' }}>Daily Study Target Limit Reached!</strong>
+                      </div>
+                      <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: '0 0 1rem 0', lineHeight: 1.45 }}>
+                        You have completed your **1 free daily study target**. Unlock **TaniOS Pro** to get instant access to study targets for all subjects daily, unlimited doubt solver, and CBSE/RBSE board repeated question banks.
+                      </p>
+                      <Link to="/subscribe" className="btn btn-primary" style={{ padding: '0.45rem 1rem', fontSize: '0.78rem', display: 'inline-flex', alignItems: 'center', gap: '0.35rem', background: 'linear-gradient(135deg, #ef4444 0%, #ec4899 100%)', border: 'none', color: '#fff', fontWeight: 700, borderRadius: '6px', boxShadow: '0 4px 10px rgba(239, 68, 68, 0.3)' }}>
+                        Unlock Pro Premium (₹199/month) ➔
+                      </Link>
+                    </div>
+                  ) : (
+                    <div style={{
+                      background: 'linear-gradient(135deg, rgba(108, 99, 255, 0.1), rgba(239, 68, 68, 0.08))',
+                      border: '1px solid rgba(108, 99, 255, 0.2)',
+                      borderRadius: '12px',
+                      padding: '1.25rem',
+                      marginBottom: '1.25rem',
+                      textAlign: 'left',
+                      position: 'relative',
+                      overflow: 'hidden'
+                    }}>
+                      <div style={{
+                        position: 'absolute', top: '-20px', right: '-20px',
+                        width: '80px', height: '80px',
+                        background: 'radial-gradient(circle, rgba(108,99,255,0.2) 0%, rgba(108,99,255,0) 70%)',
+                        borderRadius: '50%'
+                      }} />
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                        <span style={{ fontSize: '1.25rem' }}>👑</span>
+                        <strong style={{ fontSize: '0.88rem', color: '#fff' }}>Unlock TaniOS Pro Study Targets</strong>
+                      </div>
+                      <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: '0 0 1rem 0', lineHeight: 1.45 }}>
+                        You are currently on the **Free Tier (Limited to 1 daily study target)**. Upgrade to unlock all subjects targets daily, textbook uploads, and CBSE/RBSE board repeated question banks!
+                      </p>
+                      <Link to="/subscribe" className="btn btn-primary" style={{ padding: '0.45rem 1rem', fontSize: '0.78rem', display: 'inline-flex', alignItems: 'center', gap: '0.35rem', background: 'linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%)', border: 'none', color: '#fff', fontWeight: 700, borderRadius: '6px' }}>
+                        Upgrade to Pro (₹199/month) ➔
+                      </Link>
+                    </div>
+                  )
+                )}
+
+                <div>
+                  {missions.map(mission => {
+                    const isMissionLocked = !isPro && mission.type !== 'login' && !mission.done && completedNonLogin >= 1;
+                    return (
+                      <div 
+                        key={mission.id} 
+                        className={`mission-item ${mission.done ? 'completed' : ''} ${isMissionLocked ? 'locked' : ''}`}
+                        onClick={() => {
+                          if (isMissionLocked) {
+                            setShowUpgradePopup(true);
+                          }
+                        }}
+                      >
+                        {isMissionLocked ? (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setShowUpgradePopup(true);
+                            }}
+                            style={{ background: 'none', border: 'none', color: '#ff6b6b', cursor: 'pointer', flexShrink: 0 }}
+                          >
+                            <Lock size={18} />
+                          </button>
+                        ) : (
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (mission.type === 'login') {
+                                toggleMission(mission.id);
+                              } else if (!mission.done) {
+                                startStudyMission(mission);
+                              }
+                            }}
+                            disabled={mission.done}
+                            style={{ background: 'none', border: 'none', color: mission.done ? 'var(--success)' : 'var(--text-secondary)', cursor: mission.done ? 'default' : 'pointer', flexShrink: 0 }}
+                          >
+                            <CheckCircle2 size={20} style={mission.done ? {} : { opacity: 0.4 }} />
+                          </button>
+                        )}
+
+                        <div 
+                          onClick={(e) => {
+                            if (isMissionLocked) {
+                              e.stopPropagation();
+                              setShowUpgradePopup(true);
+                            } else if (!mission.done && mission.type !== 'login') {
+                              e.stopPropagation();
+                              startStudyMission(mission);
+                            }
+                          }}
+                          style={{ flex: 1, minWidth: 0, cursor: (isMissionLocked || (!mission.done && mission.type !== 'login')) ? 'pointer' : 'default' }}
+                        >
+                          <div style={{
+                            fontSize: '0.88rem',
+                            fontWeight: 600,
+                            textDecoration: mission.done ? 'line-through' : 'none',
+                            color: mission.done ? 'var(--text-secondary)' : isMissionLocked ? 'rgba(255, 255, 255, 0.4)' : 'var(--text)',
+                            wordBreak: 'break-word',
+                          }}>
+                            {mission.label}
+                          </div>
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexShrink: 0 }}>
+                          {isMissionLocked ? (
+                            <span style={{ fontSize: '0.72rem', background: 'rgba(239, 68, 68, 0.1)', color: '#ff6b6b', padding: '0.2rem 0.5rem', borderRadius: '4px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '0.2rem', whiteSpace: 'nowrap' }}>
+                              <Lock size={10} /> Pro
+                            </span>
+                          ) : (
+                            <span style={{ fontSize: '0.72rem', background: 'rgba(99, 102, 241, 0.1)', color: 'var(--primary)', padding: '0.2rem 0.5rem', borderRadius: '4px', fontWeight: 700, whiteSpace: 'nowrap' }}>
+                              +{mission.xp} XP
+                            </span>
+                          )}
+
+                          {isMissionLocked ? (
+                            <button 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setShowUpgradePopup(true);
+                              }}
+                              className="btn btn-secondary" 
+                              style={{ 
+                                padding: '0.3rem 0.6rem', 
+                                fontSize: '0.75rem', 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                gap: '0.25rem', 
+                                whiteSpace: 'nowrap',
+                                borderColor: 'rgba(239, 68, 68, 0.3)',
+                                color: '#ff6b6b',
+                                background: 'rgba(239, 68, 68, 0.05)'
+                              }}
+                            >
+                              Unlock <Lock size={10} />
+                            </button>
+                          ) : (
+                            !mission.done && mission.type !== 'login' && (
+                              <button 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  startStudyMission(mission);
+                                }}
+                                className="btn btn-secondary" 
+                                style={{ padding: '0.3rem 0.6rem', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.25rem', whiteSpace: 'nowrap' }}
+                              >
+                                Start <Play size={10} />
+                              </button>
+                            )
+                          )}
+
+                          {mission.done && mission.type !== 'login' && (
+                            <span style={{ fontSize: '0.72rem', color: 'var(--success)', fontWeight: 700 }}>✓ Done</span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </>
             )}
@@ -2593,10 +3098,14 @@ JSON Structure:
           <section className="card" style={{ borderLeft: '4px solid var(--accent)', marginTop: '0px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
               <GraduationCap color="var(--accent)" size={20} />
-              <h2 style={{ fontSize: '1.25rem', margin: 0 }}>Active Board Exam Mode</h2>
+              <h2 style={{ fontSize: '1.25rem', margin: 0 }}>
+                {['Class 10', 'Class 12'].includes(examGrade) ? 'Active Board Exam Mode' : 'Active School Exam Mode'}
+              </h2>
             </div>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '1.25rem' }}>
-              Got an upcoming board exam? Lock in your targets. The AI will instantly engineer a revision roadmap, daily high-yield topics, and repeated board questions.
+              {['Class 10', 'Class 12'].includes(examGrade) 
+                ? 'Got an upcoming board exam? Lock in your targets. The AI will instantly engineer a revision roadmap, daily high-yield topics, and repeated board questions.'
+                : 'Got an upcoming school final exam? Lock in your targets. The AI will instantly engineer a revision roadmap, daily high-yield topics, and practice questions.'}
             </p>
 
             <form onSubmit={handleGenerateRoadmap} className="exam-form-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '0.75rem', marginBottom: '1rem' }}>
@@ -2607,16 +3116,30 @@ JSON Structure:
                   <option value="RBSE (Rajasthan Board)">RBSE (Rajasthan Board)</option>
                   <option value="UP Board">UP Board (Hindi/Eng Medium)</option>
                   <option value="Bihar Board">Bihar Board (BSEB)</option>
+                  <option value="Non-Board (School Exams)">Non-Board (School Exams)</option>
                 </select>
               </div>
               <div>
                 <label className="input-label" style={{ fontSize: '0.7rem' }}>Class</label>
-                <select className="input-field" value={examGrade} onChange={e => setExamGrade(e.target.value)} style={{ padding: '0.5rem', fontSize: '0.85rem', width: '100%' }}>
+                <select 
+                  className="input-field" 
+                  value={examGrade} 
+                  onChange={e => {
+                    const val = e.target.value;
+                    setExamGrade(val);
+                    if (!['Class 10', 'Class 12'].includes(val)) {
+                      setExamBoard('Non-Board (School Exams)');
+                    } else if (examBoard === 'Non-Board (School Exams)') {
+                      setExamBoard('CBSE (Central Board)');
+                    }
+                  }} 
+                  style={{ padding: '0.5rem', fontSize: '0.85rem', width: '100%' }}
+                >
+                  <option value="Class 8">Class 8</option>
+                  <option value="Class 9">Class 9</option>
                   <option value="Class 10">Class 10</option>
                   <option value="Class 11">Class 11</option>
                   <option value="Class 12">Class 12</option>
-                  <option value="Class 9">Class 9</option>
-                  <option value="Class 8">Class 8</option>
                 </select>
               </div>
               <div>
@@ -2955,26 +3478,66 @@ JSON Structure:
                     </div>
 
                     {/* Topic Summary Card — shown BEFORE the MCQ question */}
-                    {data.topicSummary && (
-                      <div style={{
-                        background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.06) 0%, rgba(16, 185, 129, 0.04) 100%)',
-                        border: '1px solid rgba(99, 102, 241, 0.18)',
-                        borderRadius: '12px', padding: '1rem 1.25rem',
-                        marginBottom: '1.25rem',
-                      }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.65rem' }}>
-                          <span style={{ fontSize: '1rem' }}>📖</span>
-                          <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#a78bfa', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Topic Quick Summary</span>
+                    {/* Topic Summary Card — shown BEFORE the MCQ question */}
+                    {(() => {
+                      let summaryToShow = data.topicSummary;
+                      if (!summaryToShow) {
+                        const subj = (activeMission?.subject || '').toLowerCase();
+                        if (subj.includes('science')) {
+                          summaryToShow = `* **Chemical Reactions** involve the breaking and making of bonds between atoms to produce new substances.
+* **Combination Reactions** occur when two or more reactants combine to form a single product ($A + B \\rightarrow AB$).
+* **Decomposition Reactions** involve a single reactant breaking down into two or more simpler products ($AB \\rightarrow A + B$). These reactions require energy input (heat, light, or electricity).
+* **Displacement Reactions** occur when a more reactive element displaces a less reactive element from its salt solution ($A + BC \\rightarrow AC + B$).`;
+                        } else if (subj.includes('economic') || subj.includes('commerce') || subj.includes('business') || subj.includes('accountancy') || subj.includes('social')) {
+                          summaryToShow = `* **Factors of Production** are the inputs required to produce goods and services: Land, Labour, Physical Capital, and Human Capital.
+* **Physical Capital** is divided into Fixed Capital and Working Capital.
+* **Fixed Capital** includes tools, machines, and buildings that can be used in production over many years.
+* **Working Capital** includes raw materials and cash in hand that are used up or consumed in a single production cycle.`;
+                        } else if (subj.includes('math')) {
+                          summaryToShow = `* **Real Numbers** ($\\mathbb{R}$) consist of all Rational and Irrational numbers.
+* **Rational Numbers** can be expressed in the form $\\frac{p}{q}$ where $p$ and $q$ are integers and $q \\neq 0$. Their decimal representation is terminating or repeating.
+* **Irrational Numbers** cannot be written as $\\frac{p}{q}$. Their decimal expansion is non-terminating and non-repeating (e.g., $\\sqrt{2}$, $\\pi$).
+* **Perfect Squares**: The square root of a positive integer is rational only if the integer is a perfect square; otherwise, it is irrational.`;
+                        } else if (subj.includes('english')) {
+                          summaryToShow = `* **Active Voice** emphasizes the performer of the action (Subject + Verb + Object).
+* **Passive Voice** shifts the focus to the receiver or the action itself (Object + auxiliary verb + V3 + by + Subject).
+* **Present Continuous Tense**: The active form \`is/am/are + V-ing\` transforms into the passive form \`is/am/are + being + V3\`.
+* **Important Rule**: Always preserve the original tense of the active sentence during passive voice conversion.`;
+                        } else if (subj.includes('hindi') || subj.includes('sanskrit')) {
+                          summaryToShow = `* **क्रिया (Verb)**: जिन शब्दों से किसी कार्य के करने या होने का पता चले, उन्हें क्रिया कहते हैं।
+* **सकर्मक क्रिया (Transitive Verb)**: जिस क्रिया के कार्य का फल सीधे कर्म (Object) पर पड़ता है। इसमें कर्म की आवश्यकता होती है।
+* **अकर्मक क्रिया (Intransitive Verb)**: जिस क्रिया के कार्य का फल सीधे कर्ता (Subject) पर पड़ता है। इसमें कर्म नहीं होता।
+* **पहचान ट्रिक**: क्रिया से पहले 'क्या' या 'किसको' लगाने पर यदि उत्तर मिले तो वह सकर्मक है, अन्यथा अकर्मक है।`;
+                        } else {
+                          summaryToShow = `* **Subject**: ${activeMission?.subject || 'Syllabus'}
+* **Chapter**: ${activeMission?.chapter || 'Core Concepts'}
+* **Active Target**: ${data.topic || 'Syllabus Core Concept'}
+* **Pacing Guide**: Chronological sub-topic study session for Class ${profileClass || '10'} ${profileBoard || 'CBSE'} board exam.
+* **Learning Goal**: Study this concept, then answer the MCQ challenge below to unlock the detailed explanation masterclass!`;
+                        }
+                      }
+                      
+                      return (
+                        <div style={{
+                          background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.06) 0%, rgba(16, 185, 129, 0.04) 100%)',
+                          border: '1px solid rgba(99, 102, 241, 0.18)',
+                          borderRadius: '12px', padding: '1rem 1.25rem',
+                          marginBottom: '1.25rem',
+                        }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.65rem' }}>
+                            <span style={{ fontSize: '1rem' }}>📖</span>
+                            <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#a78bfa', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Topic Quick Summary</span>
+                          </div>
+                          <div className="generated-content" style={{ fontSize: '0.83rem', lineHeight: 1.65, color: 'var(--text)' }}>
+                            <ReactMarkdown
+                              remarkPlugins={[remarkGfm, remarkMath]}
+                              rehypePlugins={[rehypeKatex]}
+                              components={markdownComponents}
+                            >{summaryToShow}</ReactMarkdown>
+                          </div>
                         </div>
-                        <div className="generated-content" style={{ fontSize: '0.83rem', lineHeight: 1.65, color: 'var(--text)' }}>
-                          <ReactMarkdown
-                            remarkPlugins={[remarkGfm, remarkMath]}
-                            rehypePlugins={[rehypeKatex]}
-                            components={markdownComponents}
-                          >{data.topicSummary}</ReactMarkdown>
-                        </div>
-                      </div>
-                    )}
+                      );
+                    })()}
 
                     {/* Question Card */}
                     <div style={{
@@ -3205,6 +3768,113 @@ JSON Structure:
                 </button>
               </div>
             )}
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* ── INTERACTIVE UPGRADE TO PRO POPUP MODAL ── */}
+      {showUpgradePopup && createPortal(
+        <div className="daily-mission-overlay" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div className="daily-mission-card" style={{
+            maxWidth: '500px',
+            maxHeight: '480px',
+            height: 'auto',
+            borderRadius: '16px',
+            background: 'rgba(20, 20, 25, 0.98)',
+            border: '1px solid rgba(108, 99, 255, 0.3)',
+            boxShadow: '0 20px 40px rgba(0,0,0,0.5)',
+            padding: '2rem',
+            textAlign: 'center',
+            position: 'relative'
+          }}>
+            {/* Close Button */}
+            <button 
+              onClick={() => setShowUpgradePopup(false)}
+              style={{ position: 'absolute', top: '15px', right: '15px', background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', opacity: 0.7 }}
+            >
+              <X size={20} />
+            </button>
+
+            {/* Glowing Lock Icon */}
+            <div style={{
+              width: '60px', height: '60px',
+              borderRadius: '50%',
+              background: 'linear-gradient(135deg, rgba(108, 99, 255, 0.15) 0%, rgba(239, 68, 68, 0.15) 100%)',
+              border: '1px solid rgba(108, 99, 255, 0.3)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: '1.75rem',
+              margin: '0 auto 1.25rem auto',
+              boxShadow: '0 0 20px rgba(108, 99, 255, 0.2)'
+            }}>
+              🔒
+            </div>
+
+            {/* Title & Desc */}
+            <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#fff', margin: '0 0 0.5rem 0' }}>
+              TaniOS Pro Upgrade Required
+            </h3>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.5, margin: '0 0 1.5rem 0' }}>
+              You are currently on the **Free Tier**, which is limited to **1 daily target mission**. Complete the upgrade to unlock all subject targets every day and continue your revision!
+            </p>
+
+            {/* Perks Grid */}
+            <div style={{
+              background: 'rgba(255, 255, 255, 0.02)',
+              border: '1px solid rgba(255, 255, 255, 0.04)',
+              borderRadius: '10px',
+              padding: '1rem',
+              textAlign: 'left',
+              fontSize: '0.78rem',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.6rem',
+              marginBottom: '1.5rem',
+              color: 'var(--text-secondary)'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <span style={{ color: '#10b981', marginRight: '0.25rem' }}>✓</span>
+                <span><strong>Targets for All Subjects:</strong> Study all subjects daily.</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <span style={{ color: '#10b981', marginRight: '0.25rem' }}>✓</span>
+                <span><strong>Infinite AI Doubt Solving:</strong> No daily question limits.</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <span style={{ color: '#10b981', marginRight: '0.25rem' }}>✓</span>
+                <span><strong>Textbook Uploads (RAG):</strong> Direct textbook search.</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <span style={{ color: '#10b981', marginRight: '0.25rem' }}>✓</span>
+                <span><strong>Topper Mock Test Generators:</strong> CBSE & RBSE prep.</span>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <Link
+                to="/subscribe"
+                className="btn btn-primary"
+                onClick={() => setShowUpgradePopup(false)}
+                style={{
+                  padding: '0.75rem', fontSize: '0.88rem', fontWeight: 800,
+                  background: 'linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%)',
+                  border: 'none', color: '#fff', borderRadius: '8px',
+                  display: 'block', textDecoration: 'none'
+                }}
+              >
+                Unlock Pro Premium (₹199) ➔
+              </Link>
+              <button
+                onClick={() => setShowUpgradePopup(false)}
+                style={{
+                  background: 'transparent', border: 'none', color: 'var(--text-secondary)',
+                  fontSize: '0.8rem', cursor: 'pointer', fontWeight: 600
+                }}
+              >
+                Close & Keep Exploring
+              </button>
+            </div>
           </div>
         </div>,
         document.body
