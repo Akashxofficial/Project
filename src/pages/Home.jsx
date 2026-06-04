@@ -1978,22 +1978,27 @@ JSON Structure:
             
             {/* Dynamic context alert box — syncs with student's profile subjects */}
             {(() => {
-              // Pick a subject from the student's profile to make the message relevant
-              const today = new Date();
-              const subjectPool = profileSubjects.length > 0 ? profileSubjects : ['your subjects'];
-              const pickedSubject = subjectPool[today.getDate() % subjectPool.length];
               const completedToday = missions.filter(m => m.type !== 'login' && m.done).length;
               const totalNonLogin = missions.filter(m => m.type !== 'login').length;
+              const pendingMissions = missions.filter(m => m.type !== 'login' && !m.done);
+              const pendingSubjects = [...new Set(pendingMissions.map(m => m.subject).filter(Boolean))];
+              const doneMissions = missions.filter(m => m.type !== 'login' && m.done);
+              const doneSubjects = [...new Set(doneMissions.map(m => m.subject).filter(Boolean))];
 
               let alertMsg;
               let alertColor = 'var(--accent)';
               if (!profileSetupDone) {
                 alertMsg = <>💡 <strong>Getting Started:</strong> Set up your study profile below to unlock <strong>personalized daily missions</strong> and start earning XP!</>;
               } else if (totalNonLogin > 0 && completedToday === totalNonLogin) {
-                alertMsg = <>🎉 <strong>All Done!</strong> You crushed every mission today! Come back tomorrow for fresh {pickedSubject} challenges.</>;
+                const subjectList = doneSubjects.length > 0 ? doneSubjects.join(', ') : 'all subjects';
+                alertMsg = <>🎉 <strong>All Done!</strong> You crushed every mission today across <strong>{subjectList}</strong>! Come back tomorrow for fresh challenges.</>;
                 alertColor = 'var(--success)';
               } else {
-                alertMsg = <>💡 <strong>Companion Update:</strong> You have <strong>{totalNonLogin - completedToday} {pickedSubject} task{totalNonLogin - completedToday !== 1 ? 's' : ''}</strong> pending today. Complete them to build your streak!</>;
+                const remaining = totalNonLogin - completedToday;
+                const subjectList = pendingSubjects.length > 0
+                  ? pendingSubjects.join(', ')
+                  : 'your subjects';
+                alertMsg = <>💡 <strong>Companion Update:</strong> You have <strong>{remaining} task{remaining !== 1 ? 's' : ''}</strong> pending today for <strong>{subjectList}</strong>. Complete them to build your streak!</>;
               }
               return (
                 <div style={{
