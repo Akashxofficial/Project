@@ -1421,6 +1421,7 @@ Your output MUST be a valid JSON object with the following keys. Do not include 
 JSON Structure:
 {
   "topic": "Specific Sub-Topic Name (e.g. Balancing Chemical Equations, not the broad chapter name)",
+  "topicSummary": "A concise 4-5 bullet point Markdown summary of ONLY this sub-topic's key concepts, definitions, and formulas. Each bullet must be a complete, exam-ready fact. Use bold for key terms and KaTeX $ for all formulas. This is shown to the student BEFORE the MCQ question to prime their understanding.",
   "questionText": "Highly detailed, conceptual, and concept-introducing question text focusing strictly on this single sub-topic. Wrap all math/equations in $ delimiters.",
   "options": [
     { "key": "A", "desc": "Option A explanation. Wrap any math/formulas in $." },
@@ -2945,8 +2946,30 @@ JSON Structure:
                       fontSize: '0.78rem', color: '#a78bfa', fontWeight: 700,
                       marginBottom: '1rem'
                     }}>
-                      🎯 Target Topic: {data.topic || "Syllabus Core Concept"}
+                      🎯 Today's Topic: {data.topic || "Syllabus Core Concept"}
                     </div>
+
+                    {/* Topic Summary Card — shown BEFORE the MCQ question */}
+                    {data.topicSummary && (
+                      <div style={{
+                        background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.06) 0%, rgba(16, 185, 129, 0.04) 100%)',
+                        border: '1px solid rgba(99, 102, 241, 0.18)',
+                        borderRadius: '12px', padding: '1rem 1.25rem',
+                        marginBottom: '1.25rem',
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.65rem' }}>
+                          <span style={{ fontSize: '1rem' }}>📖</span>
+                          <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#a78bfa', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Topic Quick Summary</span>
+                        </div>
+                        <div className="generated-content" style={{ fontSize: '0.83rem', lineHeight: 1.65, color: 'var(--text)' }}>
+                          <ReactMarkdown
+                            remarkPlugins={[remarkGfm, remarkMath]}
+                            rehypePlugins={[rehypeKatex]}
+                            components={markdownComponents}
+                          >{data.topicSummary}</ReactMarkdown>
+                        </div>
+                      </div>
+                    )}
 
                     {/* Question Card */}
                     <div style={{
@@ -2956,6 +2979,7 @@ JSON Structure:
                       marginBottom: '1.25rem', fontSize: '0.95rem',
                       fontWeight: 700, color: '#fff', lineHeight: 1.5
                     }}>
+                      <div style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>❓ MCQ Challenge</div>
                       <ReactMarkdown
                         remarkPlugins={[remarkGfm, remarkMath]}
                         rehypePlugins={[rehypeKatex]}

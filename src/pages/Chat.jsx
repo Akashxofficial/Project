@@ -72,6 +72,60 @@ const targetDoubts = [
   }
 ];
 
+// Load student's active target chapters from localStorage to highlight in the solver
+const getStudentTargets = () => {
+  try {
+    const profileRaw = localStorage.getItem('tanios_profile');
+    if (!profileRaw) return null;
+    const profile = JSON.parse(profileRaw);
+    const userId = profile?.uid || '';
+    // Try user-specific keys first, then global
+    const tryKeys = (base) => {
+      const keys = [
+        `${base}_${localStorage.getItem('tanios_uid') || ''}`,
+        base
+      ];
+      for (const k of keys) {
+        const v = localStorage.getItem(k);
+        if (v) return v;
+      }
+      return null;
+    };
+    
+    // Find active chapters from any available key format
+    let activeChaptersRaw = null;
+    for (const key of Object.keys(localStorage)) {
+      if (key.includes('tanios_active_chapters')) {
+        activeChaptersRaw = localStorage.getItem(key);
+        if (activeChaptersRaw) break;
+      }
+    }
+    
+    let profileRaw2 = null;
+    for (const key of Object.keys(localStorage)) {
+      if (key.includes('tanios_profile')) {
+        profileRaw2 = localStorage.getItem(key);
+        if (profileRaw2) break;
+      }
+    }
+    
+    if (!profileRaw2) return null;
+    const prof = JSON.parse(profileRaw2);
+    const activeChapters = activeChaptersRaw ? JSON.parse(activeChaptersRaw) : {};
+    
+    if (!prof.subjects || prof.subjects.length === 0) return null;
+    
+    return {
+      board: prof.board || 'CBSE',
+      grade: prof.grade || '10',
+      subjects: prof.subjects,
+      activeChapters
+    };
+  } catch {
+    return null;
+  }
+};
+
 // LocalStorage helpers for guests
 const LS_KEY = 'guest_chat_sessions';
 const loadGuestSessions = () => {
@@ -104,6 +158,9 @@ export default function Chat() {
   const [isLoading, setIsLoading] = useState(false);
   const [statusMsg, setStatusMsg] = useState('');
   const [sidebarOpen, setSidebarOpen] = useState(true);
+
+  // Student target subjects/chapters for highlighted pads
+  const [studentTargets] = useState(() => getStudentTargets());
 
   // Multimodal Image States
   const [selectedImage, setSelectedImage] = useState(null); // { data: string, mimeType: string, url: string, name: string }
@@ -590,6 +647,81 @@ export default function Chat() {
                       margin: '1.5rem 0.5rem 1.5rem 3.5rem',
                       animation: 'fadeUp 0.4s ease both'
                     }}>
+
+                      {/* ── STUDENT'S ACTIVE TARGET PADS (highlighted) ── */}
+                      {studentTargets && studentTargets.subjects && studentTargets.subjects.length > 0 && (
+                        <div style={{ marginBottom: '1.5rem' }}>
+                          <div style={{
+                            display: 'flex', alignItems: 'center', gap: '0.5rem',
+                            marginBottom: '0.75rem'
+                          }}>
+                            <span style={{ fontSize: '1rem' }}>🎯</span>
+                            <span style={{ fontSize: '0.8rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#f59e0b' }}>
+                              Your Active Study Targets — {studentTargets.board} Class {studentTargets.grade}
+                            </span>
+                          </div>
+                          <div style={{
+                            display: 'grid',
+                            gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+                            gap: '0.6rem'
+                          }}>
+                            {studentTargets.subjects.map((subj, idx) => {
+                              const chapter = studentTargets.activeChapters[subj] || '';
+                              const chClean = chapter.replace(/^Chapter \d+:\s*/, '') || 'Chapter 1';
+                              const colors = ['#6366f1','#10b981','#f59e0b','#ec4899','#06b6d4','#a855f7','#ef4444','#8b5cf6'];
+                              const col = colors[idx % colors.length];
+                              const subjectIcons = {
+                                'Physics': '⚛️', 'Chemistry': '🧪', 'Mathematics': '📐', 'Biology': '🧬',
+                                'Social Science': '🌍', 'English': '📝', 'Hindi': '✍️', 'Computer Science': '💻',
+                                'Accountancy': '📂', 'Business Studies': '💼', 'Economics': '📊',
+                                'Informatics Practices': '🖥️', 'Science': '🔬'
+                              };
+                              const icon = subjectIcons[subj] || '📚';
+                              const askPrompt = `Solve my doubt about "${chClean}" from ${subj} (${studentTargets.board} Class ${studentTargets.grade}). Give me the key concepts, definitions, important formulas, and a quick board-focused summary of this topic with solved examples.`;
+                              return (
+                                <div
+                                  key={subj}
+                                  onClick={() => {
+                                    setInput(askPrompt);
+                                    setTimeout(() => inputRef.current?.focus(), 50);
+                                  }}
+                                  className="target-doubt-card target-subject-pad"
+                                  style={{
+                                    borderColor: `${col}44`,
+                                    background: `linear-gradient(135deg, ${col}0f 0%, rgba(255,255,255,0.01) 100%)`,
+                                    boxShadow: `0 0 0 1px ${col}33, 0 4px 16px ${col}18`,
+                                    position: 'relative',
+                                    overflow: 'hidden'
+                                  }}
+                                >
+                                  {/* Glow accent bar */}
+                                  <div style={{
+                                    position: 'absolute', top: 0, left: 0, right: 0, height: '2px',
+                                    background: `linear-gradient(90deg, ${col}, transparent)`
+                                  }} />
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.3rem' }}>
+                                    <span style={{ fontSize: '1.1rem' }}>{icon}</span>
+                                    <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#fff' }}>{subj}</span>
+                                    <span style={{
+                                      marginLeft: 'auto', fontSize: '0.6rem', fontWeight: 700,
+                                      background: `${col}22`, color: col, padding: '0.1rem 0.4rem',
+                                      borderRadius: '4px', border: `1px solid ${col}33`
+                                    }}>ACTIVE</span>
+                                  </div>
+                                  <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.72rem', lineHeight: 1.4 }}>
+                                    📖 {chClean}
+                                  </p>
+                                  <p style={{ margin: '0.35rem 0 0 0', color: col, fontSize: '0.7rem', fontWeight: 700 }}>
+                                    Ask AI about this chapter →
+                                  </p>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* ── GENERIC CBSE/RBSE TARGET PADS ── */}
                       <div style={{
                         display: 'flex',
                         alignItems: 'center',
