@@ -48,39 +48,60 @@ export default function RAGUpload() {
     }
   };
 
-  const processFile = (fileObj) => {
+  const processFile = async (fileObj) => {
     setFile(fileObj);
     setLoading(true);
     setProgress(10);
 
-    const reader = new FileReader();
-
-    // Emulate progress animation for large textbooks
-    const progInterval = setInterval(() => {
-      setProgress(p => Math.min(p + 20, 90));
-    }, 150);
-
-    reader.onload = async (e) => {
-      clearInterval(progInterval);
-      setProgress(100);
-
-      const content = e.target.result;
+    try {
       let text = '';
 
-      if (fileObj.name.endsWith('.pdf')) {
-        // Safe Client-side PDF Text Extractor Fallback
-        // Using a highly structured client-side regex decoder for rapid stateless extraction
-        text = `[PDF Content: ${fileObj.name}]\n\n`;
-        // In interviews, we show native PDF parsing utilizing CDN or standard string slices
-        // For simplicity and bulletproof execution, we slice plain-text metadata and append standard patterns
-        text += typeof content === 'string' ? content : new TextDecoder().decode(content).replace(/[^\x20-\x7E\n\t]/g, ' ');
+      if (fileObj.name.toLowerCase().endsWith('.pdf')) {
+        // ── Proper PDF Text Extraction using pdfjs-dist ──────────────────────
+        setProgress(20);
+        const arrayBuffer = await fileObj.arrayBuffer();
+        setProgress(35);
+
+        const pdfjsLib = await import('pdfjs-dist');
+        pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+          'pdfjs-dist/build/pdf.worker.min.mjs',
+          import.meta.url
+        ).toString();
+
+        setProgress(50);
+
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        const totalPages = pdf.numPages;
+        const pagesToExtract = Math.min(totalPages, 60);
+        const extractedPages = [];
+
+        for (let pageNum = 1; pageNum <= pagesToExtract; pageNum++) {
+          const page = await pdf.getPage(pageNum);
+          const content = await page.getTextContent();
+          const pageText = content.items
+            .map(item => item.str)
+            .join(' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+          if (pageText) {
+            extractedPages.push(`--- Page ${pageNum} ---\n${pageText}`);
+          }
+          setProgress(50 + Math.round((pageNum / pagesToExtract) * 40));
+        }
+
+        text = `[PDF: ${fileObj.name} | ${totalPages} pages]\n\n` + extractedPages.join('\n\n');
+        setProgress(95);
       } else {
-        text = content;
+        // Plain text / markdown / JSON
+        setProgress(40);
+        text = await fileObj.text();
+        setProgress(90);
       }
 
-      // Sanitize extracted text
-      const sanitized = text.substring(0, 15000); // Cap at 15k characters to prevent token overflow
+      // Cap at 20k chars to prevent token overflow
+      const sanitized = text.substring(0, 20000);
 
+      setProgress(100);
       setTimeout(() => {
         setLoading(false);
         setExtractedText(sanitized);
@@ -89,13 +110,13 @@ export default function RAGUpload() {
           characters: sanitized.length,
           words: sanitized.split(/\s+/).filter(Boolean).length
         });
-      }, 500);
-    };
+      }, 300);
 
-    if (fileObj.name.endsWith('.pdf')) {
-      reader.readAsArrayBuffer(fileObj);
-    } else {
-      reader.readAsText(fileObj);
+    } catch (err) {
+      console.error('[RAG] File extraction failed:', err);
+      setLoading(false);
+      setProgress(0);
+      alert(`❌ Could not read this file: ${err.message || 'Unknown error'}. Please try a different file.`);
     }
   };
 

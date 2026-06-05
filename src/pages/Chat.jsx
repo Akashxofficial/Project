@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Send, Sparkles, User, Clock, Plus, Trash2, MessageSquare, PanelLeftOpen, PanelLeftClose, Loader2, X, Image as ImageIcon } from 'lucide-react';
+import { Send, Sparkles, User, Clock, Plus, Trash2, MessageSquare, PanelLeftOpen, PanelLeftClose, Loader2, X, Image as ImageIcon, Camera } from 'lucide-react';
 import { generateAIContent, generateAIContentStream, generateDoubtPrompt, fixMathFormatting } from '../lib/ai';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -169,6 +169,7 @@ export default function Chat() {
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
   const fileInputRef = useRef(null);
+  const cameraInputRef = useRef(null);
 
   // Client-side Image Compression pipeline using HTML5 Canvas
   const handleImageUpload = (e) => {
@@ -819,11 +820,20 @@ export default function Chat() {
               {sidebarOpen ? <PanelLeftClose size={18} /> : <PanelLeftOpen size={18} />}
             </button>
 
-            {/* Hidden file input for attachment */}
+            {/* Hidden file input for gallery attachment */}
             <input
               ref={fileInputRef}
               type="file"
               accept="image/*"
+              onChange={handleImageUpload}
+              style={{ display: 'none' }}
+            />
+            {/* Hidden camera input */}
+            <input
+              ref={cameraInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
               onChange={handleImageUpload}
               style={{ display: 'none' }}
             />
@@ -879,42 +889,65 @@ export default function Chat() {
             )}
 
             <form onSubmit={handleSend} className="chat-input-wrapper">
-              {/* Image upload trigger button inside input */}
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isLoading || isCompacting}
-                style={{
-                  position: 'absolute',
-                  left: '0.5rem',
-                  width: '2.25rem',
-                  height: '2.25rem',
-                  borderRadius: '50%',
-                  border: 'none',
-                  background: 'none',
-                  color: 'var(--text-secondary)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  transition: 'all var(--transition)',
-                  zIndex: 2
-                }}
-                className="chat-attach-btn"
-                title="Upload image of your doubt"
-              >
-                {isCompacting ? (
-                  <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />
-                ) : (
-                  <ImageIcon size={16} />
-                )}
-              </button>
+              {/* Image/Camera upload trigger button inside input */}
+              <div style={{ position: 'absolute', left: '0.4rem', display: 'flex', gap: '2px', zIndex: 2 }}>
+                {/* Gallery button */}
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isLoading || isCompacting}
+                  style={{
+                    width: '2rem',
+                    height: '2rem',
+                    borderRadius: '50%',
+                    border: 'none',
+                    background: 'none',
+                    color: selectedImage ? 'var(--primary)' : 'var(--text-secondary)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    transition: 'all var(--transition)',
+                  }}
+                  className="chat-attach-btn"
+                  title="Upload image from gallery"
+                >
+                  {isCompacting ? (
+                    <Loader2 size={15} style={{ animation: 'spin 1s linear infinite' }} />
+                  ) : (
+                    <ImageIcon size={15} />
+                  )}
+                </button>
+                {/* Camera button */}
+                <button
+                  type="button"
+                  onClick={() => cameraInputRef.current?.click()}
+                  disabled={isLoading || isCompacting}
+                  style={{
+                    width: '2rem',
+                    height: '2rem',
+                    borderRadius: '50%',
+                    border: 'none',
+                    background: 'none',
+                    color: 'var(--text-secondary)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    transition: 'all var(--transition)',
+                  }}
+                  className="chat-attach-btn"
+                  title="Capture from camera"
+                >
+                  <Camera size={15} />
+                </button>
+              </div>
 
               <input
                 ref={inputRef}
                 type="text"
                 className="chat-input"
-                style={{ paddingLeft: '3.25rem', paddingRight: '3.25rem' }}
+                style={{ paddingLeft: '4.5rem', paddingRight: '3.25rem' }}
                 placeholder={isLoading ? 'Please wait...' : 'Ask your doubt here or upload image...'}
                 value={input}
                 onChange={e => setInput(e.target.value)}

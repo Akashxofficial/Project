@@ -96,6 +96,7 @@ const AdminRoute = ({ children }) => {
 function MainApp() {
   const { currentUser, setShowLoginModal, logout, subscription } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [headerScrolled, setHeaderScrolled] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -107,6 +108,15 @@ function MainApp() {
     document.body.style.overflow = sidebarOpen ? 'hidden' : '';
     return () => { document.body.style.overflow = ''; };
   }, [sidebarOpen]);
+
+  // Header scroll shadow
+  useEffect(() => {
+    const main = document.querySelector('.main-content');
+    if (!main) return;
+    const handleScroll = () => setHeaderScrolled(main.scrollTop > 8);
+    main.addEventListener('scroll', handleScroll, { passive: true });
+    return () => main.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const firstName = currentUser?.displayName?.split(' ')[0] || 'Student';
 
@@ -274,7 +284,7 @@ function MainApp() {
 
       {/* Main Content */}
       <main className="main-content">
-        <header className="header">
+        <header className={`header${headerScrolled ? ' scrolled' : ''}`}>
           <div className="header-left">
             <button className="hamburger" onClick={() => setSidebarOpen(o => !o)} aria-label="Toggle menu">
               {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
@@ -348,8 +358,64 @@ function App() {
 
   if (loading) {
     return (
-      <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)' }}>
-        <div style={{ color: 'var(--primary)', fontWeight: 600 }}>Loading TaniOS AI...</div>
+      <div style={{
+        height: '100vh',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'var(--bg)',
+        gap: '1.5rem',
+        position: 'relative',
+        overflow: 'hidden'
+      }}>
+        {/* Ambient orbs */}
+        <div style={{
+          position: 'absolute', top: '-15%', left: '-10%',
+          width: '50vw', height: '50vw',
+          background: 'radial-gradient(circle, rgba(99,102,241,0.12) 0%, transparent 70%)',
+          borderRadius: '50%', filter: 'blur(80px)',
+          animation: 'orb-drift 12s ease-in-out infinite'
+        }} />
+        <div style={{
+          position: 'absolute', bottom: '-10%', right: '-5%',
+          width: '40vw', height: '40vw',
+          background: 'radial-gradient(circle, rgba(236,72,153,0.08) 0%, transparent 70%)',
+          borderRadius: '50%', filter: 'blur(80px)',
+          animation: 'orb-drift 16s ease-in-out infinite reverse'
+        }} />
+        {/* Logo */}
+        <div style={{
+          width: '4rem', height: '4rem',
+          background: 'linear-gradient(135deg, #6366f1, #8b5cf6, #f59e0b)',
+          borderRadius: '1rem',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          boxShadow: '0 8px 32px rgba(99,102,241,0.45)',
+          animation: 'float-slow 3s ease-in-out infinite'
+        }}>
+          <Sparkles size={24} color="white" />
+        </div>
+        {/* Spinner */}
+        <div style={{
+          width: '2.5rem', height: '2.5rem',
+          border: '2px solid rgba(99,102,241,0.15)',
+          borderTop: '2px solid #6366f1',
+          borderRadius: '50%',
+          animation: 'spin 0.8s linear infinite'
+        }} />
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontWeight: 800, fontSize: '1.1rem', color: 'var(--text)', letterSpacing: '-0.02em' }}>
+            TaniOS <span style={{
+              background: 'linear-gradient(90deg, #6366f1, #f59e0b)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text'
+            }}>AI</span>
+          </div>
+          <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
+            Loading your study companion...
+          </div>
+        </div>
       </div>
     );
   }
