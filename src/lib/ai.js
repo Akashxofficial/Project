@@ -542,52 +542,52 @@ CRITICAL FORMATTING & FORMULA RULES:
 - Math & Science Formulas: Use LaTeX syntax. Inline: \`$formula$\`. Block: \`$$formula$$\`. Examples: \`$H_2SO_4$\`, \`$E = mc^2$\`, \`$x = \\frac{-b \\pm \\sqrt{b^2-4ac}}{2a}$\`. NEVER use Unicode subscripts/superscripts.`;
 };
 
-export const generateOneClickPrompt = (type, topic, grade) => {
+export const generateOneClickPrompt = (type, topic, grade, board = 'CBSE') => {
   let promptText = "";
   if (type === "Explain Easy") {
-    promptText = `Explain the academic topic/concept "${topic}" for Class ${grade} students in the simplest way possible.
+    promptText = `Explain the academic topic/concept "${topic}" for Class ${grade} students under the ${board} syllabus in the simplest way possible.
 Use simple, creative, real-world analogies (like food, cricket, or daily items) that make the concept immediately understandable.
 Avoid complicated academic jargon initially; explain it like I'm 10 years old, then connect it to the official board concept.`;
   } else if (type === "Important Questions") {
-    promptText = `Generate the top 5 highly important, marks-yielding questions on the topic "${topic}" for Class ${grade} exams.
+    promptText = `Generate the top 5 highly important, marks-yielding questions on the topic "${topic}" for Class ${grade} under the ${board} exams.
 For each question:
 1. State the question clearly.
-2. Provide a premium, full-marks model answer written in CBSE/State-board marking scheme style.
+2. Provide a premium, full-marks model answer written in ${board} board marking scheme style.
 3. Add a quick "Topper Tip" on what examiners look for in this specific answer.`;
   } else if (type === "Board Questions") {
-    promptText = `Provide the top 3 authentic, most-repeated past board exam questions (CBSE/RBSE style) on the topic "${topic}" for Class ${grade}.
+    promptText = `Provide the top 3 authentic, most-repeated past board exam questions on the topic "${topic}" for Class ${grade} ${board} Board.
 For each question:
-1. Mention which years it was asked (e.g., CBSE 2018, 2022, RBSE 2019).
+1. Mention which years it was asked (e.g., ${board} 2018, 2022).
 2. Give a step-by-step model answer.
 3. Highlight critical keywords that are MANDATORY to secure full marks.`;
   } else if (type === "Revision Sheet") {
-    promptText = `Create a sleek, high-density 1-page Revision Sheet for the topic/chapter "${topic}" for Class ${grade}.
+    promptText = `Create a sleek, high-density 1-page Revision Sheet for the topic/chapter "${topic}" for Class ${grade} under the ${board} syllabus.
 Include:
 - Key terms and their exact, formal definitions.
 - All important formulas, chemical equations, or major dates in a neat Markdown table.
 - A "Don't Make This Mistake" warning box listing common student errors in exams for this topic.`;
   } else if (type === "Mind Map") {
-    promptText = `Create a structured text-based Mind Map / Hierarchical Flow Diagram for the topic "${topic}" for Class ${grade}.
+    promptText = `Create a structured text-based Mind Map / Hierarchical Flow Diagram for the topic "${topic}" for Class ${grade} ${board} Board.
 Use clean text indentations, arrows (->), and structured bullet points to represent:
 - The central core concept.
 - Main branches (subtopics).
 - Sub-branches (key points, definitions, and examples).
 Make it highly visual using emoji headers and clear hierarchy so a student can scan and memorize it in 30 seconds.`;
   } else if (type === "5-Minute Study") {
-    promptText = `Provide a hyper-focused, super fast "5-Minute study guide" on "${topic}" for Class ${grade}.
+    promptText = `Provide a hyper-focused, super fast "5-Minute study guide" on "${topic}" for Class ${grade} under the ${board} syllabus.
 Break it down into:
 - The absolute core definition (1 sentence).
 - 3 bullet points containing the only things you MUST know.
 - 1 quick mnemonic device or trick to memorize this concept forever.
 Make it extremely crisp, engaging, and fast.`;
   } else {
-    promptText = `Provide a comprehensive, high-quality study resource on "${topic}" for Class ${grade}. Use formatting, bold headers, and easy explanations.`;
+    promptText = `Provide a comprehensive, high-quality study resource on "${topic}" for Class ${grade} under the ${board} syllabus. Use formatting, bold headers, and easy explanations.`;
   }
 
   return `You are TaniOS AI, an elite personal teacher built for Indian students.
 Role: Generate the following specific resource type: "${type}"
 Topic: "${topic}"
-Target Audience: Class ${grade} students (CBSE/RBSE board).
+Target Audience: Class ${grade} students (${board} board).
 
 Here are the specific instructions for your output:
 ${promptText}

@@ -1334,6 +1334,7 @@ export default function Home() {
   const [activeOneClickTool, setActiveOneClickTool] = useState(null);
   const [oneClickTopic, setOneClickTopic] = useState('');
   const [oneClickGrade, setOneClickGrade] = useState('10');
+  const [oneClickBoard, setOneClickBoard] = useState('CBSE');
   const [oneClickLoading, setOneClickLoading] = useState(false);
   const [oneClickStatus, setOneClickStatus] = useState('');
   const [oneClickResult, setOneClickResult] = useState('');
@@ -1461,6 +1462,7 @@ export default function Home() {
     setExamBoard(setupBoard === 'CBSE' ? 'CBSE (Central Board)' : setupBoard === 'RBSE' ? 'RBSE (Rajasthan Board)' : setupBoard);
     setExamGrade(`Class ${setupClass}`);
     setOneClickGrade(setupClass);
+    setOneClickBoard(setupBoard);
 
     awardXp(10, 'Profile Setup Complete');
   };
@@ -1584,6 +1586,7 @@ export default function Home() {
         );
         setExamGrade(`Class ${profile.grade}`);
         setOneClickGrade(profile.grade);
+        setOneClickBoard(profile.board || 'CBSE');
       } else {
         // No profile found → new user or just logged out → show setup form
         setProfileSetupDone(false);
@@ -1737,7 +1740,7 @@ export default function Home() {
       const chapterIdx = chaptersList.indexOf(currentChapter);
       
       const chaptersRemaining = Math.max(1, totalChapters - (chapterIdx !== -1 ? chapterIdx + 1 : 1) + 1);
-      const daysPerChapter = Math.max(1, Math.round(diffDays / chaptersRemaining));
+      const daysPerChapter = Math.max(5, Math.round(diffDays / chaptersRemaining));
 
       // If they completed all days allocated for this chapter, advance to next chapter automatically!
       if (nextCount >= daysPerChapter) {
@@ -1839,7 +1842,7 @@ export default function Home() {
     // Chapters remaining including the current one
     const chaptersRemaining = Math.max(1, totalChapters - resolvedChapterIdx + 1);
     // Calculated days allocated per remaining chapter to finish on time
-    const daysPerChapter = Math.max(1, Math.round(diffDays / chaptersRemaining));
+    const daysPerChapter = Math.max(5, Math.round(diffDays / chaptersRemaining));
 
     // Retrieve progress
     const storedProgress = localStorage.getItem(getUserKey('tanios_chapter_progress'));
@@ -1964,7 +1967,8 @@ JSON Structure:
   const healWeakness = async (w) => {
     setActiveOneClickTool('Explain Easy');
     setOneClickTopic(`${w.subject}: ${w.chapter}`);
-    setOneClickGrade('10');
+    setOneClickGrade(profileClass || '10');
+    setOneClickBoard(profileBoard || 'CBSE');
     setOneClickResult('');
     // Automatically trigger generation for extreme speed!
     setTimeout(() => {
@@ -1982,7 +1986,7 @@ JSON Structure:
     setOneClickResult('');
     setOneClickStatus('thinking');
 
-    const prompt = generateOneClickPrompt(activeOneClickTool, oneClickTopic, oneClickGrade);
+    const prompt = generateOneClickPrompt(activeOneClickTool, oneClickTopic, oneClickGrade, oneClickBoard);
     const response = await generateAIContent(prompt, (status) => setOneClickStatus(status || ''));
 
     setOneClickLoading(false);
@@ -2334,18 +2338,21 @@ JSON Structure:
 
         @media (max-width: 480px) {
           .quick-action-grid {
-            grid-template-columns: repeat(3, 1fr) !important;
-            gap: 0.4rem !important;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)) !important;
+            gap: 0.5rem !important;
           }
           .quick-action-btn {
-            padding: 0.65rem 0.2rem !important;
+            padding: 0.8rem 0.4rem !important;
           }
           .quick-action-btn div:first-child {
-            font-size: 1.2rem !important;
-            margin-bottom: 0.15rem !important;
+            font-size: 1.3rem !important;
+            margin-bottom: 0.2rem !important;
           }
           .quick-action-btn div:last-child {
-            font-size: 0.65rem !important;
+            font-size: 0.72rem !important;
+            line-height: 1.25 !important;
+            word-break: break-word !important;
+            white-space: normal !important;
           }
           .weakness-row {
             flex-direction: column;
@@ -2932,7 +2939,7 @@ JSON Structure:
                         </span>
                       </div>
                       
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '0.75rem' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.75rem' }}>
                         {profileSubjects.map(subj => {
                           const currentCh = activeChapters[subj] || '';
                           const cleanProfileClass = (profileClass || '10').toString().replace(/\D/g, '') || '10';
@@ -2942,7 +2949,7 @@ JSON Structure:
                           const chapterIdx = chapters.indexOf(currentCh);
                           const resolvedChapterIdx = chapterIdx !== -1 ? chapterIdx + 1 : 1;
                           const chaptersRemaining = Math.max(1, totalChapters - resolvedChapterIdx + 1);
-                          const daysPerChapter = Math.max(1, Math.round(diffDays / chaptersRemaining));
+                          const daysPerChapter = Math.max(5, Math.round(diffDays / chaptersRemaining));
 
                           // Retrieve progress
                           const progressMap = JSON.parse(localStorage.getItem(getUserKey('tanios_chapter_progress')) || '{}');
@@ -2951,7 +2958,7 @@ JSON Structure:
                           return (
                             <div key={subj} style={{ background: 'rgba(255,255,255,0.01)', border: '1px solid rgba(255,255,255,0.03)', borderRadius: '8px', padding: '0.5rem' }}>
                               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
-                                <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '65%' }}>
+                                <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '65%' }} title={subj}>
                                   {subj}
                                 </span>
                                 <span style={{ fontSize: '0.62rem', color: 'var(--success)', fontWeight: 700 }} title="Topics completed in this chapter / Days allocated to complete it">
@@ -2961,6 +2968,7 @@ JSON Structure:
                               {chapters.length > 0 ? (
                                 <select
                                   value={currentCh}
+                                  title={currentCh}
                                   onChange={(e) => {
                                     const val = e.target.value;
                                     if (!val) return; // Prevent empty selection
@@ -2971,16 +2979,17 @@ JSON Structure:
                                     setMissions(newMissions);
                                     localStorage.setItem(getUserKey('tanios_missions'), JSON.stringify(newMissions));
                                   }}
-                                  style={{ width: '100%', fontSize: '0.72rem', background: 'var(--bg-secondary)', border: '1px solid var(--border)', color: 'var(--text)', borderRadius: '4px', padding: '0.2rem 0.4rem' }}
+                                  style={{ width: '100%', fontSize: '0.72rem', background: 'var(--bg-secondary)', border: '1px solid var(--border)', color: 'var(--text)', borderRadius: '4px', padding: '0.2rem 0.4rem', textOverflow: 'ellipsis' }}
                                 >
                                   {chapters.map(ch => (
-                                    <option key={ch} value={ch}>{ch}</option>
+                                    <option key={ch} value={ch} title={ch}>{ch}</option>
                                   ))}
                                 </select>
                               ) : (
                                 <input
                                   type="text"
                                   value={currentCh}
+                                  title={currentCh}
                                   placeholder="Type active topic..."
                                   onChange={(e) => {
                                     const val = e.target.value;
@@ -2991,7 +3000,7 @@ JSON Structure:
                                     setMissions(newMissions);
                                     localStorage.setItem(getUserKey('tanios_missions'), JSON.stringify(newMissions));
                                   }}
-                                  style={{ width: '100%', fontSize: '0.72rem', background: 'var(--bg-secondary)', border: '1px solid var(--border)', color: 'var(--text)', borderRadius: '4px', padding: '0.2rem 0.4rem' }}
+                                  style={{ width: '100%', fontSize: '0.72rem', background: 'var(--bg-secondary)', border: '1px solid var(--border)', color: 'var(--text)', borderRadius: '4px', padding: '0.2rem 0.4rem', textOverflow: 'ellipsis' }}
                                 />
                               )}
                             </div>
@@ -3237,7 +3246,7 @@ JSON Structure:
 
                 <form onSubmit={handleOneClickGenerate}>
                   <div className="oneclick-form-row" style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', marginBottom: '0.75rem' }}>
-                    <div style={{ flex: 1, minWidth: '150px' }}>
+                    <div style={{ flex: 1.5, minWidth: '150px' }}>
                       <label className="input-label" style={{ fontSize: '0.7rem' }}>Topic or Chapter Name</label>
                       <input 
                         type="text" 
@@ -3249,7 +3258,24 @@ JSON Structure:
                         style={{ padding: '0.5rem 0.75rem', fontSize: '0.85rem' }}
                       />
                     </div>
-                    <div style={{ width: '120px' }}>
+                    <div style={{ width: '130px' }}>
+                      <label className="input-label" style={{ fontSize: '0.7rem' }}>Select Board</label>
+                      <select 
+                        className="input-field"
+                        value={oneClickBoard}
+                        onChange={e => setOneClickBoard(e.target.value)}
+                        style={{ padding: '0.5rem 0.75rem', fontSize: '0.85rem', width: '100%' }}
+                      >
+                        <option value="CBSE">CBSE</option>
+                        <option value="RBSE">RBSE</option>
+                        <option value="UP Board">UP Board</option>
+                        <option value="Bihar Board">Bihar Board</option>
+                        <option value="MP Board">MP Board</option>
+                        <option value="ICSE">ICSE</option>
+                        <option value="Other Board">Other Board</option>
+                      </select>
+                    </div>
+                    <div style={{ width: '110px' }}>
                       <label className="input-label" style={{ fontSize: '0.7rem' }}>Class Grade</label>
                       <select 
                         className="input-field"
@@ -3286,7 +3312,7 @@ JSON Structure:
                     <button 
                       type="button" 
                       className="btn btn-secondary"
-                      onClick={() => navigate(`/chat?prompt=${encodeURIComponent(`Give me a detailed board summary of "${oneClickTopic}" focused on Class ${oneClickGrade} including definitions, board patterns, and solved questions.`)}`)}
+                      onClick={() => navigate(`/chat?prompt=${encodeURIComponent(`Give me a detailed board summary of "${oneClickTopic}" focused on Class ${oneClickGrade} (${oneClickBoard} Board) including definitions, board patterns, and solved questions.`)}`)}
                       style={{ padding: '0.5rem 1rem', fontSize: '0.82rem' }}
                     >
                       Open in Tutor Chat 💬
