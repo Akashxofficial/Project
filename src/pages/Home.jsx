@@ -49,12 +49,12 @@ const standardSubjects = [
   { name: 'Mathematics', icon: '📐', color: '#3b82f6' },
   { name: 'Biology', icon: '🧬', color: '#ec4899' },
   { name: 'Social Science', icon: '🌍', color: '#f59e0b' },
-  { name: 'English', icon: '📝', color: '#a855f7' },
-  { name: 'Hindi', icon: '✍️', color: '#ef4444' },
+  { name: 'English', icon: '📖', color: '#a855f7' },
+  { name: 'Hindi', icon: '🇮🇳', color: '#ef4444' },
   { name: 'Computer Science', icon: '💻', color: '#06b6d4' },
-  { name: 'Accountancy', icon: '📂', color: '#f43f5e' },
-  { name: 'Business Studies', icon: '💼', color: '#a855f7' },
-  { name: 'Economics', icon: '📊', color: '#f59e0b' },
+  { name: 'Accountancy', icon: '📊', color: '#f43f5e' },
+  { name: 'Business Studies', icon: '🏢', color: '#a855f7' },
+  { name: 'Economics', icon: '📈', color: '#f59e0b' },
   { name: 'Informatics Practices', icon: '🖥️', color: '#06b6d4' }
 ];
 
@@ -98,110 +98,78 @@ const CLASS_SYLLABUS = {
       'Chapter 17: Stars and the Solar System',
       'Chapter 18: Pollution of Air and Water'
     ],
-    'Physics': [
-      'Chapter 1: Force and Pressure',
-      'Chapter 2: Friction',
-      'Chapter 3: Sound',
-      'Chapter 4: Chemical Effects of Electric Current',
-      'Chapter 5: Some Natural Phenomena',
-      'Chapter 6: Light',
-      'Chapter 7: Stars and the Solar System'
-    ],
-    'Chemistry': [
-      'Chapter 1: Synthetic Fibres and Plastics',
-      'Chapter 2: Materials: Metals and Non-Metals',
-      'Chapter 3: Coal and Petroleum',
-      'Chapter 4: Combustion and Flame',
-      'Chapter 5: Pollution of Air and Water'
-    ],
-    'Biology': [
-      'Chapter 1: Crop Production and Management',
-      'Chapter 2: Microorganisms: Friend and Foe',
-      'Chapter 3: Conservation of Plants and Animals',
-      'Chapter 4: Cell - Structure and Functions',
-      'Chapter 5: Reproduction in Animals',
-      'Chapter 6: Reaching the Age of Adolescence'
-    ],
-    'English': [
-      'Chapter 1: The Best Christmas Present in the World',
-      'Chapter 2: The Tsunami',
-      'Chapter 3: Glimpses of the Past',
-      'Chapter 4: Bepin Choudhury\'s Lapse of Memory',
-      'Chapter 5: The Summit Within',
-      'Chapter 6: This is Jody\'s Fawn',
-      'Chapter 7: A Visit to Cambridge',
-      'Chapter 8: A Short Monsoon Diary',
-      'Chapter 9: The Great Stone Face',
-      'Chapter 10: Honeydew Poems (The Ant and Cricket, Geography Lesson, Macavity, Last Bargain, School Boy, Grasshopper & Cricket)',
-      'Chapter 11: How the Camel got his hump (Supplementary)',
-      'Chapter 12: Children at work (Supplementary)',
-      'Chapter 13: The Selfish Giant (Supplementary)',
-      'Chapter 14: The Treasure Within (Supplementary)',
-      'Chapter 15: Princess September (Supplementary)',
-      'Chapter 16: The Fight (Supplementary)',
-      'Chapter 17: The Open Window (Supplementary)',
-      'Chapter 18: Jalebis (Supplementary)',
-      'Chapter 19: The Comet (Supplementary)',
-      'Chapter 20: Ancient Education System of India (Supplementary)'
-    ],
     'Social Science': [
+      // History: Our Pasts III
       'Chapter 1: How, When and Where',
-      'Chapter 2: From Trade to Territory',
+      'Chapter 2: From Trade to Territory: The Company Establishes Power',
       'Chapter 3: Ruling the Countryside',
       'Chapter 4: Tribals, Dikus and the Vision of a Golden Age',
       'Chapter 5: When People Rebel: 1857 and After',
-      'Chapter 6: Women, Caste and Reform',
-      'Chapter 7: The Making of the National Movement: 1870s-1947',
-      'Chapter 8: India After Independence',
-      'Chapter 9: Resources',
-      'Chapter 10: Land, Soil, Water, Natural Vegetation and Wildlife Resources',
-      'Chapter 11: Agriculture',
-      'Chapter 12: Industries',
-      'Chapter 13: Human Resources',
-      'Chapter 14: The Indian Constitution',
-      'Chapter 15: Understanding Secularism',
-      'Chapter 16: Parliamentary Government and the Judiciary',
-      'Chapter 17: Understanding Our Criminal Justice System',
-      'Chapter 18: Confronting Marginalisation',
-      'Chapter 19: Public Facilities',
-      'Chapter 20: Law and Social Justice'
+      'Chapter 6: Weavers, Iron Smelters and Factory Owners',
+      'Chapter 7: Civilising the Native, Educating the Nation',
+      'Chapter 8: Women, Caste and Reform',
+      'Chapter 9: The Making of the National Movement: 1870s-1947',
+      'Chapter 10: India After Independence',
+      // Geography: Resources and Development
+      'Chapter 11: Resources',
+      'Chapter 12: Land, Soil, Water, Natural Vegetation and Wildlife Resources',
+      'Chapter 13: Mineral and Power Resources',
+      'Chapter 14: Agriculture',
+      'Chapter 15: Industries',
+      'Chapter 16: Human Resources',
+      // Civics: Social and Political Life III
+      'Chapter 17: The Indian Constitution',
+      'Chapter 18: Understanding Secularism',
+      'Chapter 19: Why Do We Need a Parliament?',
+      'Chapter 20: Understanding Laws',
+      'Chapter 21: Judiciary',
+      'Chapter 22: Understanding Our Criminal Justice System',
+      'Chapter 23: Confronting Marginalisation',
+      'Chapter 24: Public Facilities',
+      'Chapter 25: Law and Social Justice'
     ],
-    'Computer Science': [
-      'Chapter 1: Computer Systems & Functions',
-      'Chapter 2: Introduction to MS Access (Databases)',
-      'Chapter 3: HTML & Web Design Basics',
-      'Chapter 4: Algorithms & Flowcharts',
-      'Chapter 5: Intro to Programming (Python/Scratch)',
-      'Chapter 6: Cyber Safety & Security'
-    ],
-    'Informatics Practices': [
-      'Chapter 1: Computer Systems & Functions',
-      'Chapter 2: Data Representation',
-      'Chapter 3: Intro to Databases',
-      'Chapter 4: Cyber Safety'
-    ],
-    'Accountancy': [
-      'Chapter 1: Basics of Accounting',
-      'Chapter 2: Ledger and Trial Balance'
-    ],
-    'Business Studies': [
-      'Chapter 1: Intro to Business and Trade',
-      'Chapter 2: Basics of Management'
-    ],
-    'Economics': [
-      'Chapter 1: Basics of Economics & Markets',
-      'Chapter 2: Economic Resources'
+    'English': [
+      // Honeydew (Main Reader)
+      'Chapter 1: The Best Christmas Present in the World (Prose)',
+      'Chapter 2: The Tsunami (Prose)',
+      'Chapter 3: Glimpses of the Past (Prose)',
+      "Chapter 4: Bepin Choudhury's Lapse of Memory (Prose)",
+      'Chapter 5: The Summit Within (Prose)',
+      "Chapter 6: This is Jody's Fawn (Prose)",
+      'Chapter 7: A Visit to Cambridge (Prose)',
+      'Chapter 8: A Short Monsoon Diary (Prose)',
+      'Chapter 9: The Great Stone Face - I (Prose)',
+      'Chapter 10: The Great Stone Face - II (Prose)',
+      // Honeydew Poems
+      'Chapter 11: The Ant and the Cricket (Poem)',
+      'Chapter 12: Geography Lesson (Poem)',
+      'Chapter 13: Macavity: The Mystery Cat (Poem)',
+      'Chapter 14: The Last Bargain (Poem)',
+      'Chapter 15: The School Boy (Poem)',
+      'Chapter 16: The Duck and the Kangaroo (Poem)',
+      'Chapter 17: When I Set Out for Lyonnesse (Poem)',
+      'Chapter 18: On the Grasshopper and Cricket (Poem)',
+      // It So Happened (Supplementary Reader)
+      'Chapter 19: How the Camel Got His Hump (Supplementary)',
+      'Chapter 20: Children at Work (Supplementary)',
+      'Chapter 21: The Selfish Giant (Supplementary)',
+      'Chapter 22: The Treasure Within (Supplementary)',
+      'Chapter 23: Princess September (Supplementary)',
+      'Chapter 24: The Fight (Supplementary)',
+      'Chapter 25: Jalebis (Supplementary)',
+      'Chapter 26: Ancient Education System of India (Supplementary)'
     ],
     'Hindi': [
+      // Vasant - III (Main)
       'Chapter 1: Dhwani (Suryakant Tripathi Nirala)',
-      'Chapter 2: Lakh ki Chudiyan (Kamtahnath)',
+      'Chapter 2: Lakh ki Chudiyan (Kamtanath)',
       'Chapter 3: Bus ki Yatra (Harishankar Parsai)',
-      'Chapter 4: Deewanon ki Hasti (Bhagwaticharan Verma)',
+      'Chapter 4: Deewanon ki Hasti (Bhagwati Charan Verma)',
       'Chapter 5: Chithiyon ki Anokhi Duniya (Arvind Kumar Singh)',
       'Chapter 6: Bhagwan ke Dakiye (Ramdhari Singh Dinkar)',
       'Chapter 7: Kya Nirash Hua Jaye (Hazari Prasad Dwivedi)',
       'Chapter 8: Yeh Sabse Kathin Samay Nahi (Jaya Jadaun)',
-      'Chapter 9: Kabir ki Sakhiyan (Kabir)',
+      'Chapter 9: Kabir ki Sakhiyan',
       'Chapter 10: Kamchor (Ismat Chughtai)',
       'Chapter 11: Sudama Charit (Narottam Das)',
       'Chapter 12: Jahaan Pahiya Hai (P. Sainath)',
@@ -209,21 +177,67 @@ const CLASS_SYLLABUS = {
       'Chapter 14: Soor ke Pad (Surdas)',
       'Chapter 15: Paani ki Kahani (Ramchandra Tiwari)',
       'Chapter 16: Baaj aur Saanp (Nirmal Verma)',
-      'Chapter 17: Topi (Sanjay)'
+      'Chapter 17: Topi (Sanjay)',
+      // Durva - III (Supplementary)
+      'Chapter 18: Gudiya (Sup - Durva)',
+      'Chapter 19: Do Gorillay (Sup - Durva)',
+      'Chapter 20: Chita aur Sher ka Bacccha (Sup - Durva)',
+      'Chapter 21: Mahi ki Udaan (Sup - Durva)',
+      'Chapter 22: Sandesh Chahta Hun Main (Sup - Durva)',
+      'Chapter 23: Ek Khiladi ki Kuch Yaadein (Sup - Durva)',
+      'Chapter 24: Bullet Train (Sup - Durva)',
+      'Chapter 25: Haath (Sup - Durva)'
+    ],
+    'Computer Science': [
+      'Chapter 1: Computer Systems - Hardware and Software',
+      'Chapter 2: Introduction to MS Access (Databases)',
+      'Chapter 3: HTML Basics - Tags, Images, Lists',
+      'Chapter 4: Algorithms and Flowcharts',
+      'Chapter 5: Introduction to Programming',
+      'Chapter 6: Cyber Safety and Security',
+      'Chapter 7: Spreadsheet (MS Excel) Advanced Features',
+      'Chapter 8: Internet and Its Uses'
+    ],
+    'Informatics Practices': [
+      'Chapter 1: Computer Systems and Functions',
+      'Chapter 2: Data Representation',
+      'Chapter 3: Introduction to Databases',
+      'Chapter 4: Basics of HTML',
+      'Chapter 5: Cyber Safety'
+    ],
+    'Accountancy': [
+      'Chapter 1: Basics of Accounting',
+      'Chapter 2: Accounting Equation',
+      'Chapter 3: Ledger and Trial Balance',
+      'Chapter 4: Financial Statements: Trading Account'
+    ],
+    'Business Studies': [
+      'Chapter 1: Introduction to Business and Trade',
+      'Chapter 2: Basics of Business and Commerce',
+      'Chapter 3: Economic Activities and Business',
+      'Chapter 4: Introduction to Management'
+    ],
+    'Economics': [
+      'Chapter 1: Basics of Economics',
+      'Chapter 2: Economic Resources and Scarcity',
+      'Chapter 3: Market and Trade',
+      'Chapter 4: Indian Economic Institutions'
     ]
   },
+
+  // . CLASS 9 . (NCERT 2025-26 Rationalized)
   '9': {
     'Mathematics': [
       'Chapter 1: Number Systems',
       'Chapter 2: Polynomials',
       'Chapter 3: Coordinate Geometry',
       'Chapter 4: Linear Equations in Two Variables',
-      'Chapter 5: Introduction to Euclid Geometry',
+      'Chapter 5: Introduction to Euclid\'s Geometry',
       'Chapter 6: Lines and Angles',
       'Chapter 7: Triangles',
       'Chapter 8: Quadrilaterals',
       'Chapter 9: Circles',
-      'Chapter 10: Herons Formula',
+      'Chapter 10: Heron\'s Formula',
       'Chapter 11: Surface Areas and Volumes',
       'Chapter 12: Statistics'
     ],
@@ -257,29 +271,38 @@ const CLASS_SYLLABUS = {
     'Biology': [
       'Chapter 1: The Fundamental Unit of Life',
       'Chapter 2: Tissues',
-      'Chapter 3: Improvement in Food Resources'
+      'Chapter 3: Why Do We Fall Ill?',
+      'Chapter 4: Natural Resources',
+      'Chapter 5: Improvement in Food Resources'
     ],
     'Social Science': [
+      // History: India and the Contemporary World - I
       'Chapter 1: The French Revolution',
       'Chapter 2: Socialism in Europe and the Russian Revolution',
       'Chapter 3: Nazism and the Rise of Hitler',
-      'Chapter 4: Size and Location of India',
-      'Chapter 5: Physical Features of India',
-      'Chapter 6: Drainage',
-      'Chapter 7: Climate',
-      'Chapter 8: Natural Vegetation and Wild Life',
-      'Chapter 9: Population',
-      'Chapter 10: What is Democracy? Why Democracy?',
-      'Chapter 11: Constitutional Design',
-      'Chapter 12: Electoral Politics',
-      'Chapter 13: Working of Institutions',
-      'Chapter 14: Democratic Rights',
-      'Chapter 15: The Story of Village Palampur',
-      'Chapter 16: People as Resource',
-      'Chapter 17: Poverty as a Challenge',
-      'Chapter 18: Food Security in India'
+      'Chapter 4: Forest Society and Colonialism',
+      'Chapter 5: Pastoralists in the Modern World',
+      // Geography: Contemporary India - I
+      'Chapter 6: India - Size and Location',
+      'Chapter 7: Physical Features of India',
+      'Chapter 8: Drainage',
+      'Chapter 9: Climate',
+      'Chapter 10: Natural Vegetation and Wild Life',
+      'Chapter 11: Population',
+      // Civics: Democratic Politics - I
+      'Chapter 12: What is Democracy? Why Democracy?',
+      'Chapter 13: Constitutional Design',
+      'Chapter 14: Electoral Politics',
+      'Chapter 15: Working of Institutions',
+      'Chapter 16: Democratic Rights',
+      // Economics: Understanding Economic Development - I
+      'Chapter 17: The Story of Village Palampur',
+      'Chapter 18: People as Resource',
+      'Chapter 19: Poverty as a Challenge',
+      'Chapter 20: Food Security in India'
     ],
     'English': [
+      // Beehive (Main Textbook)
       'Chapter 1: The Fun They Had (Beehive)',
       'Chapter 2: The Sound of Music (Beehive)',
       'Chapter 3: The Little Girl (Beehive)',
@@ -289,6 +312,7 @@ const CLASS_SYLLABUS = {
       'Chapter 7: Reach for the Top (Beehive)',
       'Chapter 8: Kathmandu (Beehive)',
       'Chapter 9: If I Were You (Beehive)',
+      // Beehive Poems
       'Chapter 10: The Road Not Taken (Poem)',
       'Chapter 11: Wind (Poem)',
       'Chapter 12: Rain on the Roof (Poem)',
@@ -297,6 +321,7 @@ const CLASS_SYLLABUS = {
       'Chapter 15: No Men Are Foreign (Poem)',
       'Chapter 16: On Killing a Tree (Poem)',
       'Chapter 17: A Slumber Did My Spirit Seal (Poem)',
+      // Moments (Supplementary Reader)
       'Chapter 18: The Lost Child (Moments)',
       'Chapter 19: The Adventures of Toto (Moments)',
       'Chapter 20: Iswaran the Storyteller (Moments)',
@@ -308,32 +333,71 @@ const CLASS_SYLLABUS = {
       'Chapter 26: The Beggar (Moments)'
     ],
     'Hindi': [
+      // Kshitij - I (Main)
       'Chapter 1: Do Bailon Ki Katha (Premchand)',
       'Chapter 2: Lhasa Ki Aur (Rahul Sankrityayan)',
       'Chapter 3: Upbhoktavad Ki Sanskriti (S. C. Dubey)',
       'Chapter 4: Sawale Sapno Ki Yaad (Jabir Husain)',
-      'Chapter 5: Premchand Ke Phate Joote (Harishankar Parsai)',
-      'Chapter 6: Mere Bachpan Ke Din (Mahadevi Varma)',
-      'Chapter 7: Sakhiyan & Sabad (Kabir)',
-      'Chapter 8: Vakh (Laldyad)',
-      'Chapter 9: Sawaiye (Raskhan)',
-      'Chapter 10: Kaidi Aur Kokila (M. L. Chaturvedi)',
-      'Chapter 11: Gram Shree (Sumitranandan Pant)',
-      'Chapter 12: Megh Aaye (S. D. Saxena)',
-      'Chapter 13: Yamraj Ki Disha (Chandrakant Devtale)',
-      'Chapter 14: Bachche Kaam Par Ja Rahe Hain (Rajesh Joshi)',
-      'Chapter 15: Is Jal Pralay Mein (Phanishwar Nath Renu)',
-      'Chapter 16: Mere Sang Ki Auratein (Mridula Garg)',
-      'Chapter 17: Reedh Ki Haddi (J. C. Mathur)'
+      'Chapter 5: Nana Saheb Ki Putri Devi Manu (Chapala Devi)',
+      'Chapter 6: Premchand Ke Phate Joote (Harishankar Parsai)',
+      'Chapter 7: Mere Bachpan Ke Din (Mahadevi Varma)',
+      'Chapter 8: Ek Kutta Aur Ek Maina (Hazari Prasad Dwivedi)',
+      // Poetry - Kshitij
+      'Chapter 9: Sakhiyan aur Sabad (Kabir)',
+      'Chapter 10: Vakh (Laldyad)',
+      'Chapter 11: Sawaiye (Raskhan)',
+      'Chapter 12: Kaidi Aur Kokila (Makhanlal Chaturvedi)',
+      'Chapter 13: Gram Shree (Sumitranandan Pant)',
+      'Chapter 14: Chandra Gahna Se Lautati Ber (Kedarnath Agarwal)',
+      'Chapter 15: Megh Aaye (Sarveshwar Dayal Saxena)',
+      'Chapter 16: Yamraj Ki Disha (Chandrakant Devtale)',
+      'Chapter 17: Bachche Kaam Par Ja Rahe Hain (Rajesh Joshi)',
+      // Kritika (Supplementary)
+      'Chapter 18: Is Jal Pralay Mein (Fanishwar Nath Renu)',
+      'Chapter 19: Mere Sang Ki Auratein (Mridula Garg)',
+      'Chapter 20: Reedh Ki Haddi (Jagdish Chandra Mathur)',
+      'Chapter 21: Maati Wali (Vidya Sagar Nautiyal)',
+      'Chapter 22: Kis Tarah Aakhirkar Main Hindi Mein Aaya (Sharad Joshi)'
     ],
     'Computer Science': [
       'Chapter 1: Introduction to IT-ITeS Industry',
       'Chapter 2: Data Entry and Keyboarding Skills',
       'Chapter 3: Digital Documentation (Word Processing)',
       'Chapter 4: Electronic Spreadsheet',
-      'Chapter 5: Digital Presentation'
+      'Chapter 5: Digital Presentation',
+      'Chapter 6: Digital Communication',
+      'Chapter 7: Cyber Security Basics'
+    ],
+    'Informatics Practices': [
+      'Chapter 1: Computer System Overview',
+      'Chapter 2: Working with Computer Data',
+      'Chapter 3: Introduction to Python',
+      'Chapter 4: Database Concepts',
+      'Chapter 5: Emerging Technologies'
+    ],
+    'Accountancy': [
+      'Chapter 1: Introduction to Accounting',
+      'Chapter 2: Basic Accounting Terms',
+      'Chapter 3: Theory Base of Accounting',
+      'Chapter 4: Recording of Transactions - Journal',
+      'Chapter 5: Ledger',
+      'Chapter 6: Trial Balance'
+    ],
+    'Business Studies': [
+      'Chapter 1: Business, Trade and Commerce',
+      'Chapter 2: Forms of Business Organisation',
+      'Chapter 3: Business Services',
+      'Chapter 4: Social Responsibility of Business'
+    ],
+    'Economics': [
+      'Chapter 1: The Story of Village Palampur',
+      'Chapter 2: People as Resource',
+      'Chapter 3: Poverty as a Challenge',
+      'Chapter 4: Food Security in India'
     ]
   },
+
+  // . CLASS 10 . (NCERT 2025-26 Rationalized)
   '10': {
     'Mathematics': [
       'Chapter 1: Real Numbers',
@@ -359,16 +423,16 @@ const CLASS_SYLLABUS = {
       'Chapter 5: Life Processes',
       'Chapter 6: Control and Coordination',
       'Chapter 7: How do Organisms Reproduce?',
-      'Chapter 8: Heredity and Evolution',
+      'Chapter 8: Heredity',
       'Chapter 9: Light - Reflection and Refraction',
-      'Chapter 10: The Human Eye and the Colorful World',
+      'Chapter 10: The Human Eye and the Colourful World',
       'Chapter 11: Electricity',
       'Chapter 12: Magnetic Effects of Electric Current',
       'Chapter 13: Our Environment'
     ],
     'Physics': [
       'Chapter 1: Light - Reflection and Refraction',
-      'Chapter 2: The Human Eye and the Colorful World',
+      'Chapter 2: The Human Eye and the Colourful World',
       'Chapter 3: Electricity',
       'Chapter 4: Magnetic Effects of Electric Current',
       'Chapter 5: Our Environment'
@@ -383,31 +447,39 @@ const CLASS_SYLLABUS = {
       'Chapter 1: Life Processes',
       'Chapter 2: Control and Coordination',
       'Chapter 3: How do Organisms Reproduce?',
-      'Chapter 4: Heredity and Evolution'
+      'Chapter 4: Heredity',
+      'Chapter 5: Our Environment'
     ],
     'Social Science': [
+      // History: India and the Contemporary World - II
       'Chapter 1: The Rise of Nationalism in Europe',
       'Chapter 2: Nationalism in India',
       'Chapter 3: The Making of a Global World',
       'Chapter 4: The Age of Industrialisation',
-      'Chapter 5: Resources and Development',
-      'Chapter 6: Forest and Wildlife Resources',
-      'Chapter 7: Water Resources',
-      'Chapter 8: Agriculture',
-      'Chapter 9: Minerals and Energy Resources',
-      'Chapter 10: Manufacturing Industries',
-      'Chapter 11: Lifelines of National Economy',
-      'Chapter 12: Power Sharing',
-      'Chapter 13: Federalism',
-      'Chapter 14: Gender, Religion and Caste',
-      'Chapter 15: Political Parties',
-      'Chapter 16: Outcomes of Democracy',
-      'Chapter 17: Development',
-      'Chapter 18: Sectors of the Indian Economy',
-      'Chapter 19: Money and Credit',
-      'Chapter 20: Globalisation and the Indian Economy'
+      'Chapter 5: Print Culture and the Modern World',
+      // Geography: Contemporary India - II
+      'Chapter 6: Resources and Development',
+      'Chapter 7: Forest and Wildlife Resources',
+      'Chapter 8: Water Resources',
+      'Chapter 9: Agriculture',
+      'Chapter 10: Minerals and Energy Resources',
+      'Chapter 11: Manufacturing Industries',
+      'Chapter 12: Lifelines of National Economy',
+      // Civics: Democratic Politics - II
+      'Chapter 13: Power Sharing',
+      'Chapter 14: Federalism',
+      'Chapter 15: Gender, Religion and Caste',
+      'Chapter 16: Political Parties',
+      'Chapter 17: Outcomes of Democracy',
+      // Economics: Understanding Economic Development - II
+      'Chapter 18: Development',
+      'Chapter 19: Sectors of the Indian Economy',
+      'Chapter 20: Money and Credit',
+      'Chapter 21: Globalisation and the Indian Economy',
+      'Chapter 22: Consumer Rights'
     ],
     'English': [
+      // First Flight (Main Textbook)
       'Chapter 1: A Letter to God (First Flight)',
       'Chapter 2: Nelson Mandela: Long Walk to Freedom (First Flight)',
       'Chapter 3: Two Stories about Flying (First Flight)',
@@ -417,6 +489,7 @@ const CLASS_SYLLABUS = {
       'Chapter 7: Madam Rides the Bus (First Flight)',
       'Chapter 8: The Sermon at Benares (First Flight)',
       'Chapter 9: The Proposal (First Flight)',
+      // Poems - First Flight
       'Chapter 10: Dust of Snow (Poem)',
       'Chapter 11: Fire and Ice (Poem)',
       'Chapter 12: A Tiger in the Zoo (Poem)',
@@ -427,8 +500,9 @@ const CLASS_SYLLABUS = {
       'Chapter 17: Fog (Poem)',
       'Chapter 18: The Tale of Custard the Dragon (Poem)',
       'Chapter 19: For Anne Gregory (Poem)',
+      // Footprints Without Feet (Supplementary)
       'Chapter 20: A Triumph of Surgery (Footprints)',
-      'Chapter 21: The Thief\'s Story (Footprints)',
+      "Chapter 21: The Thief's Story (Footprints)",
       'Chapter 22: The Midnight Visitor (Footprints)',
       'Chapter 23: A Question of Trust (Footprints)',
       'Chapter 24: Footprints Without Feet (Footprints)',
@@ -438,36 +512,83 @@ const CLASS_SYLLABUS = {
       'Chapter 28: The Book That Saved the Earth (Footprints)'
     ],
     'Hindi': [
+      // Kshitij - II
       'Chapter 1: Surdas ke Pad',
-      'Chapter 2: Ram Lakshman Parashuram Samvad',
-      'Chapter 3: Dev - Savaiya aur Kabitt',
-      'Chapter 4: Aatmakathya - Jaishankar Prasad',
-      'Chapter 5: Utsah aur At Nahi Rahi Hai',
-      'Chapter 6: Yeh Danturit Muskan aur Fasal',
-      'Chapter 7: Chhaya Mat Chhuna',
-      'Chapter 8: Kanyadan - Rituraj',
-      'Chapter 9: Sangatkar - Manglesh Dabral',
+      'Chapter 2: Ram Lakshman Parashuram Samvad (Tulsidas)',
+      'Chapter 3: Dev - Savaiya aur Kavitt',
+      'Chapter 4: Aatmakathya (Jaishankar Prasad)',
+      'Chapter 5: Utsah aur At Nahi Rahi Hai (Suryakant Tripathi Nirala)',
+      'Chapter 6: Yeh Danturit Muskan aur Fasal (Nagarjun)',
+      'Chapter 7: Chhaya Mat Chhuna (Girija Kumar Mathur)',
+      'Chapter 8: Kanyadan (Rituraj)',
+      'Chapter 9: Sangatkar (Manglesh Dabral)',
       'Chapter 10: Netaji Ka Chashma (Swayam Prakash)',
       'Chapter 11: Balgobin Bhagat (Ramvriksha Benipuri)',
-      'Chapter 12: Lakhnavi Andaaz (Yashpal)',
+      'Chapter 12: Lakhnavi Andaz (Yashpal)',
       'Chapter 13: Ek Kahani Yeh Bhi (Mannu Bhandari)',
       'Chapter 14: Naubat Khane Mein Ibadat (Yatindra Mishra)',
       'Chapter 15: Sanskriti (Bhadant Anand Kausalyayan)',
+      // Kritika - II (Supplementary)
       'Chapter 16: Mata Ka Anchal (Shivpujan Sahay)',
-      'Chapter 17: Sana-Sana Hath Jodi (Madhu Kankariya)',
-      'Chapter 18: Main Kyon Likhta Hun? (Agyeya)'
+      'Chapter 17: George Pancham Ki Naak (Kamaleswar)',
+      'Chapter 18: Sana-Sana Hath Jodi (Madhu Kankariya)',
+      'Chapter 19: Ahi Thaiya Jhulni Herani Ho Rama (Shivamurti)',
+      'Chapter 20: Main Kyon Likhta Hun? (Agyeya)'
     ],
     'Computer Science': [
-      'Chapter 1: Internet Basics & Networking',
+      'Chapter 1: Internet Basics and Networking',
       'Chapter 2: HTML - I (Basic Tags, Images, Links)',
       'Chapter 3: HTML - II (Tables, Lists, Forms)',
       'Chapter 4: Cascading Style Sheets (CSS)',
-      'Chapter 5: Cyber Ethics',
-      'Chapter 6: Digital Documentation (Advanced)',
-      'Chapter 7: Electronic Spreadsheet (Advanced)',
-      'Chapter 8: Database Management System'
+      'Chapter 5: Digital Documentation Advanced',
+      'Chapter 6: Electronic Spreadsheet Advanced',
+      'Chapter 7: Database Management System Basics',
+      'Chapter 8: Cyber Ethics and Safety'
+    ],
+    'Informatics Practices': [
+      'Chapter 1: Networking and Internet',
+      'Chapter 2: HTML and Web Design',
+      'Chapter 3: Programming Basics',
+      'Chapter 4: Database Fundamentals',
+      'Chapter 5: Cyber Security and Ethics'
+    ],
+    'Accountancy': [
+      'Chapter 1: Introduction to Accounting',
+      'Chapter 2: Theory Base of Accounting',
+      'Chapter 3: Recording of Transactions - I',
+      'Chapter 4: Recording of Transactions - II',
+      'Chapter 5: Bank Reconciliation Statement',
+      'Chapter 6: Trial Balance and Rectification of Errors',
+      'Chapter 7: Depreciation, Provisions and Reserves',
+      'Chapter 8: Bill of Exchange',
+      'Chapter 9: Financial Statements - I (Without Adjustments)',
+      'Chapter 10: Financial Statements - II (With Adjustments)',
+      'Chapter 11: Accounts from Incomplete Records',
+      'Chapter 12: Applications of Computers in Accounting',
+      'Chapter 13: Computerised Accounting System'
+    ],
+    'Business Studies': [
+      'Chapter 1: Business, Trade and Commerce',
+      'Chapter 2: Forms of Business Organisation',
+      'Chapter 3: Private, Public and Global Enterprises',
+      'Chapter 4: Business Services',
+      'Chapter 5: Emerging Modes of Business',
+      'Chapter 6: Social Responsibility of Business',
+      'Chapter 7: Sources of Business Finance',
+      'Chapter 8: Small Business',
+      'Chapter 9: Internal Trade',
+      'Chapter 10: International Business - I'
+    ],
+    'Economics': [
+      'Chapter 1: Development',
+      'Chapter 2: Sectors of the Indian Economy',
+      'Chapter 3: Money and Credit',
+      'Chapter 4: Globalisation and the Indian Economy',
+      'Chapter 5: Consumer Rights'
     ]
   },
+
+  // . CLASS 11 . (NCERT 2025-26 Rationalized)
   '11': {
     'Physics': [
       'Chapter 1: Units and Measurements',
@@ -490,11 +611,12 @@ const CLASS_SYLLABUS = {
       'Chapter 2: Structure of Atom',
       'Chapter 3: Classification of Elements and Periodicity in Properties',
       'Chapter 4: Chemical Bonding and Molecular Structure',
-      'Chapter 5: Chemical Thermodynamics',
+      'Chapter 5: Thermodynamics',
       'Chapter 6: Equilibrium',
       'Chapter 7: Redox Reactions',
       'Chapter 8: Organic Chemistry: Some Basic Principles and Techniques',
-      'Chapter 9: Hydrocarbons'
+      'Chapter 9: Hydrocarbons',
+      'Chapter 10: Environmental Chemistry'
     ],
     'Biology': [
       'Chapter 1: The Living World',
@@ -512,7 +634,7 @@ const CLASS_SYLLABUS = {
       'Chapter 13: Plant Growth and Development',
       'Chapter 14: Breathing and Exchange of Gases',
       'Chapter 15: Body Fluids and Circulation',
-      'Chapter 16: Excretory Products and their Elimination',
+      'Chapter 16: Excretory Products and Their Elimination',
       'Chapter 17: Locomotion and Movement',
       'Chapter 18: Neural Control and Coordination',
       'Chapter 19: Chemical Coordination and Integration'
@@ -534,33 +656,50 @@ const CLASS_SYLLABUS = {
       'Chapter 14: Probability'
     ],
     'English': [
+      // Hornbill (Main Textbook)
       'Chapter 1: The Portrait of a Lady (Hornbill)',
-      'Chapter 2: We Are Not Afraid to Die... (Hornbill)',
-      'Chapter 3: Discovering Tut: the Saga Continues (Hornbill)',
-      'Chapter 4: The Adventure (Hornbill)',
-      'Chapter 5: Silk Road (Hornbill)',
-      'Chapter 6: A Photograph (Poem)',
-      'Chapter 7: The Laburnum Top (Poem)',
-      'Chapter 8: The Voice of the Rain (Poem)',
-      'Chapter 9: Childhood (Poem)',
-      'Chapter 10: Father to Son (Poem)',
-      'Chapter 11: The Summer of the Beautiful White Horse (Snapshots)',
-      'Chapter 12: The Address (Snapshots)',
-      'Chapter 13: Mother\'s Day (Snapshots)',
-      'Chapter 14: Birth (Snapshots)',
-      'Chapter 15: The Tale of Melon City (Snapshots)'
+      'Chapter 2: We Are Not Afraid to Die... if We Can All Be Together (Hornbill)',
+      'Chapter 3: Discovering Tut: The Saga Continues (Hornbill)',
+      'Chapter 4: Landscape of the Soul (Hornbill)',
+      'Chapter 5: The Ailing Planet: the Green Movement\'s Role (Hornbill)',
+      'Chapter 6: The Browning Version (Hornbill)',
+      'Chapter 7: The Adventure (Hornbill)',
+      'Chapter 8: Silk Road (Hornbill)',
+      // Hornbill Poems
+      'Chapter 9: A Photograph (Poem)',
+      'Chapter 10: The Laburnum Top (Poem)',
+      'Chapter 11: The Voice of the Rain (Poem)',
+      'Chapter 12: Childhood (Poem)',
+      'Chapter 13: Father to Son (Poem)',
+      // Snapshots (Supplementary Reader)
+      'Chapter 14: The Summer of the Beautiful White Horse (Snapshots)',
+      'Chapter 15: The Address (Snapshots)',
+      "Chapter 16: Ranga's Marriage (Snapshots)",
+      'Chapter 17: Albert Einstein at School (Snapshots)',
+      "Chapter 18: Mother's Day (Snapshots)",
+      'Chapter 19: The Ghat of the Only World (Snapshots)',
+      'Chapter 20: Birth (Snapshots)',
+      'Chapter 21: The Tale of Melon City (Snapshots)'
     ],
     'Computer Science': [
       'Chapter 1: Computer Systems and Organisation',
-      'Chapter 2: Computational Thinking and Python Programming',
-      'Chapter 3: Database Concepts and SQL',
-      'Chapter 4: Introduction to Computer Networks'
+      'Chapter 2: Introduction to Python',
+      'Chapter 3: Python Fundamentals - Data Types and Control Flow',
+      'Chapter 4: Functions',
+      'Chapter 5: File Handling in Python',
+      'Chapter 6: Exception Handling',
+      'Chapter 7: Database Concepts and SQL',
+      'Chapter 8: Introduction to Computer Networks',
+      'Chapter 9: Cyber Safety'
     ],
     'Informatics Practices': [
       'Chapter 1: Computer System',
       'Chapter 2: Introduction to Python',
-      'Chapter 3: Database Query using SQL',
-      'Chapter 4: Emerging Trends'
+      'Chapter 3: Python Variables and Data Types',
+      'Chapter 4: Functions and Modules',
+      'Chapter 5: Database Query using SQL',
+      'Chapter 6: Introduction to Computer Networks',
+      'Chapter 7: Emerging Technologies and Trends'
     ],
     'Accountancy': [
       'Chapter 1: Introduction to Accounting',
@@ -581,41 +720,59 @@ const CLASS_SYLLABUS = {
       'Chapter 5: Emerging Modes of Business',
       'Chapter 6: Social Responsibility of Business and Business Ethics',
       'Chapter 7: Sources of Business Finance',
-      'Chapter 8: Small Business',
+      'Chapter 8: Small Business and Entrepreneurship',
       'Chapter 9: Internal Trade',
-      'Chapter 10: International Business'
+      'Chapter 10: International Business - I',
+      'Chapter 11: International Business - II'
     ],
     'Economics': [
-      'Chapter 1: Introduction to Statistics',
-      'Chapter 2: Collection, Organisation and Presentation of Data',
-      'Chapter 3: Statistical Tools and Interpretation',
-      'Chapter 4: Introduction to Microeconomics',
-      'Chapter 5: Consumer Equilibrium and Demand',
-      'Chapter 6: Producer Behaviour and Supply',
-      'Chapter 7: Forms of Market and Price Determination'
+      // Statistics Part
+      'Chapter 1: Introduction',
+      'Chapter 2: Collection of Data',
+      'Chapter 3: Organisation of Data',
+      'Chapter 4: Presentation of Data',
+      'Chapter 5: Measures of Central Tendency',
+      'Chapter 6: Measures of Dispersion',
+      'Chapter 7: Correlation',
+      'Chapter 8: Index Numbers',
+      // Microeconomics Part
+      'Chapter 9: Introduction to Economics and Microeconomics',
+      'Chapter 10: Consumer Equilibrium and Demand',
+      'Chapter 11: Producer Behaviour and Supply',
+      'Chapter 12: Forms of Market and Price Determination under Perfect Competition',
+      'Chapter 13: Market Equilibrium'
     ],
     'Hindi': [
+      // Aroh - I (Main)
       'Chapter 1: Namak Ka Daroga (Premchand)',
       'Chapter 2: Miyan Naseeruddin (Krishna Sobti)',
-      'Chapter 3: Appu Ke Saath Dhai Saal (Satyajit Ray)',
+      'Chapter 3: Apnu Ke Saath Dhai Saal (Satyajit Ray)',
       'Chapter 4: Vidai-Sambhashan (Balmukund Gupt)',
       'Chapter 5: Galta Loha (Shekhar Joshi)',
-      'Chapter 6: Rajani (Manu Bhandari)',
-      'Chapter 7: Jamun Ka Ped (Krishan Chander)',
-      'Chapter 8: Bharat Mata (Jawaharlal Nehru)',
-      'Chapter 9: Kabir ke Pad (Kabir)',
-      'Chapter 10: Meera ke Pad (Meera)',
-      'Chapter 11: Ghar Ki Yaad (Bhawani Prasad Mishra)',
-      'Chapter 12: Champa Kale Kale Achhar (Trilochan)',
-      'Chapter 13: Gajal (Dushyant Kumar)',
-      'Chapter 14: He Bhookh Mat Machal (Akka Mahadevi)',
-      'Chapter 15: Sabse Khatarnak (Avtar Singh Pash)',
-      'Chapter 16: Aao, Milkar Bachayein (Nirmala Putul)',
-      'Chapter 17: Bharatiya Gaayikaon Mein: Lata Mangeshkar',
-      'Chapter 18: Rajasthan Ki Rajat Boondein',
-      'Chapter 19: Alo Aandhari (Baby Halder)'
+      'Chapter 6: Spiti Mein Baarish (Krishna Nand)',
+      'Chapter 7: Rajni (Manu Bhandari)',
+      'Chapter 8: Jamun Ka Ped (Krishan Chander)',
+      'Chapter 9: Bharat Mata (Jawaharlal Nehru)',
+      'Chapter 10: Ateet Mein Dabe Paon (Om Thanvi)',
+      'Chapter 11: Kabir ke Pad',
+      'Chapter 12: Meera ke Pad',
+      'Chapter 13: Path ke Davedar (Subramaniya Bharati)',
+      'Chapter 14: Veh Aankhein (Sumitrananandan Pant)',
+      'Chapter 15: Ghar ki Yaad (Bhawani Prasad Mishra)',
+      'Chapter 16: Champa Kale Kale Achhar (Trilochan)',
+      'Chapter 17: Ghazal (Dushyant Kumar)',
+      'Chapter 18: He Bhookh! Mat Machal (Akka Mahadevi)',
+      'Chapter 19: Sabse Khatarnak (Avtar Singh Pash)',
+      'Chapter 20: Aao, Milkar Bachayein (Nirmala Putul)',
+      // Vitan - I (Supplementary)
+      'Chapter 21: Bharatiya Gaayikaon Mein: Lata Mangeshkar (Kumar Gandharva)',
+      'Chapter 22: Rajasthan Ki Rajat Boondein (Anupam Mishra)',
+      'Chapter 23: Alo Aandhari (Baby Halder)',
+      'Chapter 24: Bedu Pako Barahmasa (Girvesh Nand)'
     ]
   },
+
+  // . CLASS 12 . (NCERT 2025-26 Rationalized)
   '12': {
     'Physics': [
       'Chapter 1: Electric Charges and Fields',
@@ -643,7 +800,9 @@ const CLASS_SYLLABUS = {
       'Chapter 7: Alcohols, Phenols and Ethers',
       'Chapter 8: Aldehydes, Ketones and Carboxylic Acids',
       'Chapter 9: Amines',
-      'Chapter 10: Biomolecules'
+      'Chapter 10: Biomolecules',
+      'Chapter 11: Polymers',
+      'Chapter 12: Chemistry in Everyday Life'
     ],
     'Biology': [
       'Chapter 1: Sexual Reproduction in Flowering Plants',
@@ -654,7 +813,7 @@ const CLASS_SYLLABUS = {
       'Chapter 6: Evolution',
       'Chapter 7: Human Health and Diseases',
       'Chapter 8: Microbes in Human Welfare',
-      'Chapter 9: Biotechnology - Principles and Processes',
+      'Chapter 9: Biotechnology: Principles and Processes',
       'Chapter 10: Biotechnology and its Applications',
       'Chapter 11: Organisms and Populations',
       'Chapter 12: Ecosystem',
@@ -676,6 +835,7 @@ const CLASS_SYLLABUS = {
       'Chapter 13: Probability'
     ],
     'English': [
+      // Flamingo (Main Textbook)
       'Chapter 1: The Last Lesson (Flamingo)',
       'Chapter 2: Lost Spring (Flamingo)',
       'Chapter 3: Deep Water (Flamingo)',
@@ -684,39 +844,61 @@ const CLASS_SYLLABUS = {
       'Chapter 6: Poets and Pancakes (Flamingo)',
       'Chapter 7: The Interview (Flamingo)',
       'Chapter 8: Going Places (Flamingo)',
+      // Flamingo Poems
       'Chapter 9: My Mother at Sixty-Six (Poem)',
       'Chapter 10: Keeping Quiet (Poem)',
       'Chapter 11: A Thing of Beauty (Poem)',
       'Chapter 12: A Roadside Stand (Poem)',
-      'Chapter 13: Aunt Jennifer\'s Tigers (Poem)',
+      "Chapter 13: Aunt Jennifer's Tigers (Poem)",
+      // Vistas (Supplementary Reader)
       'Chapter 14: The Third Level (Vistas)',
-      'Chapter 15: The Enemy (Vistas)',
-      'Chapter 16: Journey to the End of the Earth (Vistas)',
+      'Chapter 15: The Tiger King (Vistas)',
+      'Chapter 16: The Enemy (Vistas)',
       'Chapter 17: On the Face of It (Vistas)',
-      'Chapter 18: Memories of Childhood (Vistas)'
+      'Chapter 18: Memories of Childhood (Vistas)',
+      'Chapter 19: The Interview (Vistas)',
+      'Chapter 20: Journey to the End of the Earth (Vistas)',
+      'Chapter 21: Evans Tries an O-Level (Vistas)',
+      'Chapter 22: Should Wizard Hit Mommy? (Vistas)'
     ],
     'Computer Science': [
-      'Chapter 1: Computational Thinking and Programming - 2',
-      'Chapter 2: Computer Networks',
-      'Chapter 3: Database Management'
+      'Chapter 1: Python Revision Tour - I',
+      'Chapter 2: Python Revision Tour - II',
+      'Chapter 3: Working with Functions',
+      'Chapter 4: Using Python Libraries',
+      'Chapter 5: File Handling',
+      'Chapter 6: Exception Handling',
+      'Chapter 7: Data Handling using Pandas - I',
+      'Chapter 8: Data Handling using Pandas - II',
+      'Chapter 9: Plotting Data using Matplotlib',
+      'Chapter 10: Computer Networks',
+      'Chapter 11: Database Query using SQL',
+      'Chapter 12: Boolean Algebra',
+      'Chapter 13: Communication Technologies'
     ],
     'Informatics Practices': [
-      'Chapter 1: Data Handling using Pandas and Data Visualization',
-      'Chapter 2: Database Query using SQL',
-      'Chapter 3: Introduction to Computer Networks',
-      'Chapter 4: Societal Impacts'
+      'Chapter 1: Python Pandas - I (Data Frames and Series)',
+      'Chapter 2: Python Pandas - II (Data Operations)',
+      'Chapter 3: Data Visualization using Matplotlib',
+      'Chapter 4: Database Query using SQL - I',
+      'Chapter 5: Database Query using SQL - II',
+      'Chapter 6: Computer Networks',
+      'Chapter 7: Societal Impacts of IT'
     ],
     'Accountancy': [
-      'Chapter 1: Accounting for Partnership Firms - Basic Concepts',
-      'Chapter 2: Reconstitution of a Partnership Firm - Admission of a Partner',
-      'Chapter 3: Reconstitution of a Partnership Firm - Retirement/Death of a Partner',
-      'Chapter 4: Dissolution of a Partnership Firm',
-      'Chapter 5: Accounting for Share Capital',
-      'Chapter 6: Accounting for Debentures',
-      'Chapter 7: Financial Statements of a Company',
-      'Chapter 8: Analysis of Financial Statements',
-      'Chapter 9: Accounting Ratios',
-      'Chapter 10: Cash Flow Statement'
+      // Part I: Partnership Accounts
+      'Chapter 1: Accounting for Partnership Firms - Fundamental Concepts',
+      'Chapter 2: Goodwill: Nature and Valuation',
+      'Chapter 3: Reconstitution of a Partnership Firm: Admission of a Partner',
+      'Chapter 4: Reconstitution of a Partnership Firm: Retirement/Death of a Partner',
+      'Chapter 5: Dissolution of Partnership Firm',
+      // Part II: Company Accounts
+      'Chapter 6: Accounting for Share Capital',
+      'Chapter 7: Issue and Redemption of Debentures',
+      'Chapter 8: Financial Statements of a Company',
+      'Chapter 9: Analysis of Financial Statements',
+      'Chapter 10: Accounting Ratios',
+      'Chapter 11: Cash Flow Statement'
     ],
     'Business Studies': [
       'Chapter 1: Nature and Significance of Management',
@@ -730,37 +912,51 @@ const CLASS_SYLLABUS = {
       'Chapter 9: Financial Management',
       'Chapter 10: Financial Markets',
       'Chapter 11: Marketing Management',
-      'Chapter 12: Consumer Protection'
+      'Chapter 12: Consumer Protection',
+      'Chapter 13: Entrepreneurship Development'
     ],
     'Economics': [
-      'Chapter 1: Development Experience (1947-90) and Economic Reforms since 1991',
-      'Chapter 2: Current Challenges Facing the Indian Economy',
-      'Chapter 3: Development Experience of India – A Comparison with Neighbours',
-      'Chapter 4: National Income and Related Aggregates',
-      'Chapter 5: Money and Banking',
-      'Chapter 6: Determination of Income and Employment',
-      'Chapter 7: Government Budget and the Economy',
-      'Chapter 8: Balance of Payments'
+      // Macroeconomics
+      'Chapter 1: Introduction to Macroeconomics',
+      'Chapter 2: National Income Accounting',
+      'Chapter 3: Money and Banking',
+      'Chapter 4: Determination of Income and Employment',
+      'Chapter 5: Government Budget and the Economy',
+      'Chapter 6: Open Economy Macroeconomics',
+      // Indian Economic Development
+      'Chapter 7: Indian Economy on the Eve of Independence',
+      'Chapter 8: Indian Economy 1950-1990',
+      'Chapter 9: Economic Reforms since 1991',
+      'Chapter 10: Poverty',
+      'Chapter 11: Human Capital Formation in India',
+      'Chapter 12: Rural Development',
+      'Chapter 13: Employment Growth, Informalisation and Other Issues',
+      'Chapter 14: Infrastructure',
+      'Chapter 15: Environment and Sustainable Development',
+      'Chapter 16: Comparative Development Experiences of India and its Neighbours'
     ],
     'Hindi': [
-      'Chapter 1: Aatmparichay / Ek Geet (H. R. Bachchan)',
+      // Aroh - II (Main)
+      'Chapter 1: Aatmparichay / Ek Geet (Harivansh Rai Bachchan)',
       'Chapter 2: Patang (Alok Dhanwa)',
-      'Chapter 3: Kavita Ke Bahane / Baat Seedhi Thi Par (K. Narayan)',
+      'Chapter 3: Kavita Ke Bahane / Baat Seedhi Thi Par (Kunwar Narayan)',
       'Chapter 4: Camere Mein Band Apahij (Raghuvir Sahay)',
       'Chapter 5: Usha (Shamsher Bahadur Singh)',
       'Chapter 6: Badal Raag (Suryakant Tripathi Nirala)',
-      'Chapter 7: Kavitavali / Laxman-murcha (Tulsidas)',
+      'Chapter 7: Kavitavali / Laxman-Murcha aur Ram ki Shakti Pooja (Tulsidas)',
       'Chapter 8: Rubaaiyaan / Ghazal (Firaq Gorakhpuri)',
-      'Chapter 9: Chota Mera Khet / Bangulo Ke Pankh (U. Joshi)',
-      'Chapter 10: Bhaktin (Mahadevi Verma)',
+      'Chapter 9: Chota Mera Khet / Bangulo Ke Pankh (Umashankhar Joshi)',
+      'Chapter 10: Bhaktin (Mahadevi Varma)',
       'Chapter 11: Bazar Darshan (Jainendra Kumar)',
       'Chapter 12: Kaale Megha Paani De (Dharmavir Bharati)',
-      'Chapter 13: Pahelwan Ki Dholak (P. N. Renu)',
+      'Chapter 13: Pahelwan Ki Dholak (Phanishwar Nath Renu)',
       'Chapter 14: Shirish Ke Phool (Hazari Prasad Dwivedi)',
-      'Chapter 15: Shram Vibhajan aur Jati Pratha (B. R. Ambedkar)',
+      'Chapter 15: Shram Vibhajan aur Jati Pratha / Meri Kalpna ka Adarsh Samaj (B. R. Ambedkar)',
+      // Vitan - II (Supplementary)
       'Chapter 16: Silver Wedding (Manohar Shyam Joshi)',
       'Chapter 17: Jooje (Anand Yadav)',
-      'Chapter 18: Ateet Mein Dabe Paon (Om Thanvi)'
+      'Chapter 18: Ateet Mein Dabe Paon (Om Thanvi)',
+      'Chapter 19: Diary Ke Panne (Anne Frank)'
     ]
   }
 };
@@ -1146,6 +1342,21 @@ export default function Home() {
   const [examStatus, setExamStatus] = useState('');
   const [examResult, setExamResult] = useState('');
   const [roadmapCopied, setRoadmapCopied] = useState(false);
+
+  // Get available subjects for selected examGrade dynamically based on CLASS_SYLLABUS
+  const examGradeNum = examGrade.replace('Class ', '');
+  const examAvailableSubjects = CLASS_SYLLABUS[examGradeNum]
+    ? Object.keys(CLASS_SYLLABUS[examGradeNum])
+    : ['Science', 'Mathematics', 'Social Science', 'English'];
+
+  // Auto-switch subject when class changes if current subject is not available
+  useEffect(() => {
+    const gradeNum = examGrade.replace('Class ', '');
+    const available = CLASS_SYLLABUS[gradeNum] ? Object.keys(CLASS_SYLLABUS[gradeNum]) : [];
+    if (available.length > 0 && !available.includes(examSubject)) {
+      setExamSubject(available[0]);
+    }
+  }, [examGrade]);
 
   // ── MISSION GENERATOR (generates from student's actual subjects) ──
   const generateMissionsFromProfile = (board, grade, subjects, activeChaptersMap = {}) => {
@@ -2390,14 +2601,21 @@ JSON Structure:
             const examInfo = EXAM_DATES[board]?.[classNum] || EXAM_DATES['CBSE']['10'];
 
             const now = new Date();
-            // Build the target exam date — Indian academic year ends in Feb-March
-            // If we're past April, the next exam is in the following calendar year
-            let examYear = now.getFullYear();
-            const examDate = new Date(examYear, examInfo.month, examInfo.day);
-            // If the exam date has already passed this year, target next year
-            if (examDate <= now) {
-              examYear += 1;
-              examDate.setFullYear(examYear);
+            let examDate;
+            let examYear;
+            if (profileExamDate) {
+              examDate = new Date(profileExamDate);
+              examYear = examDate.getFullYear();
+            } else {
+              // Build the target exam date — Indian academic year ends in Feb-March
+              // If we're past April, the next exam is in the following calendar year
+              examYear = now.getFullYear();
+              examDate = new Date(examYear, examInfo.month, examInfo.day);
+              // If the exam date has already passed this year, target next year
+              if (examDate <= now) {
+                examYear += 1;
+                examDate.setFullYear(examYear);
+              }
             }
 
             const diffMs = examDate - now;
@@ -3145,10 +3363,9 @@ JSON Structure:
               <div>
                 <label className="input-label" style={{ fontSize: '0.7rem' }}>Focus Subject</label>
                 <select className="input-field" value={examSubject} onChange={e => setExamSubject(e.target.value)} style={{ padding: '0.5rem', fontSize: '0.85rem', width: '100%' }}>
-                  <option value="Science">Science / Physics / Chem</option>
-                  <option value="Mathematics">Mathematics</option>
-                  <option value="Social Science">Social Science</option>
-                  <option value="English">English Core</option>
+                  {examAvailableSubjects.map(subj => (
+                    <option key={subj} value={subj}>{subj}</option>
+                  ))}
                 </select>
               </div>
               <div>
