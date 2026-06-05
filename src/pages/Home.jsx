@@ -1315,6 +1315,12 @@ export default function Home() {
   const completedNonLogin = missions.filter(m => m.type !== 'login' && m.done).length;
   const isPro = subscription?.active;
 
+  // 1-Day Free Trial logic: allow all targets on the first day, lock on subsequent days
+  const freeStudyDayKey = getUserKey('tanios_free_study_day');
+  const storedFreeStudyDay = localStorage.getItem(freeStudyDayKey);
+  const todayDateString = new Date().toISOString().slice(0, 10);
+  const isFreeTierLocked = !isPro && storedFreeStudyDay && storedFreeStudyDay !== todayDateString;
+
   // Subject-aware dynamic fallback MCQ based on active mission
   const fallback = getFallbackMCQ(activeMission?.subject || '');
 
@@ -1668,6 +1674,15 @@ export default function Home() {
     );
     setMissions(updated);
     saveState('tanios_missions', updated);
+
+    // If on free tier, establish the free study day on the first target completed
+    if (!isPro && target.type !== 'login') {
+      const freeStudyDayKey = getUserKey('tanios_free_study_day');
+      if (!localStorage.getItem(freeStudyDayKey)) {
+        const todayKey = new Date().toISOString().slice(0, 10);
+        localStorage.setItem(freeStudyDayKey, todayKey);
+      }
+    }
 
     // Award XP for this mission
     awardXp(target.xp, 'Completed Target Task');
@@ -2857,8 +2872,8 @@ JSON Structure:
                         {missions.filter(m => m.done).length} / {missions.length} Complete
                       </span>
                       {!isPro && (
-                        <span style={{ fontSize: '0.68rem', color: completedNonLogin >= 1 ? '#ff6b6b' : '#f59e0b', fontWeight: 700 }}>
-                          Free Tier: {completedNonLogin}/1 Daily Target Used
+                        <span style={{ fontSize: '0.68rem', color: isFreeTierLocked ? '#ff6b6b' : '#f59e0b', fontWeight: 700 }}>
+                          Free Tier: {isFreeTierLocked ? 'Trial Expired (1 Day Used)' : '1-Day Free Trial (Active)'}
                         </span>
                       )}
                     </div>
@@ -2989,7 +3004,7 @@ JSON Structure:
 
                 {/* ── TaniOS Pro Promo Card for Unsubscribed users ── */}
                 {!isPro && (
-                  completedNonLogin >= 1 ? (
+                  isFreeTierLocked ? (
                     <div style={{
                       background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(108, 99, 255, 0.05))',
                       border: '1px solid rgba(239, 68, 68, 0.3)',
@@ -3009,10 +3024,10 @@ JSON Structure:
                       }} />
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
                         <span style={{ fontSize: '1.25rem' }}>⚠️</span>
-                        <strong style={{ fontSize: '0.88rem', color: '#ff6b6b' }}>Daily Study Target Limit Reached!</strong>
+                        <strong style={{ fontSize: '0.88rem', color: '#ff6b6b' }}>1-Day Free Trial Expired!</strong>
                       </div>
                       <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: '0 0 1rem 0', lineHeight: 1.45 }}>
-                        You have completed your **1 free daily study target**. Unlock **TaniOS Pro** to get instant access to study targets for all subjects daily, unlimited doubt solver, and CBSE/RBSE board repeated question banks.
+                        You have completed your **1-day free trial** of study targets. Upgrade to **TaniOS Pro** to get daily study targets for all subjects, unlimited doubt solver, and CBSE/RBSE board repeated question banks.
                       </p>
                       <Link to="/subscribe" className="btn btn-primary" style={{ padding: '0.45rem 1rem', fontSize: '0.78rem', display: 'inline-flex', alignItems: 'center', gap: '0.35rem', background: 'linear-gradient(135deg, #ef4444 0%, #ec4899 100%)', border: 'none', color: '#fff', fontWeight: 700, borderRadius: '6px', boxShadow: '0 4px 10px rgba(239, 68, 68, 0.3)' }}>
                         Unlock Pro Premium (₹199/month) ➔
@@ -3040,7 +3055,7 @@ JSON Structure:
                         <strong style={{ fontSize: '0.88rem', color: '#fff' }}>Unlock TaniOS Pro Study Targets</strong>
                       </div>
                       <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: '0 0 1rem 0', lineHeight: 1.45 }}>
-                        You are currently on the **Free Tier (Limited to 1 daily study target)**. Upgrade to unlock all subjects targets daily, textbook uploads, and CBSE/RBSE board repeated question banks!
+                        You are currently on the **Free Tier (1-Day Trial active today)**. Upgrade to unlock all subjects targets daily, textbook uploads, and CBSE/RBSE board repeated question banks!
                       </p>
                       <Link to="/subscribe" className="btn btn-primary" style={{ padding: '0.45rem 1rem', fontSize: '0.78rem', display: 'inline-flex', alignItems: 'center', gap: '0.35rem', background: 'linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%)', border: 'none', color: '#fff', fontWeight: 700, borderRadius: '6px' }}>
                         Upgrade to Pro (₹199/month) ➔
@@ -3051,7 +3066,7 @@ JSON Structure:
 
                 <div>
                   {missions.map(mission => {
-                    const isMissionLocked = !isPro && mission.type !== 'login' && !mission.done && completedNonLogin >= 1;
+                    const isMissionLocked = !isPro && mission.type !== 'login' && !mission.done && isFreeTierLocked;
                     return (
                       <div 
                         key={mission.id} 
@@ -4032,7 +4047,7 @@ JSON Structure:
               TaniOS Pro Upgrade Required
             </h3>
             <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.5, margin: '0 0 1.5rem 0' }}>
-              You are currently on the **Free Tier**, which is limited to **1 daily target mission**. Complete the upgrade to unlock all subject targets every day and continue your revision!
+              You are currently on the **Free Tier**, which is limited to **1 free day of target missions**. Complete the upgrade to unlock all subject targets every day and continue your revision!
             </p>
 
             {/* Perks Grid */}
