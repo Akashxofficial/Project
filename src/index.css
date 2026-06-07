@@ -288,8 +288,7 @@ img { max-width: 100%; }
   z-index: 100;
   /* NO animation here — it conflicts with mobile translateX hide */
   transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: hidden;
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
 }
@@ -363,7 +362,26 @@ img { max-width: 100%; }
 }
 
 /* ─── NAV ────────────────────────────────────────────────────────────────────── */
-.nav-menu { display: flex; flex-direction: column; gap: 0.2rem; flex: 1; }
+.nav-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0;
+  padding-right: 2px;
+}
+.nav-menu::-webkit-scrollbar {
+  width: 3px;
+}
+.nav-menu::-webkit-scrollbar-track {
+  background: transparent;
+}
+.nav-menu::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
 
 .nav-section-label {
   font-size: 0.68rem;
@@ -1668,4 +1686,56 @@ img, video, canvas, iframe { max-width: 100%; height: auto; }
 /* ─── HEADER SCROLL SHADOW ────────────────────────────────────────────────────── */
 .header.scrolled {
   box-shadow: 0 4px 24px rgba(0,0,0,0.15);
+}
+
+/* ─── SENIOR DEV RESPONSIVE UTILITY GRIDS ─────────────────────────────────────── */
+.login-feature-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.625rem;
+  margin-bottom: 1.75rem;
+}
+
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.notes-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.625rem;
+}
+
+.notes-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+}
+
+.notes-grid-5 {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.5rem;
+}
+
+@media (max-width: 576px) {
+  .metrics-grid {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .login-feature-grid {
+    grid-template-columns: 1fr;
+  }
+  .notes-grid-3 {
+    grid-template-columns: 1fr;
+  }
+  .notes-grid-5 {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }

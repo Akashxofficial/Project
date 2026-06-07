@@ -100,10 +100,7 @@ export default function LoginPage() {
         </div>
 
         {/* Feature chips — staggered entrance */}
-        <div style={{
-          display: 'grid', gridTemplateColumns: '1fr 1fr',
-          gap: '0.625rem', marginBottom: '1.75rem'
-        }}>
+        <div className="login-feature-grid">
           {features.map((f, i) => (
             <div key={i} style={{
               background: 'var(--bg-tertiary)',

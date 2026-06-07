@@ -700,6 +700,23 @@ export default function Subscribe() {
           height: 100%;
           box-sizing: border-box;
         }
+        .metrics-grid {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 0.75rem;
+          margin-bottom: 1.5rem;
+        }
+        @media (max-width: 576px) {
+          .metrics-grid {
+            grid-template-columns: 1fr;
+            gap: 0.75rem;
+          }
+        }
+        @media (max-width: 480px) {
+          .benefit-card, .gateway-card {
+            padding: 1.5rem 1rem !important;
+          }
+        }
         .perk-item {
           display: flex;
           align-items: flex-start;
@@ -810,12 +827,7 @@ export default function Subscribe() {
           </div>
 
           {/* Academic Performance Boost Metrics Grid */}
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(3, 1fr)',
-            gap: '0.75rem',
-            marginBottom: '1.5rem'
-          }}>
+          <div className="metrics-grid">
             {[
               { label: 'Active Recall', value: '+45%', desc: 'Efficiency Boost' },
               { label: 'Syllabus Prep', value: '3x Faster', desc: 'Coverage Speed' },

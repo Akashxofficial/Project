@@ -7,7 +7,7 @@ import {
   AlertCircle, RefreshCw, Plus, Trash2, Sparkles, Zap, Play, Copy, Check, Calendar,
   Loader2, X, Lock
 } from 'lucide-react';
-import { generateAIContent, generateExamRoadmapPrompt, generateOneClickPrompt, fixMathFormatting } from '../lib/ai';
+import { generateAIContent, generateOneClickPrompt, fixMathFormatting } from '../lib/ai';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
@@ -1340,30 +1340,7 @@ export default function Home() {
   const [oneClickResult, setOneClickResult] = useState('');
   const [oneClickCopied, setOneClickCopied] = useState(false);
 
-  // ── 5. EXAM MODE ROADMAP STATE ──
-  const [examBoard, setExamBoard] = useState('CBSE (Central Board)');
-  const [examGrade, setExamGrade] = useState('Class 10');
-  const [examSubject, setExamSubject] = useState('Science');
-  const [examDays, setExamDays] = useState('15');
-  const [examLoading, setExamLoading] = useState(false);
-  const [examStatus, setExamStatus] = useState('');
-  const [examResult, setExamResult] = useState('');
-  const [roadmapCopied, setRoadmapCopied] = useState(false);
-
-  // Get available subjects for selected examGrade dynamically based on CLASS_SYLLABUS
-  const examGradeNum = examGrade.replace('Class ', '');
-  const examAvailableSubjects = CLASS_SYLLABUS[examGradeNum]
-    ? Object.keys(CLASS_SYLLABUS[examGradeNum])
-    : ['Science', 'Mathematics', 'Social Science', 'English'];
-
-  // Auto-switch subject when class changes if current subject is not available
-  useEffect(() => {
-    const gradeNum = examGrade.replace('Class ', '');
-    const available = CLASS_SYLLABUS[gradeNum] ? Object.keys(CLASS_SYLLABUS[gradeNum]) : [];
-    if (available.length > 0 && !available.includes(examSubject)) {
-      setExamSubject(available[0]);
-    }
-  }, [examGrade]);
+  // ── EXAM MODE ROADMAP STATE REMOVED ──
 
   // ── MISSION GENERATOR (generates from student's actual subjects) ──
   const generateMissionsFromProfile = (board, grade, subjects, activeChaptersMap = {}) => {
@@ -1458,9 +1435,7 @@ export default function Home() {
     setMissions(newMissions);
     saveState('tanios_missions', newMissions);
 
-    // Also update exam mode defaults
-    setExamBoard(setupBoard === 'CBSE' ? 'CBSE (Central Board)' : setupBoard === 'RBSE' ? 'RBSE (Rajasthan Board)' : setupBoard);
-    setExamGrade(`Class ${setupClass}`);
+    // Also update one-click defaults
     setOneClickGrade(setupClass);
     setOneClickBoard(setupBoard);
 
@@ -1578,13 +1553,7 @@ export default function Home() {
 
         setMissions(missionsToUse);
 
-        // Sync exam / one-click grade with profile
-        setExamBoard(
-          profile.board === 'CBSE' ? 'CBSE (Central Board)'
-          : profile.board === 'RBSE' ? 'RBSE (Rajasthan Board)'
-          : profile.board
-        );
-        setExamGrade(`Class ${profile.grade}`);
+        // Sync one-click grade with profile
         setOneClickGrade(profile.grade);
         setOneClickBoard(profile.board || 'CBSE');
       } else {
@@ -2007,41 +1976,7 @@ JSON Structure:
     setTimeout(() => setOneClickCopied(false), 2000);
   };
 
-  // ── TRIGGER EXAM ROADMAP GENERATION ──
-  const handleGenerateRoadmap = async (e) => {
-    e.preventDefault();
-    setExamLoading(true);
-    setExamResult('');
-    setExamStatus('thinking');
 
-    const prompt = generateExamRoadmapPrompt(examBoard, examGrade, examSubject, examDays);
-    const response = await generateAIContent(prompt, (status) => setExamStatus(status || ''));
-
-    setExamLoading(false);
-    setExamStatus('');
-
-    if (response.error || !response.text) {
-      setExamResult(`⚠️ Roadmap creation failed: ${response.message || 'Please check your connection.'}`);
-    } else {
-      const formattedText = fixMathFormatting(response.text);
-      setExamResult(formattedText);
-      awardXp(30, 'Unlocked Board Revision Roadmap');
-      if (currentUser) {
-        saveDocument(
-          currentUser.uid || currentUser.email,
-          'revision',
-          `Board Roadmap: ${examSubject} (${examBoard} Class ${examGrade.replace('Class ', '')})`,
-          formattedText
-        ).catch(err => console.warn('Save roadmap failed (non-blocking):', err));
-      }
-    }
-  };
-
-  const handleCopyRoadmap = () => {
-    navigator.clipboard.writeText(examResult);
-    setRoadmapCopied(true);
-    setTimeout(() => setRoadmapCopied(false), 2000);
-  };
 
   // Level thresholds and titles
   const levelData = {
@@ -2595,85 +2530,7 @@ JSON Structure:
             </div>
           </div>
 
-          {/* Exam Countdown banner — real-time sync with Indian board exam dates */}
-          {(() => {
-            if (!profileSetupDone) return null;
-            // ── REAL INDIAN BOARD EXAM DATE DATABASE ──
-            // These are approximate official start dates. Updated yearly.
-            const EXAM_DATES = {
-              CBSE: {
-                '10': { month: 1, day: 15, label: 'CBSE Class 10 Board Exam' },   // ~Feb 15
-                '12': { month: 1, day: 15, label: 'CBSE Class 12 Board Exam' },   // ~Feb 15
-                '8':  { month: 2, day: 1,  label: 'Class 8 Annual Exam' },         // ~March 1
-                '9':  { month: 2, day: 1,  label: 'Class 9 Annual Exam' },         // ~March 1
-                '11': { month: 2, day: 1,  label: 'Class 11 Annual Exam' },        // ~March 1
-              },
-              RBSE: {
-                '10': { month: 2, day: 5,  label: 'RBSE Class 10 Board Exam' },   // ~March 5
-                '12': { month: 2, day: 5,  label: 'RBSE Class 12 Board Exam' },   // ~March 5
-                '8':  { month: 2, day: 10, label: 'Class 8 Annual Exam' },         // ~March 10
-                '9':  { month: 2, day: 10, label: 'Class 9 Annual Exam' },         // ~March 10
-                '11': { month: 2, day: 10, label: 'Class 11 Annual Exam' },        // ~March 10
-              },
-            };
 
-            const board = profileBoard || 'CBSE';
-            // Extract just the number from profileClass (could be "10", "10th", "Class 10" etc)
-            const classNum = (profileClass || '10').toString().replace(/\D/g, '') || '10';
-            const examInfo = EXAM_DATES[board]?.[classNum] || EXAM_DATES['CBSE']['10'];
-
-            const now = new Date();
-            let examDate;
-            let examYear;
-            if (profileExamDate) {
-              examDate = new Date(profileExamDate);
-              examYear = examDate.getFullYear();
-            } else {
-              // Build the target exam date — Indian academic year ends in Feb-March
-              // If we're past April, the next exam is in the following calendar year
-              examYear = now.getFullYear();
-              examDate = new Date(examYear, examInfo.month, examInfo.day);
-              // If the exam date has already passed this year, target next year
-              if (examDate <= now) {
-                examYear += 1;
-                examDate.setFullYear(examYear);
-              }
-            }
-
-            const diffMs = examDate - now;
-            const diffDays = Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
-
-            // Color based on urgency
-            let countdownColor = 'var(--accent)';
-            if (diffDays <= 7) countdownColor = '#ef4444';        // red — exam week!
-            else if (diffDays <= 30) countdownColor = '#f59e0b';  // amber — 1 month
-            else if (diffDays <= 90) countdownColor = 'var(--accent)'; // normal
-
-            return (
-              <div className="countdown-box" style={{
-                background: 'rgba(0,0,0,0.15)',
-                border: '1px solid rgba(255,255,255,0.06)',
-                borderRadius: '12px',
-                padding: '1rem',
-                textAlign: 'center',
-                minWidth: '150px',
-                flexShrink: 0,
-              }}>
-                <span style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>
-                  {board} Target {examYear}
-                </span>
-                <div style={{ fontSize: '1.75rem', fontWeight: 900, color: countdownColor, margin: '0.25rem 0' }}>
-                  {diffDays} Day{diffDays !== 1 ? 's' : ''}
-                </div>
-                <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', lineHeight: 1.3, display: 'block' }}>
-                  {examInfo.label}
-                </span>
-                <span style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', opacity: 0.6, marginTop: '0.25rem', display: 'block' }}>
-                  {examDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
-                </span>
-              </div>
-            );
-          })()}
         </div>
       </div>
 
@@ -3353,117 +3210,6 @@ JSON Structure:
             )}
           </section>
 
-          {/* C. EXAM MODE ROADMAP ENGINE (BOARD COUNTDOWN SYSTEM) */}
-          <section className="card" style={{ borderLeft: '4px solid var(--accent)', marginTop: '0px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-              <GraduationCap color="var(--accent)" size={20} />
-              <h2 style={{ fontSize: '1.25rem', margin: 0 }}>
-                {['Class 10', 'Class 12'].includes(examGrade) ? 'Active Board Exam Mode' : 'Active School Exam Mode'}
-              </h2>
-            </div>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '1.25rem' }}>
-              {['Class 10', 'Class 12'].includes(examGrade) 
-                ? 'Got an upcoming board exam? Lock in your targets. The AI will instantly engineer a revision roadmap, daily high-yield topics, and repeated board questions.'
-                : 'Got an upcoming school final exam? Lock in your targets. The AI will instantly engineer a revision roadmap, daily high-yield topics, and practice questions.'}
-            </p>
-
-            <form onSubmit={handleGenerateRoadmap} className="exam-form-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '0.75rem', marginBottom: '1rem' }}>
-              <div>
-                <label className="input-label" style={{ fontSize: '0.7rem' }}>Select Board</label>
-                <select className="input-field" value={examBoard} onChange={e => setExamBoard(e.target.value)} style={{ padding: '0.5rem', fontSize: '0.85rem', width: '100%' }}>
-                  <option value="CBSE (Central Board)">CBSE (Central Board)</option>
-                  <option value="RBSE (Rajasthan Board)">RBSE (Rajasthan Board)</option>
-                  <option value="UP Board">UP Board (Hindi/Eng Medium)</option>
-                  <option value="Bihar Board">Bihar Board (BSEB)</option>
-                  <option value="Non-Board (School Exams)">Non-Board (School Exams)</option>
-                </select>
-              </div>
-              <div>
-                <label className="input-label" style={{ fontSize: '0.7rem' }}>Class</label>
-                <select 
-                  className="input-field" 
-                  value={examGrade} 
-                  onChange={e => {
-                    const val = e.target.value;
-                    setExamGrade(val);
-                    if (!['Class 10', 'Class 12'].includes(val)) {
-                      setExamBoard('Non-Board (School Exams)');
-                    } else if (examBoard === 'Non-Board (School Exams)') {
-                      setExamBoard('CBSE (Central Board)');
-                    }
-                  }} 
-                  style={{ padding: '0.5rem', fontSize: '0.85rem', width: '100%' }}
-                >
-                  <option value="Class 8">Class 8</option>
-                  <option value="Class 9">Class 9</option>
-                  <option value="Class 10">Class 10</option>
-                  <option value="Class 11">Class 11</option>
-                  <option value="Class 12">Class 12</option>
-                </select>
-              </div>
-              <div>
-                <label className="input-label" style={{ fontSize: '0.7rem' }}>Focus Subject</label>
-                <select className="input-field" value={examSubject} onChange={e => setExamSubject(e.target.value)} style={{ padding: '0.5rem', fontSize: '0.85rem', width: '100%' }}>
-                  {examAvailableSubjects.map(subj => (
-                    <option key={subj} value={subj}>{subj}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="input-label" style={{ fontSize: '0.7rem' }}>Days Remaining</label>
-                <select className="input-field" value={examDays} onChange={e => setExamDays(e.target.value)} style={{ padding: '0.5rem', fontSize: '0.85rem', width: '100%' }}>
-                  <option value="15">15 Days (Sprint)</option>
-                  <option value="30">30 Days (Standard)</option>
-                  <option value="45">45 Days (Full Revision)</option>
-                </select>
-              </div>
-              <div style={{ gridColumn: '1 / -1', marginTop: '0.5rem' }}>
-                <button 
-                  type="submit" 
-                  className="btn btn-primary" 
-                  style={{ width: '100%', padding: '0.65rem', backgroundColor: 'var(--accent)', color: '#fff', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
-                  disabled={examLoading}
-                >
-                  {examLoading ? (
-                    <>
-                      <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />
-                      {examStatus && examStatus !== 'thinking' ? examStatus : 'Engineering Board Roadmap...'}
-                    </>
-                  ) : (
-                    <><Sparkles size={16} /> Generate Day-by-Day Exam Roadmap</>
-                  )}
-                </button>
-              </div>
-            </form>
-
-            {/* Display generated roadmap */}
-            {examResult && (
-              <div style={{
-                background: 'var(--bg-tertiary)',
-                borderRadius: '10px',
-                padding: '1.25rem',
-                border: '1px solid var(--border)',
-                marginTop: '1rem',
-                maxHeight: '500px',
-                overflowY: 'auto'
-              }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem' }}>
-                  <strong style={{ color: 'var(--accent)', fontSize: '0.9rem' }}>🎯 Customized Board Study Roadmap ({examBoard})</strong>
-                  <button onClick={handleCopyRoadmap} className="btn btn-secondary" style={{ padding: '0.25rem 0.5rem', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                    {roadmapCopied ? <Check size={12} color="var(--success)" /> : <Copy size={12} />}
-                    {roadmapCopied ? 'Copied Roadmap' : 'Copy Roadmap'}
-                  </button>
-                </div>
-                <div className="generated-content" style={{ fontSize: '0.88rem', lineHeight: 1.7, background: 'transparent', border: 'none', padding: 0, margin: 0, boxShadow: 'none' }}>
-                  <ReactMarkdown
-                    remarkPlugins={[remarkGfm, remarkMath]}
-                    rehypePlugins={[rehypeKatex]}
-                    components={markdownComponents}
-                  >{examResult}</ReactMarkdown>
-                </div>
-              </div>
-            )}
-          </section>
 
         </div>
 
@@ -3655,23 +3401,7 @@ JSON Structure:
 
       </div>
 
-      {/* ── Glassmorphic AI Loader Overlay (Specifically for Board Roadmap Mode) ── */}
-      {examLoading && createPortal(
-        <div className="global-ai-loader-overlay">
-          <div className="global-ai-loader-card">
-            <div className="global-ai-loader-glow-orb"></div>
-            <div className="global-ai-loader-icon-wrapper">
-              <Sparkles className="global-ai-loader-icon" size={32} />
-            </div>
-            <h3>TaniOS AI is crafting...</h3>
-            <p>Please wait a moment while the AI compiles high-yield study materials for you.</p>
-            <div className="global-ai-loader-bar">
-              <div className="global-ai-loader-bar-fill"></div>
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
+
 
       {/* ── INTERACTIVE DAILY STUDY MISSIONS MODAL ── */}
       {activeMission && createPortal(

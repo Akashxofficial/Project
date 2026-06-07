@@ -206,7 +206,7 @@ Ensure that any scientific, mathematical, or numerical equations are properly fo
           {/* Board */}
           <div className="input-group">
             <label className="input-label">Select Board</label>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.625rem' }}>
+            <div className="notes-grid-2">
               {['CBSE', 'RBSE'].map(b => (
                 <button key={b} type="button" onClick={() => handleBoardChange(b)} style={{ padding: '0.75rem', borderRadius: 'var(--radius-sm)', border: `2px solid ${board === b ? 'var(--primary)' : 'var(--border)'}`, background: board === b ? 'var(--primary-light)' : 'var(--bg-tertiary)', color: board === b ? 'var(--primary)' : 'var(--text)', fontWeight: board === b ? 700 : 500, cursor: 'pointer', fontSize: '0.95rem', transition: 'all 0.18s ease' }}>
                   {b}
@@ -219,7 +219,7 @@ Ensure that any scientific, mathematical, or numerical equations are properly fo
           {board === 'RBSE' && (
             <div className="input-group">
               <label className="input-label">Select Note Language</label>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.625rem' }}>
+              <div className="notes-grid-2">
                 {['English', 'Hindi'].map(lang => (
                   <button
                     key={lang}
@@ -247,7 +247,7 @@ Ensure that any scientific, mathematical, or numerical equations are properly fo
           {/* Class */}
           <div className="input-group">
             <label className="input-label">Select Class</label>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '0.5rem' }}>
+            <div className="notes-grid-5">
               {CLASSES.map(cls => (
                 <button key={cls} type="button" onClick={() => handleGradeChange(cls)} disabled={!board} style={{ padding: '0.625rem 0.25rem', borderRadius: 'var(--radius-sm)', border: `2px solid ${grade === cls ? 'var(--primary)' : 'var(--border)'}`, background: grade === cls ? 'var(--primary-light)' : 'var(--bg-tertiary)', color: grade === cls ? 'var(--primary)' : 'var(--text)', fontWeight: grade === cls ? 700 : 500, cursor: board ? 'pointer' : 'not-allowed', opacity: board ? 1 : 0.4, fontSize: '0.8rem', transition: 'all 0.18s ease' }}>
                   {cls}
@@ -260,7 +260,7 @@ Ensure that any scientific, mathematical, or numerical equations are properly fo
           {isSenior && (
             <div className="input-group">
               <label className="input-label">Select Stream</label>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem' }}>
+              <div className="notes-grid-3">
                 {STREAMS.map(s => (
                   <button key={s} type="button" onClick={() => handleStreamChange(s)} style={{ padding: '0.625rem 0.25rem', borderRadius: 'var(--radius-sm)', border: `2px solid ${stream === s ? 'var(--primary)' : 'var(--border)'}`, background: stream === s ? 'var(--primary-light)' : 'var(--bg-tertiary)', color: stream === s ? 'var(--primary)' : 'var(--text)', fontWeight: stream === s ? 700 : 500, cursor: 'pointer', fontSize: '0.82rem', transition: 'all 0.18s ease' }}>
                     {s}
