@@ -75,9 +75,9 @@ const emailShell = (content) => `
             <td style="padding:20px 36px 32px;border-top:1px solid rgba(255,255,255,0.06);">
               <p style="margin:0;font-size:0.75rem;color:rgba(255,255,255,0.25);text-align:center;line-height:1.6;">
                 TaniOS AI — Smart Study Platform for Indian Students<br/>
-                <a href="https://tanios.ai" style="color:#6366f1;text-decoration:none;">tanios.ai</a>
+                <a href="https://project-ar2s.vercel.app" style="color:#6366f1;text-decoration:none;">project-ar2s.vercel.app</a>
                 &nbsp;·&nbsp;
-                <a href="https://tanios.ai/unsubscribe" style="color:rgba(255,255,255,0.25);text-decoration:none;">
+                <a href="https://project-ar2s.vercel.app/unsubscribe" style="color:rgba(255,255,255,0.25);text-decoration:none;">
                   Unsubscribe
                 </a>
               </p>
@@ -171,7 +171,7 @@ export const sendWelcomeEmail = (email, name) => {
     </table>
 
     <div style="text-align:center;">
-      <a href="https://tanios.ai"
+      <a href="https://project-ar2s.vercel.app"
          style="display:inline-block;padding:14px 36px;
                 background:linear-gradient(135deg,#6366f1,#8b5cf6);
                 color:#fff;font-weight:700;font-size:0.95rem;
@@ -221,7 +221,7 @@ export const sendStreakReminderEmail = (email, name, currentStreak) => {
     </p>
 
     <div style="text-align:center;">
-      <a href="https://tanios.ai/chat"
+      <a href="https://project-ar2s.vercel.app/chat"
          style="display:inline-block;padding:14px 36px;
                 background:linear-gradient(135deg,#f59e0b,#ef4444);
                 color:#fff;font-weight:700;font-size:0.95rem;
@@ -278,7 +278,7 @@ export const sendStudyReminderEmail = (email, name) => {
           ['🧪', 'Take a Test', '/test'],
         ].map(([icon, label, path]) => `
           <td width="33%" style="padding:0 6px;text-align:center;">
-            <a href="https://tanios.ai${path}"
+            <a href="https://project-ar2s.vercel.app${path}"
                style="display:block;background:rgba(255,255,255,0.04);
                       border:1px solid rgba(255,255,255,0.08);border-radius:10px;
                       padding:16px 8px;text-decoration:none;
@@ -292,7 +292,7 @@ export const sendStudyReminderEmail = (email, name) => {
     </table>
 
     <div style="text-align:center;">
-      <a href="https://tanios.ai"
+      <a href="https://project-ar2s.vercel.app"
          style="display:inline-block;padding:13px 32px;
                 background:linear-gradient(135deg,#6366f1,#8b5cf6);
                 color:#fff;font-weight:700;font-size:0.9rem;
@@ -349,7 +349,7 @@ export const sendSubscriptionApprovedEmail = (email, name, plan = 'Pro AI Member
     </div>
 
     <div style="text-align:center;">
-      <a href="https://tanios.ai/chat"
+      <a href="https://project-ar2s.vercel.app/chat"
          style="display:inline-block;padding:14px 36px;
                 background:linear-gradient(135deg,#10b981,#059669);
                 color:#fff;font-weight:700;font-size:0.95rem;
@@ -400,7 +400,7 @@ export const sendSubscriptionRejectedEmail = (email, name) => {
     </p>
 
     <div style="text-align:center;">
-      <a href="https://tanios.ai/subscribe"
+      <a href="https://project-ar2s.vercel.app/subscribe"
          style="display:inline-block;padding:13px 32px;
                 background:linear-gradient(135deg,#6366f1,#8b5cf6);
                 color:#fff;font-weight:700;font-size:0.9rem;
@@ -434,7 +434,7 @@ export const sendBroadcastEmail = (recipients, subject, messageHtml) => {
     </div>
 
     <div style="text-align:center;">
-      <a href="https://tanios.ai"
+      <a href="https://project-ar2s.vercel.app"
          style="display:inline-block;padding:13px 32px;
                 background:linear-gradient(135deg,#6366f1,#8b5cf6);
                 color:#fff;font-weight:700;font-size:0.9rem;
