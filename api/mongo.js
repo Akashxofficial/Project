@@ -38,6 +38,16 @@ const studentSchema = new mongoose.Schema({
   subscriptionActivatedAt: { type: Date, default: null },
   subscriptionAmount: { type: Number, default: 0 },
   subscriptionUtr: { type: String, default: '' },
+  // ── Email notification fields ──────────────────────────────────────────────
+  welcomeEmailSent: { type: Boolean, default: false },
+  lastEmailSentAt: { type: Date, default: null },
+  emailOptOut: { type: Boolean, default: false }, // GDPR: user can opt out
+  notificationPrefs: {
+    streakReminder: { type: Boolean, default: true },
+    studyReminder:  { type: Boolean, default: true },
+    announcements:  { type: Boolean, default: true },
+  },
+  // ──────────────────────────────────────────────────────────────────────────
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now }
 });

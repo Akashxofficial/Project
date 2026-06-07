@@ -3,6 +3,14 @@ import handler from './api/generate.js';
 import Razorpay from 'razorpay';
 import crypto from 'crypto';
 import { connectDB, ActivityModel, StudentModel, PaymentModel } from './api/mongo.js';
+import {
+  sendWelcomeEmail,
+  sendStreakReminderEmail,
+  sendStudyReminderEmail,
+  sendSubscriptionApprovedEmail,
+  sendSubscriptionRejectedEmail,
+  sendBroadcastEmail,
+} from './api/mailer.js';
 
 const app = express();
 // Connect to MongoDB
@@ -358,6 +366,14 @@ app.post('/api/admin/approve-subscription', async (req, res) => {
     await approvalActivity.save();
 
     console.log(`✅ [Admin] Subscription approved for userId: ${userId || 'N/A'}, email: ${userEmail || 'N/A'}, UTR: ${utr}`);
+
+    // ── Send approval email ────────────────────────────────────────────────
+    if (userEmail) {
+      sendSubscriptionApprovedEmail(userEmail, userName).catch(e =>
+        console.error('⚠️  [Mailer] Approval email failed:', e.message)
+      );
+    }
+
     res.status(200).json({ success: true, user: updated });
   } catch (error) {
     console.error('❌ [Admin] Error approving subscription:', error);
@@ -402,10 +418,158 @@ app.post('/api/admin/reject-subscription', async (req, res) => {
     await rejectActivity.save();
 
     console.log(`❌ [Admin] Subscription rejected for userId: ${userId || 'N/A'}, email: ${userEmail || 'N/A'}, UTR: ${utr}`);
+
+    // ── Send rejection email ───────────────────────────────────────────────
+    if (userEmail) {
+      sendSubscriptionRejectedEmail(userEmail, userName).catch(e =>
+        console.error('⚠️  [Mailer] Rejection email failed:', e.message)
+      );
+    }
+
     res.status(200).json({ success: true, user: updated });
   } catch (error) {
     console.error('❌ [Admin] Error rejecting subscription:', error);
     res.status(500).json({ error: 'Failed to reject subscription: ' + error.message });
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// 📧 EMAIL NOTIFICATION ENDPOINTS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// ── Send welcome email (called automatically on first user sync) ──────────────
+app.post('/api/notify/welcome', async (req, res) => {
+  try {
+    const { uid, email, name } = req.body;
+    if (!email) return res.status(400).json({ error: 'Missing email' });
+
+    // Prevent duplicate welcome emails
+    const student = uid ? await StudentModel.findOne({ uid }) : null;
+    if (student?.welcomeEmailSent) {
+      return res.status(200).json({ success: true, skipped: true, reason: 'Already sent' });
+    }
+
+    const result = await sendWelcomeEmail(email, name);
+
+    // Mark welcome email as sent
+    if (uid && result.success) {
+      await StudentModel.findOneAndUpdate({ uid }, { welcomeEmailSent: true, lastEmailSentAt: new Date() });
+    }
+
+    res.status(200).json(result);
+  } catch (err) {
+    console.error('❌ [Notify] Welcome email error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── Admin Broadcast: send custom email to all/selected students ───────────────
+app.post('/api/admin/broadcast', async (req, res) => {
+  try {
+    const { subject, message, targetGroup } = req.body;
+    if (!subject || !message) return res.status(400).json({ error: 'Missing subject or message' });
+
+    // Build recipient list
+    let query = { emailOptOut: { $ne: true } };
+    if (targetGroup === 'pro') query.subscriptionActive = true;
+    if (targetGroup === 'free') query.subscriptionActive = { $ne: true };
+
+    const students = await StudentModel.find(query).select('email displayName -_id');
+    if (!students.length) return res.status(200).json({ success: true, sent: 0, message: 'No recipients found' });
+
+    const recipients = students.map(s => s.email);
+    const messageHtml = message.replace(/\n/g, '<br/>');
+
+    // Fire and forget — returns immediately
+    sendBroadcastEmail(recipients, subject, messageHtml)
+      .then(r => console.log(`📢 [Broadcast] Finished: ${r.sent} sent, ${r.failed} failed`))
+      .catch(e => console.error('❌ [Broadcast] Error:', e.message));
+
+    res.status(200).json({
+      success: true,
+      queued: recipients.length,
+      message: `Broadcast queued for ${recipients.length} students`
+    });
+  } catch (err) {
+    console.error('❌ [Notify] Broadcast error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── Streak Reminder: send to students who haven't logged in today ─────────────
+// Call this via cron at 7 PM daily (e.g., from a scheduler or admin panel)
+app.post('/api/admin/notify/streak-reminder', async (req, res) => {
+  try {
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+
+    // Students who have streak > 0 but haven't logged in today
+    const students = await StudentModel.find({
+      emailOptOut: { $ne: true },
+      'notificationPrefs.streakReminder': { $ne: false },
+      streak: { $gt: 0 },
+      $or: [
+        { lastLoginAt: null },
+        { lastLoginAt: { $lt: todayStart } },
+      ],
+    }).select('email displayName streak -_id');
+
+    if (!students.length) {
+      return res.status(200).json({ success: true, sent: 0, message: 'All students are active today!' });
+    }
+
+    let sent = 0, failed = 0;
+    for (const s of students) {
+      const r = await sendStreakReminderEmail(s.email, s.displayName, s.streak);
+      if (r.success) sent++; else failed++;
+      await new Promise(resolve => setTimeout(resolve, 300)); // rate limit
+    }
+
+    console.log(`🔥 [Streak Reminder] Sent: ${sent}, Failed: ${failed}`);
+    res.status(200).json({ success: true, sent, failed, total: students.length });
+  } catch (err) {
+    console.error('❌ [Notify] Streak reminder error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── Daily Study Reminder: send to all opted-in students ───────────────────────
+// Call this via cron at 8 AM daily
+app.post('/api/admin/notify/study-reminder', async (req, res) => {
+  try {
+    const students = await StudentModel.find({
+      emailOptOut: { $ne: true },
+      'notificationPrefs.studyReminder': { $ne: false },
+    }).select('email displayName -_id');
+
+    if (!students.length) {
+      return res.status(200).json({ success: true, sent: 0 });
+    }
+
+    let sent = 0, failed = 0;
+    for (const s of students) {
+      const r = await sendStudyReminderEmail(s.email, s.displayName);
+      if (r.success) sent++; else failed++;
+      await new Promise(resolve => setTimeout(resolve, 300));
+    }
+
+    console.log(`📚 [Study Reminder] Sent: ${sent}, Failed: ${failed}`);
+    res.status(200).json({ success: true, sent, failed, total: students.length });
+  } catch (err) {
+    console.error('❌ [Notify] Study reminder error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── Email stats: how many students opted in/out ───────────────────────────────
+app.get('/api/admin/notify/stats', async (req, res) => {
+  try {
+    const total = await StudentModel.countDocuments({});
+    const optedOut = await StudentModel.countDocuments({ emailOptOut: true });
+    const welcomeSent = await StudentModel.countDocuments({ welcomeEmailSent: true });
+    res.status(200).json({ total, optedOut, optedIn: total - optedOut, welcomeSent });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 

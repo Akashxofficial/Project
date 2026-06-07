@@ -1,28 +1,5 @@
 // api/track/payment.js — Vercel Serverless Function
-import mongoose from 'mongoose';
-
-const MONGODB_URI = process.env.MONGODB_URI;
-
-let isConnected = false;
-
-const connectDB = async () => {
-  if (isConnected && mongoose.connection.readyState >= 1) return;
-  await mongoose.connect(MONGODB_URI);
-  isConnected = true;
-};
-
-const paymentSchema = new mongoose.Schema({
-  userId:    { type: String, required: true },
-  userEmail: { type: String, required: true },
-  amount:    { type: Number, required: true },
-  utr:       { type: String, required: true },
-  status:    { type: String, required: true },
-  method:    { type: String },
-  createdAt: { type: Date, default: Date.now }
-});
-
-const PaymentModel =
-  mongoose.models.Payment || mongoose.model('Payment', paymentSchema);
+import { connectDB, PaymentModel } from '../mongo.js';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');

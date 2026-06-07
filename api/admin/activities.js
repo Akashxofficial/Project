@@ -1,26 +1,5 @@
 // api/admin/activities.js — Vercel Serverless Function
-import mongoose from 'mongoose';
-
-const MONGODB_URI = process.env.MONGODB_URI;
-
-let isConnected = false;
-
-const connectDB = async () => {
-  if (isConnected && mongoose.connection.readyState >= 1) return;
-  await mongoose.connect(MONGODB_URI);
-  isConnected = true;
-};
-
-const activitySchema = new mongoose.Schema({
-  userId:    { type: String, required: true },
-  userName:  { type: String, required: true },
-  action:    { type: String, required: true },
-  details:   { type: String },
-  createdAt: { type: Date, default: Date.now }
-});
-
-const ActivityModel =
-  mongoose.models.Activity || mongoose.model('Activity', activitySchema);
+import { connectDB, ActivityModel } from '../mongo.js';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');

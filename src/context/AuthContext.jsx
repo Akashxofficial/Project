@@ -97,7 +97,25 @@ export function AuthProvider({ children }) {
           };
           setCurrentUser(userObj);
           localStorage.setItem('tanios_user', JSON.stringify(userObj));
-          syncUserToMongo(userObj.uid, userObj.email, userObj.displayName, userObj.photoURL).catch(console.warn);
+
+          // Sync user to MongoDB and send welcome email on first login
+          syncUserToMongo(userObj.uid, userObj.email, userObj.displayName, userObj.photoURL)
+            .then(async (mongoData) => {
+              // Only send welcome email on very first login (loginCount === 1)
+              if (mongoData?.user?.loginCount === 1) {
+                const BACKEND_URL = import.meta.env.DEV ? 'http://localhost:3001' : '';
+                fetch(`${BACKEND_URL}/api/notify/welcome`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    uid: userObj.uid,
+                    email: userObj.email,
+                    name: userObj.displayName,
+                  }),
+                }).catch(() => {}); // silent fail — never block UI
+              }
+            })
+            .catch(console.warn);
         } else {
           // If we had a mock logged-in user, keep it persistent across refresh
           if (persistedUser && !persistedUser.isGuest) {

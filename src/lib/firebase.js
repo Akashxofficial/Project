@@ -327,14 +327,18 @@ export const logActivity = async (userId, userName, action, details) => {
 
 export const syncUserToMongo = async (uid, email, displayName, photoURL) => {
   try {
-    await fetch(`${BACKEND_URL}/api/track/user`, {
+    const response = await fetch(`${BACKEND_URL}/api/track/user`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ uid, email, displayName, photoURL: photoURL || '' })
     });
+    if (response.ok) {
+      return await response.json(); // { success: true, user: { loginCount, ... } }
+    }
   } catch (e) {
     console.error("❌ Error syncing user to MongoDB:", e);
   }
+  return null;
 };
 
 export const trackPaymentInMongo = async (userId, userEmail, amount, utr, status, method) => {

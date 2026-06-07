@@ -14,6 +14,11 @@
     "api/track/payment.js":         { "maxDuration": 15 },
     "api/track/subscription.js":    { "maxDuration": 15 },
     "api/admin/activities.js":      { "maxDuration": 30 },
-    "api/admin/students.js":        { "maxDuration": 30 }
+    "api/admin/students.js":        { "maxDuration": 30 },
+    "api/notify/welcome.js":              { "maxDuration": 15 },
+    "api/admin/broadcast.js":             { "maxDuration": 60 },
+    "api/admin/notify/stats.js":           { "maxDuration": 15 },
+    "api/admin/notify/streak-reminder.js": { "maxDuration": 60 },
+    "api/admin/notify/study-reminder.js":  { "maxDuration": 60 }
   }
 }

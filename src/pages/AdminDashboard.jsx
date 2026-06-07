@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { LayoutDashboard, Key, ShieldAlert, Users, Settings, Activity, Sparkles, RefreshCw, CheckCircle, AlertTriangle, CreditCard, ClipboardList } from 'lucide-react';
+import { LayoutDashboard, Key, ShieldAlert, Users, Settings, Activity, Sparkles, RefreshCw, CheckCircle, AlertTriangle, CreditCard, ClipboardList, Mail, Send, Bell } from 'lucide-react';
 import { db, getActivities, getStudents, trackSubscriptionInMongo } from '../lib/firebase';
 import { collection, getDocs, query, orderBy, doc, updateDoc, setDoc } from 'firebase/firestore';
 
@@ -68,6 +68,56 @@ export default function AdminDashboard() {
   const [platformActivities, setPlatformActivities] = useState([]);
   const [fetchingActivities, setFetchingActivities] = useState(false);
 
+  // ── Email Notification State ──────────────────────────────────────────────────
+  const [emailStats, setEmailStats] = useState(null);
+  const [broadcastSubject, setBroadcastSubject] = useState('');
+  const [broadcastMessage, setBroadcastMessage] = useState('');
+  const [broadcastTarget, setBroadcastTarget] = useState('all');
+  const [broadcastSending, setBroadcastSending] = useState(false);
+  const [broadcastResult, setBroadcastResult] = useState(null);
+  const [reminderSending, setReminderSending] = useState('');
+  const [reminderResult, setReminderResult] = useState(null);
+
+  const BACKEND_URL_EMAIL = import.meta.env.DEV ? 'http://localhost:3001' : '';
+
+  const fetchEmailStats = async () => {
+    try {
+      const res = await fetch(`${BACKEND_URL_EMAIL}/api/admin/notify/stats`);
+      if (res.ok) setEmailStats(await res.json());
+    } catch (e) { console.warn('Email stats fetch failed:', e.message); }
+  };
+
+  const handleBroadcast = async () => {
+    if (!broadcastSubject.trim() || !broadcastMessage.trim()) {
+      alert('Please fill in both Subject and Message!'); return;
+    }
+    if (!window.confirm(`Send broadcast to all ${broadcastTarget} students?`)) return;
+    setBroadcastSending(true);
+    setBroadcastResult(null);
+    try {
+      const res = await fetch(`${BACKEND_URL_EMAIL}/api/admin/broadcast`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subject: broadcastSubject, message: broadcastMessage, targetGroup: broadcastTarget }),
+      });
+      const data = await res.json();
+      setBroadcastResult(data);
+      if (data.success) { setBroadcastSubject(''); setBroadcastMessage(''); }
+    } catch (e) { setBroadcastResult({ error: e.message }); }
+    setBroadcastSending(false);
+  };
+
+  const handleSendReminder = async (type) => {
+    setReminderSending(type);
+    setReminderResult(null);
+    try {
+      const res = await fetch(`${BACKEND_URL_EMAIL}/api/admin/notify/${type}`, { method: 'POST' });
+      const data = await res.json();
+      setReminderResult({ type, ...data });
+    } catch (e) { setReminderResult({ type, error: e.message }); }
+    setReminderSending('');
+  };
+
   const fetchPlatformActivities = async () => {
     setFetchingActivities(true);
     try {
@@ -132,6 +182,8 @@ export default function AdminDashboard() {
       fetchPlatformActivities();
     } else if (activeTab === 'students') {
       fetchStudents();
+    } else if (activeTab === 'email') {
+      fetchEmailStats();
     }
   }, [activeTab]);
 
@@ -318,6 +370,43 @@ export default function AdminDashboard() {
             grid-template-columns: 1fr;
           }
         }
+        .admin-sidebar {
+          display: flex;
+          flex-direction: column;
+          gap: 0.5rem;
+        }
+        .email-grid {
+          display: grid;
+          grid-template-columns: 1.5fr 1fr;
+          gap: 1.5rem;
+        }
+        @media (max-width: 1024px) {
+          .email-grid {
+            grid-template-columns: 1fr;
+          }
+        }
+        @media (max-width: 768px) {
+          .admin-sidebar {
+            flex-direction: row !important;
+            flex-wrap: wrap;
+            margin-bottom: 0.5rem;
+          }
+          .admin-nav-item {
+            width: auto !important;
+            flex: 1 1 calc(50% - 0.25rem);
+            font-size: 0.8rem !important;
+            padding: 0.5rem 0.75rem !important;
+            justify-content: center;
+          }
+        }
+        @media (max-width: 480px) {
+          .admin-sidebar {
+            flex-direction: column !important;
+          }
+          .admin-nav-item {
+            width: 100% !important;
+          }
+        }
         .admin-nav-item {
           display: flex;
           align-items: center;
@@ -430,7 +519,7 @@ export default function AdminDashboard() {
         <div className="admin-grid">
           
           {/* Navigation Sidebar */}
-          <aside style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+          <aside className="admin-sidebar">
             <button 
               onClick={() => setActiveTab('diagnostics')}
               className={`admin-nav-item ${activeTab === 'diagnostics' ? 'active' : ''}`}
@@ -466,6 +555,12 @@ export default function AdminDashboard() {
               className={`admin-nav-item ${activeTab === 'activities' ? 'active' : ''}`}
             >
               <ClipboardList size={16} /> Platform Activity 📡
+            </button>
+            <button
+              onClick={() => setActiveTab('email')}
+              className={`admin-nav-item ${activeTab === 'email' ? 'active' : ''}`}
+            >
+              <Mail size={16} /> 📧 Email Notifications
             </button>
           </aside>
 
@@ -870,6 +965,308 @@ export default function AdminDashboard() {
                   </div>
                 )}
               </section>
+            )}
+
+            {/* TAB 7: EMAIL NOTIFICATIONS */}
+            {activeTab === 'email' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', animation: 'fadeUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) both' }}>
+                
+                {/* Stats Row */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem' }}>
+                  <div className="card" style={{ padding: '1.25rem', textAlign: 'center' }}>
+                    <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Total Students</div>
+                    <div style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--primary)', margin: '0.35rem 0' }}>{emailStats?.total ?? 0}</div>
+                    <span style={{ fontSize: '0.68rem', color: 'var(--text-secondary)' }}>Registered accounts</span>
+                  </div>
+                  <div className="card" style={{ padding: '1.25rem', textAlign: 'center' }}>
+                    <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Opted In</div>
+                    <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#10b981', margin: '0.35rem 0' }}>{emailStats?.optedIn ?? 0}</div>
+                    <span style={{ fontSize: '0.68rem', color: 'var(--success)' }}>Receiving broadcasts</span>
+                  </div>
+                  <div className="card" style={{ padding: '1.25rem', textAlign: 'center' }}>
+                    <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Opted Out</div>
+                    <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#ef4444', margin: '0.35rem 0' }}>{emailStats?.optedOut ?? 0}</div>
+                    <span style={{ fontSize: '0.68rem', color: 'var(--text-secondary)' }}>Unsubscribed/Opted-out</span>
+                  </div>
+                  <div className="card" style={{ padding: '1.25rem', textAlign: 'center' }}>
+                    <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Welcome Sent</div>
+                    <div style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--accent)', margin: '0.35rem 0' }}>{emailStats?.welcomeSent ?? 0}</div>
+                    <span style={{ fontSize: '0.68rem', color: 'var(--text-secondary)' }}>First-login emails dispatched</span>
+                  </div>
+                </div>
+
+                <div className="email-grid">
+                  
+                  {/* Left Column: Send Broadcast */}
+                  <section className="card" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    <h3 style={{ fontSize: '1.05rem', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <Send size={18} color="var(--primary)" /> Send Announcements / Broadcast
+                    </h3>
+                    <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: 0 }}>
+                      Send an official HTML newsletter broadcast to registered students. Respects unsubscribe (GDPR opt-out) preferences.
+                    </p>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                      <div>
+                        <label style={{ fontSize: '0.8rem', fontWeight: 'bold', display: 'block', marginBottom: '0.25rem', color: 'var(--text)' }}>
+                          Target Audience
+                        </label>
+                        <select
+                          value={broadcastTarget}
+                          onChange={(e) => setBroadcastTarget(e.target.value)}
+                          style={{
+                            width: '100%',
+                            padding: '0.6rem',
+                            background: 'rgba(255,255,255,0.05)',
+                            border: '1px solid var(--border)',
+                            borderRadius: '6px',
+                            color: 'var(--text)',
+                            fontSize: '0.85rem'
+                          }}
+                        >
+                          <option value="all">All Opted-In Students</option>
+                          <option value="pro">Pro Members Only</option>
+                          <option value="free">Free Tier Students Only</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label style={{ fontSize: '0.8rem', fontWeight: 'bold', display: 'block', marginBottom: '0.25rem', color: 'var(--text)' }}>
+                          Subject Line
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="e.g. 📢 Important: New AI Doubt Solver Board features are here!"
+                          value={broadcastSubject}
+                          onChange={(e) => setBroadcastSubject(e.target.value)}
+                          style={{
+                            width: '100%',
+                            padding: '0.6rem',
+                            background: 'rgba(255,255,255,0.05)',
+                            border: '1px solid var(--border)',
+                            borderRadius: '6px',
+                            color: 'var(--text)',
+                            fontSize: '0.85rem'
+                          }}
+                        />
+                      </div>
+
+                      <div>
+                        <label style={{ fontSize: '0.8rem', fontWeight: 'bold', display: 'block', marginBottom: '0.25rem', color: 'var(--text)' }}>
+                          Message Body (HTML supported)
+                        </label>
+                        <textarea
+                          rows={8}
+                          placeholder="Type your message here... (Use newlines for paragraphs)"
+                          value={broadcastMessage}
+                          onChange={(e) => setBroadcastMessage(e.target.value)}
+                          style={{
+                            width: '100%',
+                            padding: '0.6rem',
+                            background: 'rgba(255,255,255,0.05)',
+                            border: '1px solid var(--border)',
+                            borderRadius: '6px',
+                            color: 'var(--text)',
+                            fontSize: '0.85rem',
+                            fontFamily: 'inherit',
+                            resize: 'vertical'
+                          }}
+                        />
+                      </div>
+
+                      <button
+                        onClick={handleBroadcast}
+                        className="btn btn-primary"
+                        disabled={broadcastSending}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '0.5rem',
+                          background: 'linear-gradient(135deg, var(--primary), #8b5cf6)',
+                          border: 'none',
+                          padding: '0.75rem',
+                          fontSize: '0.88rem',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          borderRadius: '6px',
+                          color: '#fff',
+                          width: '100%'
+                        }}
+                      >
+                        {broadcastSending ? (
+                          <>
+                            <RefreshCw size={16} className="spin" style={{ animation: 'spin 1s linear infinite' }} />
+                            Queueing Broadcast...
+                          </>
+                        ) : (
+                          <>
+                            <Send size={16} />
+                            Send Announcement Broadcast
+                          </>
+                        )}
+                      </button>
+
+                      {broadcastResult && (
+                        <div style={{
+                          padding: '0.75rem',
+                          borderRadius: '6px',
+                          background: broadcastResult.success ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)',
+                          border: `1px solid ${broadcastResult.success ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)'}`,
+                          fontSize: '0.8rem',
+                          color: 'var(--text)'
+                        }}>
+                          {broadcastResult.success ? (
+                            <div style={{ color: '#10b981', fontWeight: 600 }}>
+                              ✓ Broadcast successfully queued! Recipients targeted: {broadcastResult.queued}
+                            </div>
+                          ) : (
+                            <div style={{ color: '#ef4444', fontWeight: 600 }}>
+                              Failed to send: {broadcastResult.error}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </section>
+
+                  {/* Right Column: Trigger System Campaigns */}
+                  <section className="card" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                    <h3 style={{ fontSize: '1.05rem', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <Bell size={18} color="var(--accent)" /> Trigger Daily Campaigns
+                    </h3>
+                    <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: 0 }}>
+                      Manually trigger system emails that are normally automated by scheduled cron jobs.
+                    </p>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '0.5rem' }}>
+                      
+                      {/* Campaign 1: Streak Reminder */}
+                      <div style={{
+                        padding: '1rem',
+                        background: 'rgba(255,255,255,0.02)',
+                        border: '1px solid var(--border)',
+                        borderRadius: '8px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '0.75rem'
+                      }}>
+                        <div>
+                          <strong style={{ fontSize: '0.85rem', color: 'var(--text)', display: 'block' }}>
+                            🔥 Streak Preservation Reminder
+                          </strong>
+                          <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
+                            Sends to opted-in students with streak &gt; 0 who haven't logged in today. (Scheduled daily at 7 PM).
+                          </span>
+                        </div>
+                        <button
+                          onClick={() => handleSendReminder('streak-reminder')}
+                          disabled={!!reminderSending}
+                          className="btn"
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '0.35rem',
+                            padding: '0.5rem',
+                            fontSize: '0.8rem',
+                            fontWeight: 600,
+                            borderRadius: '4px',
+                            background: 'rgba(245,158,11,0.1)',
+                            border: '1px solid rgba(245,158,11,0.2)',
+                            color: '#f59e0b',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          {reminderSending === 'streak-reminder' ? (
+                            <>
+                              <RefreshCw size={14} className="spin" style={{ animation: 'spin 1s linear infinite' }} />
+                              Executing Campaign...
+                            </>
+                          ) : (
+                            'Execute Campaign Now'
+                          )}
+                        </button>
+                      </div>
+
+                      {/* Campaign 2: Study Reminder */}
+                      <div style={{
+                        padding: '1rem',
+                        background: 'rgba(255,255,255,0.02)',
+                        border: '1px solid var(--border)',
+                        borderRadius: '8px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '0.75rem'
+                      }}>
+                        <div>
+                          <strong style={{ fontSize: '0.85rem', color: 'var(--text)', display: 'block' }}>
+                            📚 Daily Study Motivation
+                          </strong>
+                          <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
+                            Sends daily learning tip and quick links to all opted-in students. (Scheduled daily at 8 AM).
+                          </span>
+                        </div>
+                        <button
+                          onClick={() => handleSendReminder('study-reminder')}
+                          disabled={!!reminderSending}
+                          className="btn"
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '0.35rem',
+                            padding: '0.5rem',
+                            fontSize: '0.8rem',
+                            fontWeight: 600,
+                            borderRadius: '4px',
+                            background: 'rgba(99,102,241,0.1)',
+                            border: '1px solid rgba(99,102,241,0.2)',
+                            color: 'var(--primary)',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          {reminderSending === 'study-reminder' ? (
+                            <>
+                              <RefreshCw size={14} className="spin" style={{ animation: 'spin 1s linear infinite' }} />
+                              Executing Campaign...
+                            </>
+                          ) : (
+                            'Execute Campaign Now'
+                          )}
+                        </button>
+                      </div>
+
+                      {/* Campaign Execution Result */}
+                      {reminderResult && (
+                        <div style={{
+                          padding: '0.75rem',
+                          borderRadius: '6px',
+                          background: reminderResult.error ? 'rgba(239,68,68,0.08)' : 'rgba(99,102,241,0.08)',
+                          border: `1px solid ${reminderResult.error ? 'rgba(239,68,68,0.2)' : 'rgba(99,102,241,0.2)'}`,
+                          fontSize: '0.78rem',
+                          color: 'var(--text)'
+                        }}>
+                          <div style={{ fontWeight: 'bold', marginBottom: '0.25rem' }}>
+                            Campaign Run Results:
+                          </div>
+                          {reminderResult.error ? (
+                            <span style={{ color: '#ef4444' }}>Error: {reminderResult.error}</span>
+                          ) : (
+                            <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                              • Campaign Target: <strong style={{ color: 'var(--text)' }}>{reminderResult.type === 'streak-reminder' ? 'Inactive Streakers' : 'All Opted-in'}</strong><br />
+                              • Successfully Dispatched: <strong style={{ color: '#10b981' }}>{reminderResult.sent} emails</strong><br />
+                              • Failures / Skipped: <strong style={{ color: '#ef4444' }}>{reminderResult.failed} emails</strong><br />
+                              • Total Candidates: <strong style={{ color: 'var(--text)' }}>{reminderResult.total}</strong>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                    </div>
+                  </section>
+                </div>
+              </div>
             )}
 
           </main>
