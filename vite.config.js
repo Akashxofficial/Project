@@ -3,7 +3,17 @@ import react from '@vitejs/plugin-react'
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    {
+      name: 'force-exit-after-build',
+      apply: 'build',
+      closeBundle() {
+        console.log('✨ [Vite] Build completed, forcing process exit to avoid Vercel hang.');
+        setTimeout(() => process.exit(0), 100);
+      }
+    }
+  ],
   server: {
     proxy: {
       // During local development, proxy /api calls to a local Express server
