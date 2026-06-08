@@ -13,6 +13,33 @@ export default defineConfig({
       }
     }
   },
+  build: {
+    chunkSizeWarningLimit: 1000,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('pdfjs-dist')) {
+              return 'vendor-pdfjs';
+            }
+            if (id.includes('katex')) {
+              return 'vendor-katex';
+            }
+            if (id.includes('firebase')) {
+              return 'vendor-firebase';
+            }
+            if (id.includes('@google/generative-ai')) {
+              return 'vendor-ai';
+            }
+            if (id.includes('react')) {
+              return 'vendor-react';
+            }
+            return 'vendor-libs';
+          }
+        }
+      }
+    }
+  },
   test: {
     globals: true,
     environment: 'node',
