@@ -388,23 +388,38 @@ export default function AdminDashboard() {
         @media (max-width: 768px) {
           .admin-sidebar {
             flex-direction: row !important;
-            flex-wrap: wrap;
+            flex-wrap: nowrap !important;
+            overflow-x: auto !important;
+            overflow-y: hidden !important;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 0.4rem !important;
+            gap: 0.35rem !important;
             margin-bottom: 0.5rem;
+            -webkit-overflow-scrolling: touch;
+          }
+          .admin-sidebar::-webkit-scrollbar {
+            height: 3px;
+          }
+          .admin-sidebar::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 99px;
+          }
+          .admin-sidebar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+          }
+          .admin-sidebar::-webkit-scrollbar {
+            display: none;
           }
           .admin-nav-item {
             width: auto !important;
-            flex: 1 1 calc(50% - 0.25rem);
-            font-size: 0.8rem !important;
-            padding: 0.5rem 0.75rem !important;
+            flex: 0 0 auto !important;
+            white-space: nowrap !important;
+            font-size: 0.82rem !important;
+            padding: 0.5rem 0.85rem !important;
             justify-content: center;
-          }
-        }
-        @media (max-width: 480px) {
-          .admin-sidebar {
-            flex-direction: column !important;
-          }
-          .admin-nav-item {
-            width: 100% !important;
           }
         }
         .admin-nav-item {
