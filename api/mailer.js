@@ -446,3 +446,293 @@ export const sendBroadcastEmail = (recipients, subject, messageHtml) => {
 
   return sendEmailBatch(recipients, subject, html, 400);
 };
+
+// ── 7. Dynamic Daily Email Notification ──────────────────────────────────────────
+export const sendDynamicDailyEmail = async (student, timeOfDay) => {
+  const firstName = (student.displayName || 'Student').split(' ')[0];
+  const email = student.email;
+  
+  // 1. Calculate Levels
+  const getLevelInfo = (xp) => {
+    let level = 1;
+    let name = 'Aspirant 🌟';
+    let next = 200;
+    
+    if (xp >= 500) {
+      level = 3;
+      name = 'Board Topper 👑';
+      next = 1000;
+    } else if (xp >= 200) {
+      level = 2;
+      name = 'Scholar 📚';
+      next = 500;
+    }
+    
+    const xpNeeded = Math.max(0, next - xp);
+    const progressPercent = Math.min(100, Math.round((xp / next) * 100));
+    
+    return { level, name, next, xpNeeded, progressPercent };
+  };
+
+  const levelInfo = getLevelInfo(student.xp || 0);
+
+  // 2. Check if student studied today
+  const didStudyToday = (lastLoginAt) => {
+    if (!lastLoginAt) return false;
+    // Connect to IST time (UTC + 5.5 hours)
+    const nowIST = new Date(Date.now() + 5.5 * 60 * 60 * 1000);
+    const loginIST = new Date(new Date(lastLoginAt).getTime() + 5.5 * 60 * 60 * 1000);
+    return nowIST.getUTCDate() === loginIST.getUTCDate() &&
+           nowIST.getUTCMonth() === loginIST.getUTCMonth() &&
+           nowIST.getUTCFullYear() === loginIST.getUTCFullYear();
+  };
+
+  const activeToday = didStudyToday(student.lastLoginAt);
+
+  // 3. Define content elements matching timeOfDay
+  let greeting = `Good morning, ${firstName}! ☀️`;
+  let subject = `🌅 Good Morning ${firstName}! Let's crush today's study goals.`;
+  let headerGradient = `linear-gradient(135deg, #f59e0b, #6366f1)`;
+  let introMessage = `Rise and shine! A new day is a fresh opportunity to learn and grow. Here is your personalized daily update from TaniOS AI to kickstart your morning.`;
+  let timeOfDayTip = `💡 <strong>Morning Tip:</strong> Consistency beats intensity! Spend just 15 minutes reviewing notes or planning your subjects before you start school.`;
+
+  if (timeOfDay === 'afternoon') {
+    greeting = `Good afternoon, ${firstName}! ⚡`;
+    subject = `🚀 Quick check-in, ${firstName}! Ready for an afternoon study boost?`;
+    headerGradient = `linear-gradient(135deg, #0d9488, #4f46e5)`;
+    introMessage = `Hope your day is going great! Let's beat the afternoon slump. A quick 10-minute study check-in is all it takes to keep your learning momentum high.`;
+    timeOfDayTip = `💡 <strong>Afternoon Tip:</strong> Beat the mid-day haze! Clear a tough homework doubt using the TaniOS AI Doubt Solver or take a short mock quiz.`;
+  } else if (timeOfDay === 'evening') {
+    greeting = `Good evening, ${firstName}! 🌙`;
+    subject = `🔥 Evening revision, ${firstName}! Is your study streak secure today?`;
+    headerGradient = `linear-gradient(135deg, #7c3aed, #1e1b4b)`;
+    introMessage = `Time to wrap up the day! Revisit your achievements, review your topics, and make sure your daily progress is locked in before you call it a night.`;
+    timeOfDayTip = `💡 <strong>Evening Tip:</strong> Close out the day with a light review. Solve one repeated board question to commit key concepts to long-term memory.`;
+  }
+
+  // 4. Construct personalized HTML sections
+  // Streak Block
+  let streakHtml = '';
+  const currentStreak = student.streak || 0;
+  if (currentStreak > 0) {
+    if (activeToday) {
+      streakHtml = `
+        <table width="100%" cellpadding="0" cellspacing="0" style="border: 1px solid #10b981; border-radius: 12px; background: rgba(16, 185, 129, 0.06); padding: 18px; margin-bottom: 24px;">
+          <tr>
+            <td style="font-size: 2.2rem; padding-right: 14px; vertical-align: middle; width: 45px;">🏆</td>
+            <td>
+              <div style="font-weight: 800; color: #10b981; font-size: 0.95rem; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.05em;">Streak Safe!</div>
+              <div style="color: #ffffff; font-size: 0.88rem; line-height: 1.5;">
+                Awesome job! You have secured your <strong style="color: #10b981;">${currentStreak}-day streak</strong> for today. Keep the fire burning bright!
+              </div>
+            </td>
+          </tr>
+        </table>
+      `;
+    } else {
+      streakHtml = `
+        <table width="100%" cellpadding="0" cellspacing="0" style="border: 2px dashed #ef4444; border-radius: 12px; background: rgba(239, 68, 68, 0.06); padding: 18px; margin-bottom: 24px;">
+          <tr>
+            <td style="font-size: 2.2rem; padding-right: 14px; vertical-align: middle; width: 45px;">🔥</td>
+            <td>
+              <div style="font-weight: 800; color: #ef4444; font-size: 0.95rem; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.05em;">Streak in Danger!</div>
+              <div style="color: #ffffff; font-size: 0.88rem; line-height: 1.5;">
+                You have a brilliant <strong style="color: #ef4444;">${currentStreak}-day streak</strong> active, but you haven't studied today yet! Don't let all your hard work go to waste. Ask a quick doubt or generate one note to save it.
+              </div>
+            </td>
+          </tr>
+        </table>
+      `;
+    }
+  } else {
+    streakHtml = `
+      <table width="100%" cellpadding="0" cellspacing="0" style="border: 1px solid #6366f1; border-radius: 12px; background: rgba(99, 102, 241, 0.06); padding: 18px; margin-bottom: 24px;">
+        <tr>
+          <td style="font-size: 2.2rem; padding-right: 14px; vertical-align: middle; width: 45px;">🌱</td>
+          <td>
+            <div style="font-weight: 800; color: #a5b4fc; font-size: 0.95rem; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.05em;">Start Your Streak!</div>
+            <div style="color: #ffffff; font-size: 0.88rem; line-height: 1.5;">
+              Your current study streak is at 0. Start today, study for just 5 minutes, and build a powerful habit of daily learning. Let's make today Day 1!
+            </div>
+          </td>
+        </tr>
+      </table>
+    `;
+  }
+
+  // XP / Level Block
+  const xpProgressHtml = `
+    <div style="background: #1e2230; border-radius: 14px; border: 1px solid rgba(255,255,255,0.06); padding: 20px; margin-bottom: 24px;">
+      <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 10px;">
+        <tr>
+          <td align="left" style="font-size: 0.85rem; font-weight: 700; color: #fff;">
+            Level ${levelInfo.level}: ${levelInfo.name}
+          </td>
+          <td align="right" style="font-size: 0.82rem; font-weight: 700; color: #8b5cf6;">
+            ${student.xp || 0} / ${levelInfo.next} XP
+          </td>
+        </tr>
+      </table>
+      <table width="100%" cellpadding="0" cellspacing="0" style="background: rgba(255,255,255,0.05); border-radius: 6px; overflow: hidden; height: 8px; margin-bottom: 12px;">
+        <tr>
+          <td width="${levelInfo.progressPercent}%" style="background: linear-gradient(90deg, #6366f1, #8b5cf6); height: 8px; border-radius: 6px 0 0 6px;"></td>
+          <td width="${100 - levelInfo.progressPercent}%" style="background: rgba(255,255,255,0.03); height: 8px; border-radius: 0 6px 6px 0;"></td>
+        </tr>
+      </table>
+      ${levelInfo.xpNeeded > 0 ? `
+      <div style="font-size: 0.8rem; color: rgba(255,255,255,0.45);">
+        💡 You need only <strong style="color: #a5b4fc;">${levelInfo.xpNeeded} more XP</strong> to level up! Ask AI doubts or generate notes to gain XP.
+      </div>
+      ` : `
+      <div style="font-size: 0.8rem; color: rgba(255,255,255,0.45);">
+        ⭐ Maximum level achieved! Continue studying to hold your position.
+      </div>
+      `}
+    </div>
+  `;
+
+  // Membership Block
+  let subscriptionHtml = '';
+  if (student.subscriptionActive) {
+    subscriptionHtml = `
+      <div style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.08), rgba(5, 150, 105, 0.05)); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 14px; padding: 18px; margin-bottom: 24px;">
+        <div style="font-weight: 800; color: #10b981; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px;">👑 Premium Tip for Pro AI Member</div>
+        <div style="color: rgba(255,255,255,0.85); font-size: 0.88rem; line-height: 1.5;">
+          Have you uploaded your textbook PDF today? You can upload and chat directly with your CBSE/RBSE books. Use your priority AI bandwidth to revise the toughest chapter of your curriculum today!
+        </div>
+      </div>
+    `;
+  } else {
+    subscriptionHtml = `
+      <div style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.08), rgba(239, 68, 68, 0.05)); border: 1px dashed rgba(245, 158, 11, 0.3); border-radius: 14px; padding: 18px; margin-bottom: 24px; text-align: center;">
+        <div style="font-weight: 800; color: #f59e0b; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px;">⭐ UNLOCK TANIOS PRO AI</div>
+        <div style="color: rgba(255,255,255,0.85); font-size: 0.88rem; line-height: 1.5; margin-bottom: 14px;">
+          Get unlimited AI doubt solving, RAG textbook uploads, and unlimited mock tests for just <strong>₹199</strong> one-time!
+        </div>
+        <a href="https://project-ar2s.vercel.app/subscribe" style="display: inline-block; background: linear-gradient(135deg, #f59e0b, #ef4444); color: #fff; text-decoration: none; padding: 8px 18px; border-radius: 8px; font-weight: 700; font-size: 0.82rem;">Upgrade Now 👑</a>
+      </div>
+    `;
+  }
+
+  // Profile Audits
+  let profileAuditsHtml = '';
+  if (!student.displayName || student.displayName.toLowerCase() === 'student' || student.displayName.toLowerCase() === 'guest') {
+    profileAuditsHtml += `
+      <table width="100%" cellpadding="0" cellspacing="0" style="background: rgba(245, 158, 11, 0.05); border: 1px solid rgba(245, 158, 11, 0.2); border-radius: 10px; padding: 12px; margin-bottom: 12px;">
+        <tr>
+          <td style="font-size: 1.2rem; width: 30px; text-align: center; vertical-align: middle;">🔧</td>
+          <td style="color: rgba(255, 255, 255, 0.7); font-size: 0.82rem; line-height: 1.4;">
+            <strong>Profile incomplete:</strong> You are currently using the default name 'Student'. Customize your profile name on the dashboard so TaniOS AI can refer to you correctly!
+          </td>
+        </tr>
+      </table>
+    `;
+  }
+  if (!student.photoURL) {
+    profileAuditsHtml += `
+      <table width="100%" cellpadding="0" cellspacing="0" style="background: rgba(99, 102, 241, 0.05); border: 1px solid rgba(99, 102, 241, 0.2); border-radius: 10px; padding: 12px; margin-bottom: 12px;">
+        <tr>
+          <td style="font-size: 1.2rem; width: 30px; text-align: center; vertical-align: middle;">📸</td>
+          <td style="color: rgba(255, 255, 255, 0.7); font-size: 0.82rem; line-height: 1.4;">
+            <strong>Upload profile photo:</strong> Put a face to the name! Setting up your profile avatar makes your study console feel uniquely yours.
+          </td>
+        </tr>
+      </table>
+    `;
+  }
+  if (profileAuditsHtml) {
+    profileAuditsHtml = `
+      <div style="margin-bottom: 24px;">
+        <div style="font-size: 0.75rem; font-weight: 700; color: rgba(255, 255, 255, 0.3); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 10px;">⚠️ Profile Improvements</div>
+        ${profileAuditsHtml}
+      </div>
+    `;
+  }
+
+  // Quick Action Buttons
+  const quickActionsHtml = `
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
+      <tr>
+        <td width="33%" style="padding:0 6px;text-align:center;">
+          <a href="https://project-ar2s.vercel.app/chat"
+             style="display:block;background:rgba(255,255,255,0.03);
+                    border:1px solid rgba(255,255,255,0.06);border-radius:10px;
+                    padding:16px 8px;text-decoration:none;">
+            <div style="font-size:1.5rem;margin-bottom:6px;">💬</div>
+            <div style="color:#fff;font-size:0.78rem;font-weight:600;">Ask a Doubt</div>
+          </a>
+        </td>
+        <td width="33%" style="padding:0 6px;text-align:center;">
+          <a href="https://project-ar2s.vercel.app/notes"
+             style="display:block;background:rgba(255,255,255,0.03);
+                    border:1px solid rgba(255,255,255,0.06);border-radius:10px;
+                    padding:16px 8px;text-decoration:none;">
+            <div style="font-size:1.5rem;margin-bottom:6px;">📝</div>
+            <div style="color:#fff;font-size:0.78rem;font-weight:600;">Generate Notes</div>
+          </a>
+        </td>
+        <td width="33%" style="padding:0 6px;text-align:center;">
+          <a href="https://project-ar2s.vercel.app/test"
+             style="display:block;background:rgba(255,255,255,0.03);
+                    border:1px solid rgba(255,255,255,0.06);border-radius:10px;
+                    padding:16px 8px;text-decoration:none;">
+            <div style="font-size:1.5rem;margin-bottom:6px;">🧪</div>
+            <div style="color:#fff;font-size:0.78rem;font-weight:600;">Take a Test</div>
+          </a>
+        </td>
+      </tr>
+    </table>
+  `;
+
+  const content = `
+    <!-- Time of Day Greeting Header -->
+    <div style="text-align:center;margin-bottom:28px;">
+      <h1 style="font-size:1.8rem;font-weight:800;color:#fff;margin:0 0 10px;letter-spacing:-0.02em;">
+        ${greeting}
+      </h1>
+      <p style="color:rgba(255,255,255,0.6);font-size:0.95rem;line-height:1.6;margin:0 0 18px;">
+        ${introMessage}
+      </p>
+    </div>
+
+    <!-- Time of Day Dynamic Tip -->
+    <div style="background:${headerGradient};border-radius:12px;padding:16px 20px;margin-bottom:24px;">
+      <div style="color:#fff;font-size:0.9rem;line-height:1.5;">
+        ${timeOfDayTip}
+      </div>
+    </div>
+
+    <!-- Streak Alert -->
+    ${streakHtml}
+
+    <!-- XP Stats Progress -->
+    ${xpProgressHtml}
+
+    <!-- Profile Audits -->
+    ${profileAuditsHtml}
+
+    <!-- Membership Info / Upgrade Promo -->
+    ${subscriptionHtml}
+
+    <!-- Quick study actions -->
+    <div style="font-size: 0.75rem; font-weight: 700; color: rgba(255, 255, 255, 0.3); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px; text-align: center;">🚀 Quick Revision Shortcuts</div>
+    ${quickActionsHtml}
+
+    <div style="text-align:center;">
+      <a href="https://project-ar2s.vercel.app"
+         style="display:inline-block;padding:13px 32px;
+                background:linear-gradient(135deg,#6366f1,#8b5cf6);
+                color:#fff;font-weight:700;font-size:0.9rem;
+                border-radius:10px;text-decoration:none;
+                box-shadow:0 6px 20px rgba(99,102,241,0.3);">
+        Launch Study Desk →
+      </a>
+    </div>
+  `;
+
+  return sendEmail({
+    to: email,
+    subject,
+    html: emailShell(content),
+  });
+};

@@ -1,5 +1,11 @@
 {
   "installCommand": "npm install --legacy-peer-deps",
+  "crons": [
+    {
+      "path": "/api/admin/notify/cron-reminder",
+      "schedule": "0 2,8,14 * * *"
+    }
+  ],
   "rewrites": [
     {
       "source": "/api/track/activity",
@@ -33,6 +39,7 @@
     "api/admin/broadcast.js":             { "maxDuration": 60 },
     "api/admin/notify/stats.js":           { "maxDuration": 15 },
     "api/admin/notify/streak-reminder.js": { "maxDuration": 60 },
-    "api/admin/notify/study-reminder.js":  { "maxDuration": 60 }
+    "api/admin/notify/study-reminder.js":  { "maxDuration": 60 },
+    "api/admin/notify/cron-reminder.js":   { "maxDuration": 60 }
   }
 }

@@ -10,7 +10,10 @@ import {
   sendSubscriptionApprovedEmail,
   sendSubscriptionRejectedEmail,
   sendBroadcastEmail,
+  sendDynamicDailyEmail,
 } from './api/mailer.js';
+import cronReminderHandler from './api/admin/notify/cron-reminder.js';
+
 
 const app = express();
 // Connect to MongoDB
@@ -572,6 +575,9 @@ app.get('/api/admin/notify/stats', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
+// ── Daily Cron Reminder Endpoint ───────────────────────────────────────────────
+app.all('/api/admin/notify/cron-reminder', cronReminderHandler);
 
 const PORT = 3001;
 app.listen(PORT, () => {
