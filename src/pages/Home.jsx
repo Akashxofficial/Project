@@ -16,7 +16,7 @@ import 'katex/dist/katex.min.css';
 import { useAuth } from '../context/AuthContext';
 import { saveDocument, logActivity } from '../lib/firebase';
 
-// Custom renderers for beautiful markdown tables
+// Redesigned clean layout production build trigger
 const markdownComponents = {
   table: ({ children }) => (
     <div className="md-table-wrapper">
