@@ -2,6 +2,22 @@
   "installCommand": "npm install --legacy-peer-deps",
   "rewrites": [
     {
+      "source": "/api/track/activity",
+      "destination": "/api/track.js?type=activity"
+    },
+    {
+      "source": "/api/track/user",
+      "destination": "/api/track.js?type=user"
+    },
+    {
+      "source": "/api/track/payment",
+      "destination": "/api/track.js?type=payment"
+    },
+    {
+      "source": "/api/track/subscription",
+      "destination": "/api/track.js?type=subscription"
+    },
+    {
       "source": "/((?!api/).*)",
       "destination": "/index.html"
     }
@@ -10,10 +26,7 @@
     "api/generate.js":              { "maxDuration": 60 },
     "api/razorpay-order.js":        { "maxDuration": 30 },
     "api/razorpay-verify.js":       { "maxDuration": 30 },
-    "api/track/activity.js":        { "maxDuration": 15 },
-    "api/track/user.js":            { "maxDuration": 15 },
-    "api/track/payment.js":         { "maxDuration": 15 },
-    "api/track/subscription.js":    { "maxDuration": 15 },
+    "api/track.js":                 { "maxDuration": 15 },
     "api/admin/activities.js":      { "maxDuration": 30 },
     "api/admin/students.js":        { "maxDuration": 30 },
     "api/notify/welcome.js":              { "maxDuration": 15 },
