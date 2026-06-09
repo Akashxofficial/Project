@@ -1286,6 +1286,9 @@ export default function Home() {
   const [activeChapters, setActiveChapters] = useState({});
   const [profileSetupDone, setProfileSetupDone] = useState(false);
   const [showProfileSetup, setShowProfileSetup] = useState(false);
+  const [showChaptersConfig, setShowChaptersConfig] = useState(false);
+  const [showOneClickTools, setShowOneClickTools] = useState(false);
+  const [showMistakeLocker, setShowMistakeLocker] = useState(false);
 
   // Temp state for profile setup form
   const [setupBoard, setSetupBoard] = useState('CBSE');
@@ -1607,6 +1610,13 @@ export default function Home() {
     window.addEventListener('tanios_xp_update', handleXpUpdate);
     return () => window.removeEventListener('tanios_xp_update', handleXpUpdate);
   }, []);
+
+  // Automatically open tools when one is activated (e.g. from mistake clinic)
+  useEffect(() => {
+    if (activeOneClickTool) {
+      setShowOneClickTools(true);
+    }
+  }, [activeOneClickTool]);
 
 
 
@@ -2022,13 +2032,14 @@ JSON Structure:
           }
         }
         .gamified-header-card {
-          background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(245, 158, 11, 0.1));
-          border: 1px solid rgba(99, 102, 241, 0.2);
+          background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+          border: 1px solid var(--border);
           border-radius: var(--radius);
-          padding: 2rem;
+          padding: 1.75rem 2rem;
           position: relative;
           overflow: hidden;
           margin-bottom: 1.5rem;
+          box-shadow: var(--shadow-sm);
         }
         .gamified-header-title {
           font-size: 1.8rem;
@@ -2501,12 +2512,13 @@ JSON Structure:
                   display: 'flex',
                   alignItems: 'center',
                   gap: '0.75rem',
-                  background: 'rgba(255,255,255,0.06)',
+                  background: 'var(--bg-secondary)',
+                  border: '1px solid var(--border)',
                   padding: '0.75rem 1rem',
                   borderRadius: 'var(--radius-sm)',
                   borderLeft: `4px solid ${alertColor}`,
                   fontSize: '0.85rem',
-                  marginBottom: '1rem'
+                  marginBottom: '1.25rem'
                 }}>
                   <AlertCircle size={16} color={alertColor} style={{ flexShrink: 0 }} />
                   <span style={{ color: 'var(--text)' }}>{alertMsg}</span>
@@ -2786,84 +2798,133 @@ JSON Structure:
                       padding: '1rem',
                       marginBottom: '1.25rem'
                     }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                           <span style={{ fontSize: '0.85rem' }}>🎯</span>
-                          <strong style={{ fontSize: '0.82rem', color: '#fff' }}>Set Your Active Class Chapters:</strong>
+                          <strong style={{ fontSize: '0.82rem', color: '#fff' }}>Active Syllabus Chapters:</strong>
+                          <button
+                            onClick={() => setShowChaptersConfig(!showChaptersConfig)}
+                            style={{
+                              background: 'rgba(99, 102, 241, 0.08)',
+                              border: '1px solid rgba(99, 102, 241, 0.2)',
+                              color: 'var(--primary)',
+                              cursor: 'pointer',
+                              fontSize: '0.72rem',
+                              fontWeight: 700,
+                              padding: '0.2rem 0.5rem',
+                              borderRadius: '4px',
+                              marginLeft: '0.25rem',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '0.25rem'
+                            }}
+                          >
+                            {showChaptersConfig ? 'Close Edit ✕' : 'Edit Chapters ✏️'}
+                          </button>
                         </div>
                         <span style={{ fontSize: '0.72rem', background: 'rgba(99, 102, 241, 0.1)', color: 'var(--primary)', padding: '0.2rem 0.5rem', borderRadius: '4px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                           ⏳ {diffDays} Days Remaining
                         </span>
                       </div>
                       
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.75rem' }}>
-                        {profileSubjects.map(subj => {
-                          const currentCh = activeChapters[subj] || '';
-                          const cleanProfileClass = (profileClass || '10').toString().replace(/\D/g, '') || '10';
-                          const chapters = CLASS_SYLLABUS[cleanProfileClass]?.[subj] || [];
-                          
-                          const totalChapters = chapters.length || 1;
-                          const chapterIdx = chapters.indexOf(currentCh);
-                          const resolvedChapterIdx = chapterIdx !== -1 ? chapterIdx + 1 : 1;
-                          const chaptersRemaining = Math.max(1, totalChapters - resolvedChapterIdx + 1);
-                          const daysPerChapter = Math.max(5, Math.round(diffDays / chaptersRemaining));
+                      {showChaptersConfig ? (
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.75rem', marginTop: '0.5rem' }}>
+                          {profileSubjects.map(subj => {
+                            const currentCh = activeChapters[subj] || '';
+                            const cleanProfileClass = (profileClass || '10').toString().replace(/\D/g, '') || '10';
+                            const chapters = CLASS_SYLLABUS[cleanProfileClass]?.[subj] || [];
+                            
+                            const totalChapters = chapters.length || 1;
+                            const chapterIdx = chapters.indexOf(currentCh);
+                            const resolvedChapterIdx = chapterIdx !== -1 ? chapterIdx + 1 : 1;
+                            const chaptersRemaining = Math.max(1, totalChapters - resolvedChapterIdx + 1);
+                            const daysPerChapter = Math.max(5, Math.round(diffDays / chaptersRemaining));
 
-                          // Retrieve progress
-                          const progressMap = JSON.parse(localStorage.getItem(getUserKey('tanios_chapter_progress')) || '{}');
-                          const completedTopics = progressMap[subj]?.[currentCh] || 0;
-                          
-                          return (
-                            <div key={subj} style={{ background: 'rgba(255,255,255,0.01)', border: '1px solid rgba(255,255,255,0.03)', borderRadius: '8px', padding: '0.5rem' }}>
-                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
-                                <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '65%' }} title={subj}>
-                                  {subj}
-                                </span>
-                                <span style={{ fontSize: '0.62rem', color: 'var(--success)', fontWeight: 700 }} title="Topics completed in this chapter / Days allocated to complete it">
-                                  Day {completedTopics}/{daysPerChapter} ⏱️
-                                </span>
+                            // Retrieve progress
+                            const progressMap = JSON.parse(localStorage.getItem(getUserKey('tanios_chapter_progress')) || '{}');
+                            const completedTopics = progressMap[subj]?.[currentCh] || 0;
+                            
+                            return (
+                              <div key={subj} style={{ background: 'rgba(255,255,255,0.01)', border: '1px solid rgba(255,255,255,0.03)', borderRadius: '8px', padding: '0.5rem' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+                                  <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '65%' }} title={subj}>
+                                    {subj}
+                                  </span>
+                                  <span style={{ fontSize: '0.62rem', color: 'var(--success)', fontWeight: 700 }} title="Topics completed in this chapter / Days allocated to complete it">
+                                    Day {completedTopics}/{daysPerChapter} ⏱️
+                                  </span>
+                                </div>
+                                {chapters.length > 0 ? (
+                                  <select
+                                    value={currentCh}
+                                    title={currentCh}
+                                    onChange={(e) => {
+                                      const val = e.target.value;
+                                      if (!val) return; // Prevent empty selection
+                                      const updated = { ...activeChapters, [subj]: val };
+                                      setActiveChapters(updated);
+                                      localStorage.setItem(getUserKey('tanios_active_chapters'), JSON.stringify(updated));
+                                      const newMissions = generateMissionsFromProfile(profileBoard, profileClass, profileSubjects, updated);
+                                      setMissions(newMissions);
+                                      localStorage.setItem(getUserKey('tanios_missions'), JSON.stringify(newMissions));
+                                    }}
+                                    style={{ width: '100%', fontSize: '0.72rem', background: 'var(--bg-secondary)', border: '1px solid var(--border)', color: 'var(--text)', borderRadius: '4px', padding: '0.2rem 0.4rem', textOverflow: 'ellipsis' }}
+                                  >
+                                    {chapters.map(ch => (
+                                      <option key={ch} value={ch} title={ch}>{ch}</option>
+                                    ))}
+                                  </select>
+                                ) : (
+                                  <input
+                                    type="text"
+                                    value={currentCh}
+                                    title={currentCh}
+                                    placeholder="Type active topic..."
+                                    onChange={(e) => {
+                                      const val = e.target.value;
+                                      const updated = { ...activeChapters, [subj]: val };
+                                      setActiveChapters(updated);
+                                      localStorage.setItem(getUserKey('tanios_active_chapters'), JSON.stringify(updated));
+                                      const newMissions = generateMissionsFromProfile(profileBoard, profileClass, profileSubjects, updated);
+                                      setMissions(newMissions);
+                                      localStorage.setItem(getUserKey('tanios_missions'), JSON.stringify(newMissions));
+                                    }}
+                                    style={{ width: '100%', fontSize: '0.72rem', background: 'var(--bg-secondary)', border: '1px solid var(--border)', color: 'var(--text)', borderRadius: '4px', padding: '0.2rem 0.4rem', textOverflow: 'ellipsis' }}
+                                  />
+                                )}
                               </div>
-                              {chapters.length > 0 ? (
-                                <select
-                                  value={currentCh}
-                                  title={currentCh}
-                                  onChange={(e) => {
-                                    const val = e.target.value;
-                                    if (!val) return; // Prevent empty selection
-                                    const updated = { ...activeChapters, [subj]: val };
-                                    setActiveChapters(updated);
-                                    localStorage.setItem(getUserKey('tanios_active_chapters'), JSON.stringify(updated));
-                                    const newMissions = generateMissionsFromProfile(profileBoard, profileClass, profileSubjects, updated);
-                                    setMissions(newMissions);
-                                    localStorage.setItem(getUserKey('tanios_missions'), JSON.stringify(newMissions));
-                                  }}
-                                  style={{ width: '100%', fontSize: '0.72rem', background: 'var(--bg-secondary)', border: '1px solid var(--border)', color: 'var(--text)', borderRadius: '4px', padding: '0.2rem 0.4rem', textOverflow: 'ellipsis' }}
-                                >
-                                  {chapters.map(ch => (
-                                    <option key={ch} value={ch} title={ch}>{ch}</option>
-                                  ))}
-                                </select>
-                              ) : (
-                                <input
-                                  type="text"
-                                  value={currentCh}
-                                  title={currentCh}
-                                  placeholder="Type active topic..."
-                                  onChange={(e) => {
-                                    const val = e.target.value;
-                                    const updated = { ...activeChapters, [subj]: val };
-                                    setActiveChapters(updated);
-                                    localStorage.setItem(getUserKey('tanios_active_chapters'), JSON.stringify(updated));
-                                    const newMissions = generateMissionsFromProfile(profileBoard, profileClass, profileSubjects, updated);
-                                    setMissions(newMissions);
-                                    localStorage.setItem(getUserKey('tanios_missions'), JSON.stringify(newMissions));
-                                  }}
-                                  style={{ width: '100%', fontSize: '0.72rem', background: 'var(--bg-secondary)', border: '1px solid var(--border)', color: 'var(--text)', borderRadius: '4px', padding: '0.2rem 0.4rem', textOverflow: 'ellipsis' }}
-                                />
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '0.5rem' }}>
+                          {profileSubjects.map(subj => {
+                            const currentCh = activeChapters[subj] || 'Intro';
+                            const cleanCh = currentCh.replace(/^Chapter \d+:\s*/, '');
+                            return (
+                              <div 
+                                key={subj} 
+                                style={{ 
+                                  background: 'rgba(255,255,255,0.03)', 
+                                  border: '1px solid rgba(255,255,255,0.06)', 
+                                  borderRadius: '6px', 
+                                  padding: '0.35rem 0.65rem', 
+                                  fontSize: '0.75rem', 
+                                  display: 'flex', 
+                                  alignItems: 'center', 
+                                  gap: '0.4rem',
+                                  cursor: 'pointer'
+                                }}
+                                onClick={() => setShowChaptersConfig(true)}
+                                title="Click to manage active chapters"
+                              >
+                                <strong style={{ color: 'var(--text-secondary)' }}>{subj}:</strong>
+                                <span style={{ color: 'var(--text)', fontWeight: 500 }} className="text-gradient">{cleanCh}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
                   );
                 })()}
@@ -3054,31 +3115,61 @@ JSON Structure:
 
           {/* B. ONE-CLICK OUTPUTS HUB (FAST SHORTCUT COMPANION GENERATOR) */}
           <section className="card" id="oneclick-section">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-              <Zap color="#f59e0b" size={20} />
-              <h2 style={{ fontSize: '1.25rem', margin: 0 }}>One-Click Study Generators</h2>
-            </div>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '1.25rem' }}>
-              No prompting required. Get instant, board-focused outputs customized for Indian syllabus in seconds.
-            </p>
-
-            <div className="quick-action-grid">
-              {quickActions.map(action => (
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Zap color="#f59e0b" size={20} />
+                <h2 style={{ fontSize: '1.25rem', margin: 0 }}>One-Click Study Generators</h2>
                 <button
-                  key={action.label}
-                  onClick={() => {
-                    setActiveOneClickTool(action.label);
-                    setOneClickResult('');
-                    setOneClickTopic('');
+                  onClick={() => setShowOneClickTools(!showOneClickTools)}
+                  style={{
+                    background: 'rgba(245, 158, 11, 0.08)',
+                    border: '1px solid rgba(245, 158, 11, 0.2)',
+                    color: 'var(--accent)',
+                    cursor: 'pointer',
+                    fontSize: '0.72rem',
+                    fontWeight: 700,
+                    padding: '0.2rem 0.5rem',
+                    borderRadius: '4px',
+                    marginLeft: '0.25rem',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.25rem'
                   }}
-                  className="quick-action-btn"
-                  style={activeOneClickTool === action.label ? { borderColor: 'var(--primary)', background: 'var(--primary-light)' } : {}}
                 >
-                  <div style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}>{action.icon}</div>
-                  <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text)' }}>{action.label}</div>
+                  {showOneClickTools ? 'Hide Tools ✕' : 'Open Tools ⚡'}
                 </button>
-              ))}
+              </div>
             </div>
+
+            {showOneClickTools ? (
+              <>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '1.25rem' }}>
+                  No prompting required. Get instant, board-focused outputs customized for Indian syllabus in seconds.
+                </p>
+
+                <div className="quick-action-grid">
+                  {quickActions.map(action => (
+                    <button
+                      key={action.label}
+                      onClick={() => {
+                        setActiveOneClickTool(action.label);
+                        setOneClickResult('');
+                        setOneClickTopic('');
+                      }}
+                      className="quick-action-btn"
+                      style={activeOneClickTool === action.label ? { borderColor: 'var(--primary)', background: 'var(--primary-light)' } : {}}
+                    >
+                      <div style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}>{action.icon}</div>
+                      <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text)' }}>{action.label}</div>
+                    </button>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.82rem', margin: 0 }}>
+                Get instant, board-focused outputs (Revision Sheets, Mind Maps, Important Questions) in seconds. Click <strong>Open Tools ⚡</strong> to begin.
+              </p>
+            )}
 
             {/* Display active tool generation window */}
             {activeOneClickTool && (
@@ -3224,7 +3315,7 @@ JSON Structure:
             </div>
 
             {/* A. Streak with Fire icon animation */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.25rem', background: 'rgba(255,255,255,0.04)', padding: '0.75rem 1rem', borderRadius: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.25rem', background: 'var(--bg-secondary)', border: '1px solid var(--border)', padding: '0.75rem 1rem', borderRadius: '10px' }}>
               <div className="pulse-streak" style={{
                 width: '3rem', height: '3rem',
                 background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(245, 158, 11, 0.15))',
@@ -3243,7 +3334,7 @@ JSON Structure:
             </div>
 
             {/* B. Daily Target MCQ Marks Score Card */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.25rem', background: 'rgba(255,255,255,0.04)', padding: '0.75rem 1rem', borderRadius: '10px', borderLeft: netScore >= 0 ? '4px solid #10b981' : '4px solid #ef4444' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.25rem', background: 'var(--bg-secondary)', border: '1px solid var(--border)', padding: '0.75rem 1rem', borderRadius: '10px', borderLeft: netScore >= 0 ? '4px solid #10b981' : '4px solid #ef4444' }}>
               <div style={{
                 width: '3rem', height: '3rem',
                 background: netScore >= 0 
@@ -3259,7 +3350,7 @@ JSON Structure:
                   <div style={{ fontSize: '1.35rem', fontWeight: 800, color: netScore >= 0 ? '#10b981' : '#f87171' }}>
                     {netScore >= 0 ? `+${netScore}` : netScore} Marks
                   </div>
-                  <span style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-secondary)', background: 'rgba(255,255,255,0.06)', padding: '0.15rem 0.45rem', borderRadius: '4px' }}>
+                  <span style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-secondary)', background: 'var(--bg-tertiary)', border: '1px solid var(--border)', padding: '0.15rem 0.45rem', borderRadius: '4px' }}>
                     {netScore >= 100 ? 'Board Topper 🏆' : netScore >= 50 ? 'Excellent 🎓' : netScore >= 0 ? 'Aspirant ⚡' : 'Needs Practice 🩹'}
                   </span>
                 </div>
@@ -3322,11 +3413,11 @@ JSON Structure:
                         background: day.isActive
                           ? 'var(--success)'
                           : day.isToday
-                            ? 'rgba(99, 102, 241, 0.3)'
-                            : 'rgba(255,255,255,0.06)',
+                            ? 'var(--primary-light)'
+                            : 'var(--bg-tertiary)',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: '8px', color: '#fff', fontWeight: 900,
-                        border: day.isToday ? '2px solid var(--primary)' : 'none',
+                        fontSize: '8px', color: day.isActive ? '#fff' : 'var(--text)', fontWeight: 900,
+                        border: day.isToday ? '2px solid var(--primary)' : '1px solid var(--border)',
                         transition: 'all 0.2s ease',
                       }}>
                         {day.isActive ? '✓' : ''}
@@ -3376,25 +3467,55 @@ JSON Structure:
 
           {/* 3. MISTAKE CLINIC & CONCEPT REVISION RECAP */}
           <section className="card" style={{ borderLeft: '4px solid var(--accent)', marginTop: '1.5rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-              <span style={{ fontSize: '1.1rem' }}>🧠</span>
-              <h2 style={{ fontSize: '1.1rem', margin: 0 }}>My MCQ Mistake Locker</h2>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <span style={{ fontSize: '1.1rem' }}>🧠</span>
+                <h2 style={{ fontSize: '1.1rem', margin: 0 }}>My MCQ Mistake Locker</h2>
+                <button
+                  onClick={() => setShowMistakeLocker(!showMistakeLocker)}
+                  style={{
+                    background: 'rgba(245, 158, 11, 0.08)',
+                    border: '1px solid rgba(245, 158, 11, 0.2)',
+                    color: 'var(--accent)',
+                    cursor: 'pointer',
+                    fontSize: '0.72rem',
+                    fontWeight: 700,
+                    padding: '0.2rem 0.5rem',
+                    borderRadius: '4px',
+                    marginLeft: '0.25rem',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.25rem'
+                  }}
+                >
+                  {showMistakeLocker ? 'Hide Locker ✕' : `Open Locker (${mcqAttempts.length}) 📖`}
+                </button>
+              </div>
             </div>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', marginBottom: '1rem' }}>
-              Review your previous conceptual targets. Re-read masterclasses for topics you answered incorrectly.
-            </p>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', maxHeight: '400px', overflowY: 'auto', paddingRight: '0.25rem' }}>
-              {mcqAttempts.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '1rem', color: 'var(--text-secondary)', fontSize: '0.8rem' }}>
-                  📖 No topic history logged yet. Complete study missions to fill your revision locker!
+            {showMistakeLocker ? (
+              <>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', marginBottom: '1rem' }}>
+                  Review your previous conceptual targets. Re-read masterclasses for topics you answered incorrectly.
+                </p>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', maxHeight: '400px', overflowY: 'auto', paddingRight: '0.25rem' }}>
+                  {mcqAttempts.length === 0 ? (
+                    <div style={{ textAlign: 'center', padding: '1rem', color: 'var(--text-secondary)', fontSize: '0.8rem' }}>
+                      📖 No topic history logged yet. Complete study missions to fill your revision locker!
+                    </div>
+                  ) : (
+                    mcqAttempts.map(att => (
+                      <AttemptItem key={att.id} att={att} />
+                    ))
+                  )}
                 </div>
-              ) : (
-                mcqAttempts.map(att => (
-                  <AttemptItem key={att.id} att={att} />
-                ))
-              )}
-            </div>
+              </>
+            ) : (
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', margin: 0 }}>
+                Review and re-read explanations for topics you answered incorrectly. Click <strong>Open Locker 📖</strong> to view.
+              </p>
+            )}
           </section>
 
         </div>
