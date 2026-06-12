@@ -912,8 +912,24 @@ export default function AdminDashboard() {
                                     Decline ❌
                                   </button>
                                 </>
+                              ) : r.status === 'rejected' ? (
+                                <span style={{
+                                  padding: '0.2rem 0.55rem',
+                                  borderRadius: '4px',
+                                  fontSize: '0.72rem',
+                                  fontWeight: 700,
+                                  background: 'rgba(239,68,68,0.1)',
+                                  color: '#ef4444'
+                                }}>Declined ❌</span>
                               ) : (
-                                <span style={{ color: 'var(--text-secondary)', fontSize: '0.72rem' }}>Settled</span>
+                                <span style={{
+                                  padding: '0.2rem 0.55rem',
+                                  borderRadius: '4px',
+                                  fontSize: '0.72rem',
+                                  fontWeight: 700,
+                                  background: 'rgba(16,185,129,0.1)',
+                                  color: '#10b981'
+                                }}>Settled ✅</span>
                               )}
                             </td>
                           </tr>

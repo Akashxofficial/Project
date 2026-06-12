@@ -3122,18 +3122,21 @@ JSON Structure:
                 <button
                   onClick={() => setShowOneClickTools(!showOneClickTools)}
                   style={{
-                    background: 'rgba(245, 158, 11, 0.08)',
-                    border: '1px solid rgba(245, 158, 11, 0.2)',
-                    color: 'var(--accent)',
+                    background: showOneClickTools ? 'rgba(59,130,246,0.15)' : 'rgba(59,130,246,0.1)',
+                    border: '1px solid rgba(59,130,246,0.4)',
+                    color: '#60a5fa',
                     cursor: 'pointer',
                     fontSize: '0.72rem',
                     fontWeight: 700,
-                    padding: '0.2rem 0.5rem',
-                    borderRadius: '4px',
+                    padding: '0.2rem 0.6rem',
+                    borderRadius: '6px',
                     marginLeft: '0.25rem',
                     display: 'inline-flex',
                     alignItems: 'center',
-                    gap: '0.25rem'
+                    gap: '0.25rem',
+                    boxShadow: showOneClickTools ? 'none' : '0 0 8px rgba(59,130,246,0.35)',
+                    animation: showOneClickTools ? 'none' : 'btnPulseBlue 2s ease-in-out infinite',
+                    transition: 'all 0.2s ease'
                   }}
                 >
                   {showOneClickTools ? 'Hide Tools ✕' : 'Open Tools ⚡'}
@@ -3474,18 +3477,21 @@ JSON Structure:
                 <button
                   onClick={() => setShowMistakeLocker(!showMistakeLocker)}
                   style={{
-                    background: 'rgba(245, 158, 11, 0.08)',
-                    border: '1px solid rgba(245, 158, 11, 0.2)',
-                    color: 'var(--accent)',
+                    background: showMistakeLocker ? 'rgba(59,130,246,0.15)' : 'rgba(59,130,246,0.1)',
+                    border: '1px solid rgba(59,130,246,0.4)',
+                    color: '#60a5fa',
                     cursor: 'pointer',
                     fontSize: '0.72rem',
                     fontWeight: 700,
-                    padding: '0.2rem 0.5rem',
-                    borderRadius: '4px',
+                    padding: '0.2rem 0.6rem',
+                    borderRadius: '6px',
                     marginLeft: '0.25rem',
                     display: 'inline-flex',
                     alignItems: 'center',
-                    gap: '0.25rem'
+                    gap: '0.25rem',
+                    boxShadow: showMistakeLocker ? 'none' : '0 0 8px rgba(59,130,246,0.35)',
+                    animation: showMistakeLocker ? 'none' : 'btnPulseBlue 2s ease-in-out infinite',
+                    transition: 'all 0.2s ease'
                   }}
                 >
                   {showMistakeLocker ? 'Hide Locker ✕' : `Open Locker (${mcqAttempts.length}) 📖`}

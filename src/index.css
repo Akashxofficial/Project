@@ -145,6 +145,17 @@
   to { transform: scale(2.5); opacity: 0; }
 }
 
+@keyframes btnPulseBlue {
+  0%, 100% {
+    box-shadow: 0 0 6px rgba(59,130,246,0.3), 0 0 0 0 rgba(59,130,246,0.15);
+    border-color: rgba(59,130,246,0.35);
+  }
+  50% {
+    box-shadow: 0 0 14px rgba(59,130,246,0.55), 0 0 0 4px rgba(59,130,246,0.08);
+    border-color: rgba(59,130,246,0.65);
+  }
+}
+
 /* ─── DESIGN TOKENS ─────────────────────────────────────────────────────────── */
 :root {
   --bg: #f4f6fb;
@@ -1135,11 +1146,13 @@ h3 { font-size: 1.15rem; }
   display: none;
   align-items: center;
   gap: 0.5rem;
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  pointer-events: none;
+  /* Natural flex centering — no position:absolute needed */
+  pointer-events: auto;
   animation: fadeIn 0.4s ease both;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  flex-shrink: 0;
 }
 .mobile-logo-icon {
   width: 1.5rem; height: 1.5rem;
@@ -1424,68 +1437,189 @@ h3 { font-size: 1.15rem; }
   /* CRITICAL: sidebar hidden by default on mobile using translateX */
   .sidebar {
     transform: translateX(-264px) !important;
-    width: 264px;
+    width: 264px !important;
     box-shadow: var(--shadow-lg);
-    /* Override any animation that might fight with this transform */
     animation: none !important;
+    z-index: 200;
   }
-  /* Sidebar revealed when .open class added */
   .sidebar.open {
     transform: translateX(0) !important;
   }
   .hamburger { display: flex; }
 
-  .main-content { margin-left: 0; overflow-x: hidden; width: 100%; max-width: 100vw; }
+  /* Main layout */
+  .main-content {
+    margin-left: 0 !important;
+    overflow-x: hidden;
+    width: 100%;
+    max-width: 100vw;
+  }
   .mobile-logo { display: flex; }
 
-  .page-content { padding: 1rem 0.875rem; overflow-x: hidden; width: 100%; box-sizing: border-box; }
-  .page-content > * { max-width: 100%; box-sizing: border-box; }
+  /* Page content padding */
+  .page-content {
+    padding: 1rem 0.875rem;
+    overflow-x: hidden;
+    width: 100%;
+    box-sizing: border-box;
+    max-width: 100vw;
+  }
+  .page-content > * { max-width: 100%; box-sizing: border-box; overflow-x: hidden; }
 
+  /* Hero */
   .hero-section { padding: 2rem 1rem; }
+
+  /* Cards */
+  .card {
+    padding: 1.1rem;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
+    /* Disable 3D hover lift on mobile — causes layout jank */
+    transform: none !important;
+  }
+  .card:hover { transform: none !important; }
+  .card::after { display: none; } /* No shimmer on touch */
+
+  /* Grids collapse to single column */
   .grid-cards { grid-template-columns: 1fr 1fr; gap: 0.875rem; }
-  .chat-messages { padding: 0.875rem; }
-  .chat-input-area { padding: 0.75rem 0.875rem 1rem; }
+  .home-grid { grid-template-columns: 1fr !important; gap: 1rem !important; }
+
+  /* Typography */
+  h2 { font-size: 1.2rem; margin-bottom: 0.875rem; }
+  h3 { font-size: 1rem; }
+
+  /* Header */
+  .header { padding: 0 0.875rem; }
+  .header-left { gap: 0.5rem; }
+  .header-right { gap: 0.5rem; }
   .welcome-text { display: none; }
 
-  .generated-content {
-    padding: 1rem; font-size: 0.9rem;
-    max-width: 100%; overflow-x: hidden; word-break: break-word;
-  }
-
+  /* Flex overflows fix */
   .form-row { flex-direction: column !important; gap: 0.875rem !important; }
   .board-exam-section { padding: 1rem !important; }
+
+  /* Chat */
+  .chat-messages { padding: 0.875rem; }
+  .chat-input-area { padding: 0.75rem 0.875rem 1rem; }
   .message { max-width: 92%; }
-  .card { padding: 1.1rem; max-width: 100%; box-sizing: border-box; overflow: hidden; }
-  h2 { font-size: 1.25rem; }
-  h3 { font-size: 1rem; }
-  .header { padding: 0 0.875rem; }
+
+  /* Generated content */
+  .generated-content {
+    padding: 1rem;
+    font-size: 0.9rem;
+    max-width: 100%;
+    overflow-x: hidden;
+    word-break: break-word;
+  }
+
+  /* Tables inside generated content must scroll horizontally */
+  .md-table-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+  /* Buttons on mobile - full width where appropriate */
+  .btn { white-space: normal; }
+
+  /* Quick action grid - 2 columns on tablet */
+  .quick-action-grid { grid-template-columns: repeat(2, 1fr) !important; }
+
+  /* Mission items - no horizontal translate on touch */
+  .mission-item:hover { transform: none !important; }
+
+  /* Nav items - no animation conflicts */
+  .nav-menu .nav-item { animation: none !important; }
+  .nav-item:hover svg { animation: none !important; }
+
+  /* Fix any display:flex with fixed widths */
   [style*="display: flex"], [style*="display:flex"] { max-width: 100%; flex-shrink: 1; }
 }
 
-/* Mobile */
+/* Mobile (phones) */
 @media (max-width: 480px) {
   html, body { overflow-x: hidden !important; max-width: 100vw !important; }
-  .grid-cards { grid-template-columns: 1fr; }
+
+  /* Single column everywhere */
+  .grid-cards { grid-template-columns: 1fr; gap: 0.75rem; }
+  .home-grid { grid-template-columns: 1fr !important; gap: 1rem !important; }
+  .quick-action-grid { grid-template-columns: repeat(2, 1fr) !important; }
+
+  /* Hero */
   .hero-title { font-size: 1.6rem; }
   .hero-subtitle { font-size: 0.875rem; }
-  .card { padding: 1rem; width: 100%; max-width: 100%; box-sizing: border-box; }
-  .message { max-width: 95%; }
-  .btn { padding: 0.55rem 0.875rem; font-size: 0.85rem; white-space: normal; text-align: center; }
-  h2 { font-size: 1.15rem; }
+
+  /* Cards */
+  .card {
+    padding: 0.875rem;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    border-radius: 10px;
+    /* Kill all hover transforms on phone */
+    transform: none !important;
+  }
+  .card:hover { transform: none !important; box-shadow: var(--shadow-sm) !important; }
+
+  /* Typography */
+  h2 { font-size: 1.1rem; margin-bottom: 0.75rem; }
+  h3 { font-size: 0.95rem; }
+
+  /* Buttons */
+  .btn {
+    padding: 0.55rem 0.875rem;
+    font-size: 0.85rem;
+    white-space: normal;
+    text-align: center;
+  }
+
+  /* Inputs */
   .input-field, select.input-field {
-    font-size: 0.875rem; padding: 0.65rem 0.875rem;
-    width: 100%; max-width: 100%; box-sizing: border-box;
+    font-size: 0.875rem;
+    padding: 0.65rem 0.875rem;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
   }
-  .page-content { padding: 0.875rem 0.75rem; overflow-x: hidden; }
+
+  /* Page content */
+  .page-content { padding: 0.75rem 0.625rem; overflow-x: hidden; }
+
+  /* Generated content */
   .generated-content {
-    padding: 0.875rem; font-size: 0.875rem; margin-top: 1rem;
-    max-width: 100%; overflow-x: hidden; word-break: break-word; overflow-wrap: break-word;
+    padding: 0.875rem;
+    font-size: 0.875rem;
+    margin-top: 1rem;
+    max-width: 100%;
+    overflow-x: hidden;
+    word-break: break-word;
+    overflow-wrap: break-word;
   }
+
+  /* Chat */
   .chat-input { font-size: 0.875rem; padding: 0.75rem 3rem 0.75rem 0.875rem; }
+  .message { max-width: 95%; }
+
+  /* Header */
   .header { padding: 0 0.75rem; }
   .header-left { gap: 0.5rem; }
   .header-right { gap: 0.5rem; }
+
+  /* Images */
   img { max-width: 100% !important; height: auto !important; }
+
+  /* Fix inline flex rows that overflow */
+  [style*="display: flex"][style*="gap"] {
+    flex-wrap: wrap !important;
+  }
+
+  /* Section spacing */
+  section.card { margin-bottom: 0.75rem; }
+
+  /* Mission items font size */
+  .mission-item [style*="font-size: 0.88rem"] { font-size: 0.82rem !important; }
+
+  /* Disable all hover-only effects */
+  .badge-item:hover { transform: none !important; box-shadow: none !important; }
+  .quick-action-btn:hover { transform: none !important; box-shadow: none !important; }
+  .nav-item:hover { transform: none !important; }
 }
 
 @media (max-width: 360px) {
@@ -1737,5 +1871,357 @@ img, video, canvas, iframe { max-width: 100%; height: auto; }
   }
   .notes-grid-5 {
     grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   ✨ PROFESSIONAL ANIMATION SYSTEM — TaniOS AI v4.0
+   GPU-accelerated · Micro-interactions · Smooth transitions
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* ─── ADDITIONAL KEYFRAMES ───────────────────────────────────────────────────── */
+@keyframes slideInFromLeft {
+  from { opacity: 0; transform: translateX(-32px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes slideInFromRight {
+  from { opacity: 0; transform: translateX(32px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes popIn {
+  0%   { opacity: 0; transform: scale(0.85) translateY(12px); }
+  65%  { opacity: 1; transform: scale(1.03) translateY(-2px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+@keyframes shimmerPass {
+  0%   { background-position: -400% 0; }
+  100% { background-position: 400% 0; }
+}
+@keyframes glowPulseGreen {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); }
+  50%       { box-shadow: 0 0 0 6px rgba(16,185,129,0.12); }
+}
+@keyframes toastSlideIn {
+  from { opacity: 0; transform: translateX(120%) scale(0.9); }
+  to   { opacity: 1; transform: translateX(0) scale(1); }
+}
+@keyframes toastSlideOut {
+  from { opacity: 1; transform: translateX(0) scale(1); }
+  to   { opacity: 0; transform: translateX(120%) scale(0.9); }
+}
+@keyframes countUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes borderFlow {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+@keyframes iconBounce {
+  0%, 100% { transform: translateY(0); }
+  40%       { transform: translateY(-5px); }
+  60%       { transform: translateY(-2px); }
+}
+@keyframes reveal {
+  from { opacity: 0; transform: translateY(24px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ─── SIDEBAR — Smooth entrance with staggered nav ───────────────────────────── */
+.sidebar {
+  animation: slideInFromLeft 0.38s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Logo hover — gentle scale + glow */
+.logo {
+  transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1), opacity 0.2s ease;
+  will-change: transform;
+}
+.logo:hover {
+  transform: scale(1.04);
+}
+.logo:hover .logo-icon {
+  box-shadow: 0 0 20px rgba(99,102,241,0.55), 0 6px 16px rgba(99,102,241,0.3);
+  transform: rotate(15deg) scale(1.15);
+}
+.logo:active {
+  transform: scale(0.97);
+}
+
+/* Nav items — staggered entrance */
+.nav-menu .nav-item:nth-child(1)  { animation: slideInFromLeft 0.3s 0.05s cubic-bezier(0.16,1,0.3,1) both; }
+.nav-menu .nav-item:nth-child(2)  { animation: slideInFromLeft 0.3s 0.08s cubic-bezier(0.16,1,0.3,1) both; }
+.nav-menu .nav-item:nth-child(3)  { animation: slideInFromLeft 0.3s 0.11s cubic-bezier(0.16,1,0.3,1) both; }
+.nav-menu .nav-item:nth-child(4)  { animation: slideInFromLeft 0.3s 0.14s cubic-bezier(0.16,1,0.3,1) both; }
+.nav-menu .nav-item:nth-child(5)  { animation: slideInFromLeft 0.3s 0.17s cubic-bezier(0.16,1,0.3,1) both; }
+.nav-menu .nav-item:nth-child(6)  { animation: slideInFromLeft 0.3s 0.20s cubic-bezier(0.16,1,0.3,1) both; }
+.nav-menu .nav-item:nth-child(7)  { animation: slideInFromLeft 0.3s 0.23s cubic-bezier(0.16,1,0.3,1) both; }
+.nav-menu .nav-item:nth-child(8)  { animation: slideInFromLeft 0.3s 0.26s cubic-bezier(0.16,1,0.3,1) both; }
+.nav-menu .nav-item:nth-child(9)  { animation: slideInFromLeft 0.3s 0.29s cubic-bezier(0.16,1,0.3,1) both; }
+.nav-menu .nav-item:nth-child(10) { animation: slideInFromLeft 0.3s 0.32s cubic-bezier(0.16,1,0.3,1) both; }
+
+/* Nav item — icon bounce on hover */
+.nav-item:hover svg {
+  animation: iconBounce 0.45s cubic-bezier(0.34,1.56,0.64,1);
+}
+/* Active nav item — shimmer on active bar */
+.nav-item.active::before {
+  animation: shimmerPass 2.5s linear infinite;
+}
+
+/* ─── HEADER — Scroll shadow reveal ──────────────────────────────────────────── */
+.header {
+  transition: box-shadow 0.3s ease, backdrop-filter 0.3s ease;
+}
+.header.scrolled {
+  box-shadow: 0 4px 24px rgba(0,0,0,0.18), 0 1px 0 rgba(255,255,255,0.04);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+}
+
+/* Mobile logo hover — no position offset needed, just scale */
+.mobile-logo {
+  transition: transform 0.22s cubic-bezier(0.34,1.56,0.64,1);
+}
+.mobile-logo:hover { transform: scale(1.06); }
+.mobile-logo:active { transform: scale(0.93); }
+
+/* ─── CARDS — Professional 3D lift + shimmer ─────────────────────────────────── */
+.card {
+  will-change: transform, box-shadow;
+}
+.card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg,
+    transparent 40%,
+    rgba(255,255,255,0.035) 50%,
+    transparent 60%
+  );
+  background-size: 200% 100%;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  border-radius: inherit;
+  pointer-events: none;
+}
+.card:hover::after {
+  opacity: 1;
+  animation: shimmerPass 1.8s ease-in-out;
+}
+
+/* ─── BUTTONS — Micro-interactions ───────────────────────────────────────────── */
+.btn {
+  will-change: transform, box-shadow;
+}
+/* Primary btn glow on hover */
+.btn-primary:hover:not(:disabled) {
+  box-shadow: 0 8px 24px rgba(99,102,241,0.45), 0 0 0 1px rgba(255,255,255,0.1) inset;
+}
+/* Secondary btn */
+.btn-secondary {
+  will-change: transform;
+}
+
+/* ─── INPUTS — Focus glow ────────────────────────────────────────────────────── */
+.input-field {
+  transition: border-color 0.2s ease, box-shadow 0.25s ease, background 0.2s ease;
+  will-change: box-shadow;
+}
+.input-field:focus {
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.15), 0 0 12px rgba(99,102,241,0.1);
+  outline: none;
+}
+
+/* ─── MODAL — Backdrop blur + card pop ──────────────────────────────────────── */
+/* Applied globally to any modal backdrop div */
+[style*="position: fixed"][style*="zIndex: 9999"],
+[style*="position: fixed"][style*="z-index: 9999"] {
+  animation: fadeIn 0.22s ease both;
+}
+/* Modal cards inside backdrops */
+[style*="position: fixed"] .card {
+  animation: popIn 0.38s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+
+/* ─── PAGE SECTIONS — Scroll reveal ─────────────────────────────────────────── */
+.page-content section,
+.page-content .card {
+  animation: reveal 0.42s cubic-bezier(0.16,1,0.3,1) both;
+}
+.page-content section:nth-child(1) { animation-delay: 0.03s; }
+.page-content section:nth-child(2) { animation-delay: 0.08s; }
+.page-content section:nth-child(3) { animation-delay: 0.13s; }
+.page-content section:nth-child(4) { animation-delay: 0.18s; }
+.page-content section:nth-child(5) { animation-delay: 0.23s; }
+
+/* ─── STATUS PILLS — Pop in ──────────────────────────────────────────────────── */
+.status-pill {
+  animation: scaleIn 0.25s cubic-bezier(0.34,1.56,0.64,1) both;
+  will-change: transform;
+}
+
+/* ─── SUBSCRIPTION QUEUE TABLE ROWS ─────────────────────────────────────────── */
+tbody tr {
+  transition: background 0.18s ease, transform 0.18s ease;
+}
+tbody tr:hover {
+  background: rgba(99,102,241,0.04);
+  transform: translateX(2px);
+}
+
+/* ─── AVATAR — Pulse on hover ────────────────────────────────────────────────── */
+.user-avatar {
+  transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.25s ease;
+}
+.user-avatar:hover {
+  transform: scale(1.1) rotate(-3deg);
+  box-shadow: 0 6px 20px rgba(99,102,241,0.4);
+}
+
+/* ─── ICON BUTTONS ────────────────────────────────────────────────────────────── */
+.icon-btn {
+  will-change: transform;
+}
+.icon-btn:hover svg {
+  animation: iconBounce 0.4s cubic-bezier(0.34,1.56,0.64,1);
+}
+
+/* ─── SIDEBAR UPGRADE CARD — Float on hover ──────────────────────────────────── */
+.sidebar > div[style*="cursor: pointer"] {
+  transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1),
+              box-shadow 0.25s ease !important;
+  will-change: transform;
+}
+.sidebar > div[style*="cursor: pointer"]:hover {
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 12px 28px rgba(99,102,241,0.25) !important;
+}
+.sidebar > div[style*="cursor: pointer"]:active {
+  transform: scale(0.97);
+}
+
+/* ─── ADMIN NAV ITEMS ────────────────────────────────────────────────────────── */
+.admin-nav-item {
+  transition: all 0.2s cubic-bezier(0.16,1,0.3,1) !important;
+  will-change: transform, background;
+}
+.admin-nav-item:hover {
+  transform: translateX(4px) !important;
+}
+.admin-nav-item.active {
+  animation: scaleIn 0.2s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+
+/* ─── APPROVE / REJECT BUTTONS ───────────────────────────────────────────────── */
+button[style*="#10b981"],
+button[style*="#ef4444"] {
+  transition: transform 0.18s cubic-bezier(0.34,1.56,0.64,1),
+              box-shadow 0.18s ease,
+              filter 0.18s ease !important;
+  will-change: transform;
+}
+button[style*="#10b981"]:hover {
+  transform: translateY(-2px) scale(1.06) !important;
+  box-shadow: 0 6px 16px rgba(16,185,129,0.4) !important;
+}
+button[style*="#ef4444"]:hover:not([style*="background: linear-gradient"]) {
+  transform: translateY(-2px) scale(1.06) !important;
+  box-shadow: 0 6px 16px rgba(239,68,68,0.4) !important;
+}
+
+/* ─── MISSION / TASK ITEMS ───────────────────────────────────────────────────── */
+.mission-item {
+  transition: transform 0.2s cubic-bezier(0.16,1,0.3,1),
+              background 0.2s ease,
+              border-color 0.2s ease !important;
+  will-change: transform;
+}
+.mission-item:hover {
+  transform: translateX(4px) !important;
+}
+.mission-item.completed {
+  animation: scaleIn 0.3s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+
+/* ─── BADGE ITEMS ─────────────────────────────────────────────────────────────── */
+.badge-item {
+  transition: transform 0.22s cubic-bezier(0.34,1.56,0.64,1),
+              box-shadow 0.22s ease !important;
+  will-change: transform;
+}
+.badge-item:hover:not(.locked) {
+  transform: translateY(-4px) scale(1.08) !important;
+  box-shadow: 0 8px 20px rgba(99,102,241,0.3) !important;
+}
+
+/* ─── QUICK ACTION BUTTONS (Study generators grid) ────────────────────────────── */
+.quick-action-btn {
+  transition: transform 0.22s cubic-bezier(0.34,1.56,0.64,1),
+              box-shadow 0.22s ease,
+              border-color 0.22s ease !important;
+  will-change: transform;
+}
+.quick-action-btn:hover {
+  transform: translateY(-4px) scale(1.04) !important;
+  box-shadow: 0 10px 24px rgba(99,102,241,0.2) !important;
+}
+.quick-action-btn:active {
+  transform: scale(0.96) !important;
+}
+
+/* ─── CHAT MESSAGES ───────────────────────────────────────────────────────────── */
+.message-bubble {
+  animation: fadeUp 0.3s cubic-bezier(0.16,1,0.3,1) both;
+  will-change: opacity, transform;
+}
+
+/* ─── TOGGLE SWITCHES ─────────────────────────────────────────────────────────── */
+.toggle-switch .slider {
+  transition: background 0.3s ease !important;
+}
+.toggle-switch .slider:before {
+  transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1) !important;
+}
+input:checked + .slider:before {
+  box-shadow: 0 0 8px rgba(99,102,241,0.5);
+}
+
+/* ─── SELECT DROPDOWNS ───────────────────────────────────────────────────────── */
+select.input-field {
+  transition: border-color 0.2s ease, box-shadow 0.25s ease !important;
+  cursor: pointer;
+}
+select.input-field:focus {
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.15) !important;
+}
+
+/* ─── STAT CARDS (Admin metrics) ─────────────────────────────────────────────── */
+.card[style*="textAlign: center"] {
+  animation: reveal 0.4s cubic-bezier(0.16,1,0.3,1) both;
+}
+
+/* ─── PAGE TRANSITION WRAPPER ────────────────────────────────────────────────── */
+.main-content > header + * {
+  animation: reveal 0.35s cubic-bezier(0.16,1,0.3,1) both;
+}
+
+/* ─── REFRESH BUTTONS ────────────────────────────────────────────────────────── */
+button .spin,
+.spin {
+  animation: spin 0.9s linear infinite;
+}
+
+/* Mobile animation overrides are now in the main @media (max-width: 768px) block above */
+
+/* ─── ACCESSIBILITY — Respect prefers-reduced-motion ────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }

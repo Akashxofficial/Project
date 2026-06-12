@@ -132,7 +132,7 @@ function MainApp() {
 
       {/* Sidebar */}
       <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
-        <div className="logo">
+        <div className="logo" onClick={() => navigate('/')} style={{ cursor: 'pointer' }} title="Go to Dashboard">
           <div className="logo-icon"><Sparkles size={16} /></div>
           <span>TaniOS <span className="text-gradient">AI</span></span>
         </div>
@@ -285,7 +285,8 @@ function MainApp() {
       {/* Main Content */}
       <main className="main-content">
         <header className={`header${headerScrolled ? ' scrolled' : ''}`}>
-          <div className="header-left">
+          {/* LEFT — flex:1 so it takes equal space */}
+          <div className="header-left" style={{ flex: 1 }}>
             <button className="hamburger" onClick={() => setSidebarOpen(o => !o)} aria-label="Toggle menu">
               {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
@@ -294,8 +295,13 @@ function MainApp() {
             </div>
           </div>
 
-          {/* ── Mobile Logo (center) — hidden on desktop ── */}
-          <div className="mobile-logo">
+          {/* CENTER — Mobile Logo, perfectly centered between left/right */}
+          <div
+            className="mobile-logo"
+            onClick={() => navigate('/')}
+            title="Go to Dashboard"
+            style={{ cursor: 'pointer', position: 'static', transform: 'none', flex: '0 0 auto' }}
+          >
             <div className="mobile-logo-icon">
               <Sparkles size={12} color="white" />
             </div>
@@ -304,7 +310,8 @@ function MainApp() {
             </span>
           </div>
 
-          <div className="header-right">
+          {/* RIGHT — flex:1 + justify-content:flex-end so it mirrors the left */}
+          <div className="header-right" style={{ flex: 1, justifyContent: 'flex-end' }}>
             {currentUser?.photoURL ? (
               <img src={currentUser.photoURL} alt="profile" className="user-avatar" title={currentUser.displayName} />
             ) : (
