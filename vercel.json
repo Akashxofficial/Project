@@ -24,6 +24,22 @@
       "destination": "/api/track.js?type=subscription"
     },
     {
+      "source": "/api/admin/notify/stats",
+      "destination": "/api/admin/notify.js?action=stats"
+    },
+    {
+      "source": "/api/admin/notify/streak-reminder",
+      "destination": "/api/admin/notify.js?action=streak-reminder"
+    },
+    {
+      "source": "/api/admin/notify/study-reminder",
+      "destination": "/api/admin/notify.js?action=study-reminder"
+    },
+    {
+      "source": "/api/admin/notify/cron-reminder",
+      "destination": "/api/admin/notify.js?action=cron-reminder"
+    },
+    {
       "source": "/((?!api/).*)",
       "destination": "/index.html"
     }
@@ -39,9 +55,6 @@
     "api/admin/reject-subscription.js":      { "maxDuration": 30 },
     "api/notify/welcome.js":              { "maxDuration": 15 },
     "api/admin/broadcast.js":             { "maxDuration": 60 },
-    "api/admin/notify/stats.js":           { "maxDuration": 15 },
-    "api/admin/notify/streak-reminder.js": { "maxDuration": 60 },
-    "api/admin/notify/study-reminder.js":  { "maxDuration": 60 },
-    "api/admin/notify/cron-reminder.js":   { "maxDuration": 60 }
+    "api/admin/notify.js":                 { "maxDuration": 60 }
   }
 }

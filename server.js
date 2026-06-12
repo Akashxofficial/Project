@@ -12,7 +12,7 @@ import {
   sendBroadcastEmail,
   sendDynamicDailyEmail,
 } from './api/mailer.js';
-import cronReminderHandler from './api/admin/notify/cron-reminder.js';
+import cronReminderHandler from './api/admin/notify.js';
 
 
 const app = express();
