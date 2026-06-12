@@ -1,5 +1,5 @@
 // api/track.js — Unified Vercel Serverless Function for Ingest Metrics
-import { connectDB, ActivityModel, StudentModel, PaymentModel } from './mongo.js';
+import { connectDB, ActivityModel, StudentModel, PaymentModel } from './_mongo.js';
 
 export default async function handler(req, res) {
   // CORS Headers

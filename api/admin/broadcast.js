@@ -1,6 +1,6 @@
 // api/admin/broadcast.js — Vercel Serverless Function
-import { connectDB, StudentModel } from '../mongo.js';
-import { sendBroadcastEmail } from '../mailer.js';
+import { connectDB, StudentModel } from '../_mongo.js';
+import { sendBroadcastEmail } from '../_mailer.js';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');

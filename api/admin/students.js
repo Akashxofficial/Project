@@ -1,5 +1,5 @@
 // api/admin/students.js — Vercel Serverless Function
-import { connectDB, StudentModel } from '../mongo.js';
+import { connectDB, StudentModel } from '../_mongo.js';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');

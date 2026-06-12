@@ -1,6 +1,6 @@
 // api/admin/notify.js — Unified Vercel Serverless Function
-import { connectDB, StudentModel } from '../mongo.js';
-import { sendStreakReminderEmail, sendStudyReminderEmail, sendDynamicDailyEmail } from '../mailer.js';
+import { connectDB, StudentModel } from '../_mongo.js';
+import { sendStreakReminderEmail, sendStudyReminderEmail, sendDynamicDailyEmail } from '../_mailer.js';
 
 export default async function handler(req, res) {
   // CORS Headers

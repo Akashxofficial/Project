@@ -1,6 +1,6 @@
 // api/admin/reject-subscription.js — Vercel Serverless Function
-import { connectDB, StudentModel, PaymentModel, ActivityModel } from '../mongo.js';
-import { sendSubscriptionRejectedEmail } from '../mailer.js';
+import { connectDB, StudentModel, PaymentModel, ActivityModel } from '../_mongo.js';
+import { sendSubscriptionRejectedEmail } from '../_mailer.js';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');

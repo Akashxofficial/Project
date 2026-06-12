@@ -2,7 +2,7 @@ import express from 'express';
 import handler from './api/generate.js';
 import Razorpay from 'razorpay';
 import crypto from 'crypto';
-import { connectDB, ActivityModel, StudentModel, PaymentModel } from './api/mongo.js';
+import { connectDB, ActivityModel, StudentModel, PaymentModel } from './api/_mongo.js';
 import {
   sendWelcomeEmail,
   sendStreakReminderEmail,
@@ -11,7 +11,7 @@ import {
   sendSubscriptionRejectedEmail,
   sendBroadcastEmail,
   sendDynamicDailyEmail,
-} from './api/mailer.js';
+} from './api/_mailer.js';
 import cronReminderHandler from './api/admin/notify.js';
 
 

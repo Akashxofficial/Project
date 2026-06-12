@@ -1,5 +1,5 @@
 // api/admin/activities.js — Vercel Serverless Function
-import { connectDB, ActivityModel } from '../mongo.js';
+import { connectDB, ActivityModel } from '../_mongo.js';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');

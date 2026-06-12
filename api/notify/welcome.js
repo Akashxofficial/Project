@@ -1,6 +1,6 @@
 // api/notify/welcome.js — Vercel Serverless Function
-import { connectDB, StudentModel } from '../mongo.js';
-import { sendWelcomeEmail } from '../mailer.js';
+import { connectDB, StudentModel } from '../_mongo.js';
+import { sendWelcomeEmail } from '../_mailer.js';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
