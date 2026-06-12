@@ -7,17 +7,31 @@
 
 import { initializeApp } from 'firebase/app';
 import { getFirestore, doc, setDoc, updateDoc, onSnapshot, getDoc, serverTimestamp } from 'firebase/firestore';
+import { readFileSync } from 'fs';
+
+// Load .env file manually if present
+try {
+  const envFile = readFileSync(".env", "utf-8");
+  envFile.split("\n").forEach((line) => {
+    const [key, ...valParts] = line.split("=");
+    if (key && valParts.length > 0 && !key.trim().startsWith("#")) {
+      process.env[key.trim()] = valParts.join("=").trim();
+    }
+  });
+} catch (err) {
+  // Silent fallback
+}
 
 // ── Config ─────────────────────────────────────────────────────────────────
 const BACKEND = 'http://localhost:3001';
 
 const firebaseConfig = {
-  apiKey:            'YOUR_FIREBASE_API_KEY_PLACEHOLDER',
-  authDomain:        'tanios-3cd37.firebaseapp.com',
-  projectId:         'tanios-3cd37',
-  storageBucket:     'tanios-3cd37.firebasestorage.app',
-  messagingSenderId: '635893073596',
-  appId:             '1:635893073596:web:1839eead55e75b7f3972b9'
+  apiKey:            process.env.VITE_FIREBASE_API_KEY || 'dummy-api-key',
+  authDomain:        process.env.VITE_FIREBASE_AUTH_DOMAIN || 'tanios-3cd37.firebaseapp.com',
+  projectId:         process.env.VITE_FIREBASE_PROJECT_ID || 'tanios-3cd37',
+  storageBucket:     process.env.VITE_FIREBASE_STORAGE_BUCKET || 'tanios-3cd37.firebasestorage.app',
+  messagingSenderId: process.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '635893073596',
+  appId:             process.env.VITE_FIREBASE_APP_ID || '1:635893073596:web:1839eead55e75b7f3972b9'
 };
 
 // Test user (simulated student)

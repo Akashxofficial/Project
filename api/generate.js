@@ -4,6 +4,40 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { Redis } from "@upstash/redis";
 import * as SentryNode from "@sentry/node";
 
+// Utility to redact sensitive API keys and secrets from string outputs (logs and JSON errors)
+function sanitizeSensitiveInfo(text) {
+  if (!text || typeof text !== 'string') return text;
+  let sanitized = text;
+
+  // 1. Redact standard Google/Firebase API key pattern (AIzaSy followed by 35 chars)
+  sanitized = sanitized.replace(/AIzaSy[A-Za-z0-9_-]{35}/g, '[REDACTED_API_KEY]');
+
+  // 2. Redact specific secrets loaded in environment variables (excluding public client keys)
+  const secretsToRedact = [
+    process.env.GEMINI_API_KEY,
+    process.env.GEMINI_API_KEYS,
+    process.env.UPSTASH_REDIS_REST_TOKEN,
+    process.env.RAZORPAY_KEY_SECRET,
+    process.env.MONGODB_URI,
+    process.env.EMAIL_APP_PASSWORD
+  ];
+
+  for (const secret of secretsToRedact) {
+    if (secret && secret.length > 5) {
+      // Split keys if GEMINI_API_KEYS contains comma-separated keys
+      const parts = secret.split(/[,\s;]+/).map(p => p.trim()).filter(p => p.length > 5);
+      for (const part of parts) {
+        // Escape special regex characters in the secret value
+        const escaped = part.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+        const regex = new RegExp(escaped, 'g');
+        sanitized = sanitized.replace(regex, '[REDACTED_SECRET]');
+      }
+    }
+  }
+
+  return sanitized;
+}
+
 // Initialize Sentry Node SDK
 if (process.env.SENTRY_DSN) {
   SentryNode.init({
@@ -271,7 +305,7 @@ export default async function handler(req, res) {
           chosenModel = modelName;
           break; // Successfully got response from this model, break model loop
         } catch (err) {
-          console.warn(`[API] Key ${i} with model ${modelName} failed:`, err.message);
+          console.warn(`[API] Key ${i} with model ${modelName} failed:`, sanitizeSensitiveInfo(err.message));
           lastError = err;
           
           const errMsg = err.message?.toLowerCase() || '';
@@ -327,7 +361,7 @@ export default async function handler(req, res) {
     });
 
   } catch (error) {
-    console.error('[API] Final Failure:', error.message);
+    console.error('[API] Final Failure:', sanitizeSensitiveInfo(error.message));
     if (process.env.SENTRY_DSN) {
       SentryNode.captureException(error);
     }
@@ -335,6 +369,8 @@ export default async function handler(req, res) {
     const rawKeys = process.env.GEMINI_API_KEYS || process.env.GEMINI_API_KEY || "";
     const apiKeys = rawKeys.split(/[\s,;\n]+/).map(k => k.trim()).filter(Boolean);
     const maskedKeys = apiKeys.map(k => k.length > 8 ? k.substring(0, 8) + '...' : 'invalid');
+
+    const sanitizedErrorMessage = sanitizeSensitiveInfo(error.message || '');
 
     if (error.name === 'AbortError') {
       return res.status(504).json({
@@ -345,12 +381,12 @@ export default async function handler(req, res) {
     }
 
     // Detect permanent key exhaustion (Daily limit 1500 reached / Billing block)
-    const errText = error?.message?.toLowerCase() || "";
+    const errText = sanitizedErrorMessage.toLowerCase();
     if (errText.includes('exceeded your current quota') || errText.includes('billing') || errText.includes('check your plan')) {
       return res.status(403).json({
         error: 'TaniOS AI is experiencing temporary high load. Please try again in a few seconds.',
         code: 'QUOTA_EXHAUSTED',
-        diagnostics: { keysFound: apiKeys.length, maskedKeys, lastError: error.message.split('\n')[0] }
+        diagnostics: { keysFound: apiKeys.length, maskedKeys, lastError: sanitizedErrorMessage.split('\n')[0] }
       });
     }
 
@@ -366,7 +402,7 @@ export default async function handler(req, res) {
         diagnostics: {
           keysFoundInEnv: apiKeys.length,
           maskedKeys,
-          lastError: error.message ? error.message.split('\n')[0] : 'Quota exceeded'
+          lastError: sanitizedErrorMessage ? sanitizedErrorMessage.split('\n')[0] : 'Quota exceeded'
         }
       });
     }
@@ -374,7 +410,7 @@ export default async function handler(req, res) {
     return res.status(500).json({
       error: 'TaniOS AI server is busy or experiencing high demand. Please try again in a few seconds.',
       code: 'INTERNAL_ERROR',
-      diagnostics: { keysFound: apiKeys.length, maskedKeys, lastError: error.message || 'An error occurred during AI execution' }
+      diagnostics: { keysFound: apiKeys.length, maskedKeys, lastError: sanitizedErrorMessage || 'An error occurred during AI execution' }
     });
   }
 }
