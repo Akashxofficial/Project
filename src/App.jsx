@@ -3,7 +3,7 @@ import { Routes, Route, NavLink, useLocation, useNavigate, Navigate } from 'reac
 import {
   BookOpen, MessageSquare, Clock, FileText,
   GraduationCap, LayoutDashboard, User, Sparkles,
-  LogOut, Bookmark, Menu, X
+  LogOut, Bookmark, Menu, X, Sun, Moon
 } from 'lucide-react';
 import { useAuth } from './context/AuthContext';
 
@@ -100,6 +100,31 @@ function MainApp() {
   const location = useLocation();
   const navigate = useNavigate();
 
+  const [theme, setTheme] = useState(() => {
+    try {
+      const savedTheme = localStorage.getItem('tanios_theme');
+      if (savedTheme) return savedTheme;
+      return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+    } catch {
+      return 'dark';
+    }
+  });
+
+  useEffect(() => {
+    if (theme === 'light') {
+      document.documentElement.classList.add('light-theme');
+    } else {
+      document.documentElement.classList.remove('light-theme');
+    }
+    try {
+      localStorage.setItem('tanios_theme', theme);
+    } catch {}
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(prev => prev === 'dark' ? 'light' : 'dark');
+  };
+
   useEffect(() => {
     setSidebarOpen(false);
   }, [location.pathname]);
@@ -121,7 +146,7 @@ function MainApp() {
   const firstName = currentUser?.displayName?.split(' ')[0] || 'Student';
 
   return (
-    <div className="app-container">
+    <div className={`app-container ${location.pathname === '/chat' ? 'chat-page-active' : ''}`}>
 
       {/* Mobile Overlay — always in DOM, pointer-events controls interaction */}
       <div
@@ -311,7 +336,15 @@ function MainApp() {
           </div>
 
           {/* RIGHT — flex:1 + justify-content:flex-end so it mirrors the left */}
-          <div className="header-right" style={{ flex: 1, justifyContent: 'flex-end' }}>
+          <div className="header-right" style={{ flex: 1, justifyContent: 'flex-end', gap: '0.75rem' }}>
+            <button 
+              className="icon-btn theme-switcher-btn" 
+              onClick={toggleTheme} 
+              title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+              style={{ flexShrink: 0 }}
+            >
+              {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+            </button>
             {currentUser?.photoURL ? (
               <img src={currentUser.photoURL} alt="profile" className="user-avatar" title={currentUser.displayName} />
             ) : (

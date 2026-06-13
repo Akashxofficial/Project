@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Send, Sparkles, User, Clock, Plus, Trash2, MessageSquare, PanelLeftOpen, PanelLeftClose, Loader2, X, Image as ImageIcon, Camera } from 'lucide-react';
+import { Send, Sparkles, User, Clock, Plus, Trash2, MessageSquare, PanelLeftOpen, PanelLeftClose, Loader2, X, Image as ImageIcon, Camera, ArrowLeft } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { generateAIContent, generateAIContentStream, generateDoubtPrompt, fixMathFormatting } from '../lib/ai';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -137,6 +138,7 @@ const saveGuestSessions = (sessions) => {
 
 // ── Component ────────────────────────────────────────────────────────────────
 export default function Chat() {
+  const navigate = useNavigate();
   const { currentUser, incrementGuestUsage, getRemainingQuota, QUOTA, subscription } = useAuth();
   const isGuest = !currentUser || currentUser.isGuest || currentUser.email === 'guest@tanios.ai';
   const userId = currentUser?.uid || currentUser?.email || 'guest';
@@ -516,6 +518,32 @@ export default function Chat() {
 
       {/* ── LEFT: History Sidebar ── */}
       <aside className={`chat-history-sidebar ${sidebarOpen ? 'open' : ''}`}>
+        {/* Mobile Only: Back to Dashboard Link */}
+        <div className="mobile-only-back-btn" style={{ padding: '0.75rem 0.875rem 0.25rem', borderBottom: '1px solid var(--border)' }}>
+          <button
+            type="button"
+            onClick={() => navigate('/')}
+            style={{
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '0.5rem',
+              padding: '0.6rem 0.875rem',
+              borderRadius: 'var(--radius-sm)',
+              border: '1px solid var(--border)',
+              color: 'var(--text)',
+              fontSize: '0.8rem',
+              fontWeight: 700,
+              cursor: 'pointer',
+              background: 'var(--bg-tertiary)'
+            }}
+          >
+            <ArrowLeft size={14} />
+            Back to Dashboard
+          </button>
+        </div>
+
         <div className="chat-history-sidebar-header">
           <button className="new-chat-btn" onClick={startNewChat} id="new-chat-btn">
             <Plus size={16} />
@@ -581,28 +609,11 @@ export default function Chat() {
 
       {/* ── RIGHT: Active Chat Panel ── */}
       <div className="chat-main">
-        <div className="chat-container">
 
+
+        <div className="chat-container">
           {/* ── MESSAGES ── */}
           <div className="chat-messages">
-            {/* Toggle sidebar button */}
-            <div className="chat-top-toggle" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
-              <button
-                onClick={() => setSidebarOpen(o => !o)}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: '0.4rem',
-                  background: 'none', border: '1px solid var(--border)',
-                  borderRadius: 'var(--radius-sm)',
-                  color: 'var(--text-secondary)', fontSize: '0.78rem',
-                  padding: '0.3rem 0.65rem', cursor: 'pointer',
-                  transition: 'all var(--transition)'
-                }}
-                title={sidebarOpen ? 'Hide history' : 'Show history'}
-              >
-                {sidebarOpen ? <PanelLeftClose size={14} /> : <PanelLeftOpen size={14} />}
-                {sidebarOpen ? 'Hide History' : 'Chat History'}
-              </button>
-            </div>
 
             {messages.filter(msg => (msg.text && msg.text.trim() !== '') || msg.image).map(msg => {
               const isWelcome = msg.id === 'welcome';
@@ -703,7 +714,7 @@ export default function Chat() {
                                   }} />
                                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.3rem' }}>
                                     <span style={{ fontSize: '1.1rem' }}>{icon}</span>
-                                    <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#fff' }}>{subj}</span>
+                                    <span style={{ fontSize: '0.82rem', fontWeight: 800, color: 'var(--text)' }}>{subj}</span>
                                     <span style={{
                                       marginLeft: 'auto', fontSize: '0.6rem', fontWeight: 700,
                                       background: `${col}22`, color: col, padding: '0.1rem 0.4rem',
@@ -759,7 +770,7 @@ export default function Chat() {
                               <span style={{ fontSize: '1.25rem', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
                                 {doubt.icon}
                               </span>
-                              <h4 style={{ margin: 0, color: '#fff', fontSize: '0.85rem', fontWeight: 700 }}>
+                              <h4 style={{ margin: 0, color: 'var(--text)', fontSize: '0.85rem', fontWeight: 700 }}>
                                 {doubt.title}
                               </h4>
                             </div>
@@ -812,14 +823,7 @@ export default function Chat() {
           {/* ── INPUT AREA ── */}
           <div className="chat-input-area">
 
-            {/* 📱 Floating Chat History toggle for mobile — always visible near input */}
-            <button
-              className="chat-history-fab"
-              onClick={() => setSidebarOpen(o => !o)}
-              title={sidebarOpen ? 'Hide history' : 'Chat History'}
-            >
-              {sidebarOpen ? <PanelLeftClose size={18} /> : <PanelLeftOpen size={18} />}
-            </button>
+
 
             {/* Hidden file input for gallery attachment */}
             <input
@@ -838,6 +842,8 @@ export default function Chat() {
               onChange={handleImageUpload}
               style={{ display: 'none' }}
             />
+
+
 
             {/* Selected Image Floating Preview */}
             {selectedImage && (
@@ -891,7 +897,29 @@ export default function Chat() {
 
             <form onSubmit={handleSend} className="chat-input-wrapper">
               {/* Image/Camera upload trigger button inside input */}
-              <div style={{ position: 'absolute', left: '0.4rem', display: 'flex', gap: '2px', zIndex: 2 }}>
+              <div style={{ display: 'flex', gap: '4px', alignItems: 'center', paddingLeft: '0.25rem', flexShrink: 0 }}>
+                {/* Sidebar toggle button */}
+                <button
+                  type="button"
+                  onClick={() => setSidebarOpen(o => !o)}
+                  style={{
+                    width: '2rem',
+                    height: '2rem',
+                    borderRadius: '50%',
+                    border: 'none',
+                    background: 'none',
+                    color: 'var(--text-secondary)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    transition: 'all var(--transition)',
+                  }}
+                  className="chat-attach-btn"
+                  title={sidebarOpen ? 'Close sidebar' : 'Open sidebar'}
+                >
+                  {sidebarOpen ? <PanelLeftClose size={15} /> : <PanelLeftOpen size={15} />}
+                </button>
                 {/* Gallery button */}
                 <button
                   type="button"
@@ -948,7 +976,7 @@ export default function Chat() {
                 ref={inputRef}
                 type="text"
                 className="chat-input"
-                style={{ paddingLeft: '4.5rem', paddingRight: '3.25rem' }}
+                style={{ background: 'transparent', border: 'none', outline: 'none' }}
                 placeholder={isLoading ? 'Please wait...' : 'Ask your doubt here or upload image...'}
                 value={input}
                 onChange={e => setInput(e.target.value)}
@@ -983,32 +1011,7 @@ export default function Chat() {
           30% { transform: scale(1.4); opacity: 1; }
         }
 
-        /* Floating history FAB — hidden on desktop, shown on mobile */
-        .chat-history-fab {
-          display: none;
-          position: absolute;
-          top: -48px;
-          left: 0.75rem;
-          z-index: 100;
-          width: 36px;
-          height: 36px;
-          border-radius: 50%;
-          border: 1px solid var(--border);
-          background: var(--bg-secondary);
-          color: var(--text-secondary);
-          align-items: center;
-          justify-content: center;
-          cursor: pointer;
-          box-shadow: 0 2px 12px rgba(0,0,0,0.3);
-          backdrop-filter: blur(10px);
-          -webkit-backdrop-filter: blur(10px);
-          transition: all 0.2s ease;
-        }
-        .chat-history-fab:hover {
-          background: var(--primary);
-          color: white;
-          border-color: var(--primary);
-        }
+
 
         /* Desktop: top toggle visible, FAB hidden */
         .chat-top-toggle { display: flex; }
@@ -1040,11 +1043,17 @@ export default function Chat() {
           to { opacity: 1; transform: translateY(0); }
         }
 
+
+
+        .mobile-only-back-btn {
+          display: none !important;
+        }
+
         @media (max-width: 768px) {
-          /* Mobile: hide the top toggle, show the FAB */
+          /* Mobile: hide the top toggle */
           .chat-top-toggle { display: none !important; }
-          .chat-history-fab { display: flex; }
           .chat-mobile-overlay { display: block !important; }
+          .mobile-only-back-btn { display: block !important; }
           .target-doubts-section {
             margin: 1.25rem 0.5rem !important;
           }

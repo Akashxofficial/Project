@@ -2,8 +2,8 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
 import { getFirestore, collection, addDoc, query, where, getDocs, orderBy, serverTimestamp, doc, setDoc, deleteDoc } from 'firebase/firestore';
 
-// Dynamic backend URL — localhost for dev, same-origin for production (Vercel/Railway)
-const BACKEND_URL = import.meta.env.DEV ? 'http://localhost:3001' : '';
+// Dynamic backend URL — relative for dev and production (proxied locally, hosted same-origin in prod)
+const BACKEND_URL = '';
 
 // Your web app's Firebase configuration
 // Replace these with your actual Firebase config from Firebase Console

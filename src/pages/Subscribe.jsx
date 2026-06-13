@@ -5,8 +5,8 @@ import { db, logActivity, trackPaymentInMongo, trackSubscriptionInMongo } from '
 import { setDoc, doc, serverTimestamp, getDoc, onSnapshot, query, collection, where, getDocs } from 'firebase/firestore';
 import { Sparkles, Check, Copy, CheckCircle2, ShieldCheck, CreditCard, Lock, RefreshCw, ChevronLeft, ArrowRight, QrCode, AlertCircle, Clock, CheckCheck } from 'lucide-react';
 
-// Dynamic backend URL — localhost for dev, same-origin in production
-const BACKEND_URL = import.meta.env.DEV ? 'http://localhost:3001' : '';
+// Dynamic backend URL — relative for dev and production (proxied locally, hosted same-origin in prod)
+const BACKEND_URL = '';
 
 // Anti-fraud: max UTR submission attempts per user per day
 const MAX_UTR_ATTEMPTS_PER_DAY = 3;
@@ -677,8 +677,8 @@ export default function Subscribe() {
           }
         }
         .benefit-card {
-          background: rgba(25, 25, 30, 0.45);
-          border: 1px solid rgba(255, 255, 255, 0.05);
+          background: var(--bg-secondary);
+          border: 1px solid var(--border);
           backdrop-filter: blur(16px);
           padding: 2.25rem 2rem;
           border-radius: 20px;
@@ -686,10 +686,11 @@ export default function Subscribe() {
           flex-direction: column;
           height: 100%;
           box-sizing: border-box;
+          box-shadow: var(--shadow-sm);
         }
         .gateway-card {
-          background: rgba(25, 25, 30, 0.6);
-          border: 1px solid rgba(108, 99, 255, 0.15);
+          background: var(--bg-secondary);
+          border: 1px solid var(--border-hover);
           box-shadow: 0 15px 35px rgba(108, 99, 255, 0.05);
           backdrop-filter: blur(24px);
           padding: 2.25rem 2rem;
@@ -699,6 +700,7 @@ export default function Subscribe() {
           flex-direction: column;
           height: 100%;
           box-sizing: border-box;
+          box-shadow: var(--shadow-md);
         }
         .metrics-grid {
           display: grid;
@@ -785,7 +787,7 @@ export default function Subscribe() {
             Unlock Core AI Capabilities
           </span>
         </div>
-        <h1 style={{ fontSize: '2rem', fontWeight: 800, color: '#fff', margin: '0 0 0.5rem 0' }}>TaniOS Pro Premium Member</h1>
+        <h1 style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--text)', margin: '0 0 0.5rem 0' }}>TaniOS Pro Premium Member</h1>
         <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', maxWidth: '600px', margin: '0 auto' }}>
           Accelerate your board exam preparation with continuous access to personal AI tutoring and dynamic note synthesis tools.
         </p>
@@ -795,7 +797,7 @@ export default function Subscribe() {
         
         {/* Benefits Panel */}
         <div className="benefit-card">
-          <h2 style={{ fontSize: '1.25rem', fontWeight: 800, margin: '0 0 0.5rem 0', color: '#fff', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <h2 style={{ fontSize: '1.25rem', fontWeight: 800, margin: '0 0 0.5rem 0', color: 'var(--text)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <ShieldCheck color="var(--primary)" size={22} /> Pro Member Privileges
           </h2>
           <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '1.75rem' }}>
@@ -823,7 +825,7 @@ export default function Subscribe() {
             color: 'var(--text-secondary)',
             lineHeight: 1.55
           }}>
-            💡 <strong style={{ color: '#fff' }}>CBSE & State Board Target Focus:</strong> Tailored specifically to Indian marking schemes and topper frameworks. Pro members maintain a <strong style={{ color: '#a78bfa' }}>4x higher study consistency</strong> using gamified learning checkpoints!
+            💡 <strong style={{ color: 'var(--text)' }}>CBSE & State Board Target Focus:</strong> Tailored specifically to Indian marking schemes and topper frameworks. Pro members maintain a <strong style={{ color: 'var(--primary)' }}>4x higher study consistency</strong> using gamified learning checkpoints!
           </div>
 
           {/* Academic Performance Boost Metrics Grid */}
@@ -834,15 +836,15 @@ export default function Subscribe() {
               { label: 'Retention Rate', value: '98.2%', desc: 'Long-term Memory' }
             ].map((stat, i) => (
               <div key={i} style={{
-                background: 'rgba(255, 255, 255, 0.02)',
-                border: '1px solid rgba(255, 255, 255, 0.05)',
+                background: 'var(--bg-tertiary)',
+                border: '1px solid var(--border)',
                 borderRadius: '12px',
                 padding: '0.75rem 0.5rem',
                 textAlign: 'center',
                 cursor: 'default'
               }}>
-                <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#a78bfa', marginBottom: '0.2rem' }}>{stat.value}</div>
-                <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#fff', marginBottom: '0.1rem' }}>{stat.label}</div>
+                <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--primary)', marginBottom: '0.2rem' }}>{stat.value}</div>
+                <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text)', marginBottom: '0.1rem' }}>{stat.label}</div>
                 <div style={{ fontSize: '0.58rem', color: 'var(--text-secondary)' }}>{stat.desc}</div>
               </div>
             ))}
@@ -850,7 +852,7 @@ export default function Subscribe() {
 
           <div style={{
             marginTop: 'auto',
-            borderTop: '1px solid rgba(255,255,255,0.06)',
+            borderTop: '1px solid var(--border)',
             paddingTop: '1.5rem',
             display: 'flex',
             alignItems: 'center',
@@ -1002,15 +1004,15 @@ export default function Subscribe() {
                     alignItems: 'center',
                     justifyContent: 'center',
                     gap: '0.5rem',
-                    background: 'rgba(255, 255, 255, 0.02)',
-                    border: '1px solid rgba(255, 255, 255, 0.05)',
+                    background: 'var(--bg-tertiary)',
+                    border: '1px solid var(--border)',
                     borderRadius: '10px',
                     padding: '0.6rem 1rem',
                     marginBottom: '1.25rem',
                     fontSize: '0.82rem'
                   }}>
                     <span style={{ color: 'var(--text-secondary)' }}>UPI ID:</span>
-                    <strong style={{ color: '#fff', letterSpacing: '0.5px' }}>7412948856@kotakbank</strong>
+                    <strong style={{ color: 'var(--text)', letterSpacing: '0.5px' }}>7412948856@kotakbank</strong>
                     <button
                       type="button"
                       onClick={() => {
@@ -1054,12 +1056,12 @@ export default function Subscribe() {
                       }}
                       style={{
                         width: '100%',
-                        background: '#09090b',
-                        border: utrError ? '1px solid #ef4444' : '1px solid rgba(255, 255, 255, 0.1)',
+                        background: 'var(--bg)',
+                        border: utrError ? '1px solid #ef4444' : '1px solid var(--border)',
                         borderRadius: '10px',
                         padding: '0.7rem 1rem',
                         fontSize: '0.88rem',
-                        color: '#fff',
+                        color: 'var(--text)',
                         outline: 'none',
                         letterSpacing: '1px',
                         textAlign: 'center',
@@ -1120,14 +1122,14 @@ export default function Subscribe() {
 
                   {/* Secure Trust Badge Info Container */}
                   <div style={{
-                    background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.01), rgba(255, 255, 255, 0.03))',
-                    border: '1px solid rgba(255, 255, 255, 0.04)',
+                    background: 'var(--bg-tertiary)',
+                    border: '1px solid var(--border)',
                     borderRadius: '12px',
                     padding: '1rem',
                     marginTop: '1.25rem',
                     textAlign: 'left'
                   }}>
-                    <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#fff', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                    <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text)', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                       🔒 Secured NPCI UPI Settlement Verification
                     </div>
                     <p style={{ fontSize: '0.68rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.45 }}>
@@ -1146,24 +1148,24 @@ export default function Subscribe() {
 
                   {/* Secure Razorpay Card Preview Box */}
                   <div style={{
-                    background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.12), rgba(167, 139, 250, 0.08))',
-                    border: '1px solid rgba(99, 102, 241, 0.3)',
+                    background: 'var(--bg-tertiary)',
+                    border: '1px solid var(--border)',
                     borderRadius: '16px',
                     padding: '1.25rem',
                     marginBottom: '1rem',
-                    boxShadow: '0 4px 20px rgba(99, 102, 241, 0.15)'
+                    boxShadow: 'var(--shadow-sm)'
                   }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-                      <div style={{ background: 'rgba(255,255,255,0.08)', padding: '6px 12px', borderRadius: '6px', fontSize: '0.7rem', fontWeight: 800, color: '#fff', border: '1px solid rgba(255,255,255,0.1)' }}>
+                      <div style={{ background: 'var(--primary-light)', padding: '6px 12px', borderRadius: '6px', fontSize: '0.7rem', fontWeight: 800, color: 'var(--primary)', border: '1px solid var(--border)' }}>
                         RAZORPAY CHECKOUT
                       </div>
-                      <span style={{ fontSize: '1.1rem', fontWeight: 800, color: '#fff' }}>₹199 <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: 500 }}>one-time</span></span>
+                      <span style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text)' }}>₹199 <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: 500 }}>one-time</span></span>
                     </div>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
                         <span>Plan:</span>
-                        <span style={{ color: '#fff', fontWeight: 700 }}>TaniOS Pro Premium Member</span>
+                        <span style={{ color: 'var(--text)', fontWeight: 700 }}>TaniOS Pro Premium Member</span>
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
                         <span>Settlement:</span>
@@ -1280,7 +1282,7 @@ export default function Subscribe() {
                           {s.step}
                         </div>
                         <div>
-                          <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#fff' }}>{s.title}</div>
+                          <div style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text)' }}>{s.title}</div>
                           <div style={{ fontSize: '0.68rem', color: 'var(--text-secondary)', marginTop: '0.15rem', lineHeight: 1.35 }}>{s.desc}</div>
                         </div>
                       </div>
@@ -1289,14 +1291,14 @@ export default function Subscribe() {
 
                   {/* Secure Trust Badge Info Container */}
                   <div style={{
-                    background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.01), rgba(255, 255, 255, 0.03))',
-                    border: '1px solid rgba(255, 255, 255, 0.04)',
+                    background: 'var(--bg-tertiary)',
+                    border: '1px solid var(--border)',
                     borderRadius: '12px',
                     padding: '1rem',
                     marginTop: '1.25rem',
                     textAlign: 'left'
                   }}>
-                    <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#fff', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                    <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text)', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                       🔒 Razorpay Secured Payment aggregations
                     </div>
                     <p style={{ fontSize: '0.68rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.45 }}>
@@ -1325,8 +1327,8 @@ export default function Subscribe() {
                 boxShadow: '0 4px 25px rgba(108, 99, 255, 0.15)',
                 boxSizing: 'border-box'
               }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '0.75rem' }}>
-                  <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#c084fc', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.75rem' }}>
+                  <span style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                     SIMULATED POPUP MODAL
                   </span>
                   <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>ID: {mockOrderDetails.orderId}</span>
@@ -1335,7 +1337,7 @@ export default function Subscribe() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem', fontSize: '0.8rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                     <span style={{ color: 'var(--text-secondary)' }}>Prefilled Email:</span>
-                    <span style={{ color: '#fff', fontWeight: 700 }}>{currentUser.email || 'student@tanios.ai'}</span>
+                    <span style={{ color: 'var(--text)', fontWeight: 700 }}>{currentUser.email || 'student@tanios.ai'}</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                     <span style={{ color: 'var(--text-secondary)' }}>Amount Due:</span>
@@ -1507,14 +1509,14 @@ export default function Subscribe() {
                   Awaiting Admin Verification
                 </h4>
                 <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                  Your UTR <strong style={{ color: '#fff', fontFamily: 'monospace', letterSpacing: '1px' }}>{pendingUtr}</strong> has been submitted for manual verification against our bank statement.
+                  Your UTR <strong style={{ color: 'var(--text)', fontFamily: 'monospace', letterSpacing: '1px' }}>{pendingUtr}</strong> has been submitted for manual verification against our bank statement.
                 </p>
               </div>
 
               {/* Real-time status indicator */}
               <div style={{
-                background: 'rgba(99,102,241,0.06)',
-                border: '1px solid rgba(99,102,241,0.15)',
+                background: 'var(--primary-light)',
+                border: '1px solid var(--border)',
                 borderRadius: '10px',
                 padding: '1rem',
                 display: 'flex',
@@ -1529,7 +1531,7 @@ export default function Subscribe() {
                   flexShrink: 0
                 }} />
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#fff' }}>Live Verification Listener Active</div>
+                  <div style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text)' }}>Live Verification Listener Active</div>
                   <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: '0.15rem' }}>
                     This page will automatically redirect when admin approves your payment. No need to refresh!
                   </div>
@@ -1551,13 +1553,13 @@ export default function Subscribe() {
                     alignItems: 'flex-start',
                     gap: '0.75rem',
                     padding: '0.65rem 0.85rem',
-                    background: step.done ? 'rgba(16,185,129,0.05)' : 'rgba(255,255,255,0.02)',
-                    border: `1px solid ${step.done ? 'rgba(16,185,129,0.2)' : 'rgba(255,255,255,0.05)'}`,
+                    background: step.done ? 'rgba(16,185,129,0.05)' : 'var(--bg-tertiary)',
+                    border: `1px solid ${step.done ? 'rgba(16,185,129,0.2)' : 'var(--border)'}`,
                     borderRadius: '8px'
                   }}>
                     <span style={{ fontSize: '1rem', flexShrink: 0 }}>{step.icon}</span>
                     <div>
-                      <div style={{ fontSize: '0.78rem', fontWeight: 700, color: step.done ? '#10b981' : '#fff' }}>{step.label}</div>
+                      <div style={{ fontSize: '0.78rem', fontWeight: 700, color: step.done ? '#10b981' : 'var(--text)' }}>{step.label}</div>
                       <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: '0.1rem' }}>{step.desc}</div>
                     </div>
                     {step.done && <CheckCheck size={14} color="#10b981" style={{ marginLeft: 'auto', flexShrink: 0, marginTop: '2px' }} />}
@@ -1567,16 +1569,16 @@ export default function Subscribe() {
 
               {/* Estimated time + support note */}
               <div style={{
-                background: 'rgba(255,255,255,0.02)',
-                border: '1px solid rgba(255,255,255,0.05)',
+                background: 'var(--bg-tertiary)',
+                border: '1px solid var(--border)',
                 borderRadius: '8px',
                 padding: '0.85rem 1rem',
                 fontSize: '0.72rem',
                 color: 'var(--text-secondary)',
                 lineHeight: 1.6
               }}>
-                ⏱️ <strong style={{ color: '#fff' }}>Estimated wait:</strong> 5–30 minutes during business hours (10am–8pm IST).<br />
-                📧 If not activated within 2 hours, contact <strong style={{ color: '#a78bfa' }}>support@tanios.ai</strong> with your UTR number.
+                ⏱️ <strong style={{ color: 'var(--text)' }}>Estimated wait:</strong> 5–30 minutes during business hours (10am–8pm IST).<br />
+                📧 If not activated within 2 hours, contact <strong style={{ color: 'var(--primary)' }}>support@tanios.ai</strong> with your UTR number.
               </div>
 
               {/* Cancel / go back option */}

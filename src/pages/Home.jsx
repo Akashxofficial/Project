@@ -1136,8 +1136,8 @@ const AttemptItem = ({ att }) => {
   
   return (
     <div style={{
-      background: 'rgba(255,255,255,0.01)',
-      border: '1px solid rgba(255,255,255,0.03)',
+      background: 'var(--bg-secondary)',
+      border: '1px solid var(--border)',
       borderRadius: '8px',
       padding: '0.75rem',
       transition: 'all 0.2s',
@@ -1148,7 +1148,7 @@ const AttemptItem = ({ att }) => {
           <span style={{ fontSize: '0.65rem', fontWeight: 800, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
             {att.subject} : {att.chapter.replace(/^Chapter \d+:\s*/, '')}
           </span>
-          <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#fff', marginTop: '0.15rem' }}>{att.topic}</div>
+          <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text)', marginTop: '0.15rem' }}>{att.topic}</div>
           <div style={{ fontSize: '0.68rem', color: !att.isCorrect ? '#f87171' : att.firstIncorrectKey ? '#f59e0b' : '#34d399', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.25rem', marginTop: '0.15rem' }}>
             <span>⭐ Marks:</span>
             <span>{!att.isCorrect ? '-5 Penalty' : att.firstIncorrectKey ? '+5 (Corrected)' : '+10 Added'}</span>
@@ -1184,13 +1184,13 @@ const AttemptItem = ({ att }) => {
         <div style={{
           marginTop: '0.75rem',
           paddingTop: '0.75rem',
-          borderTop: '1px solid rgba(255,255,255,0.05)',
+          borderTop: '1px solid var(--border)',
           fontSize: '0.8rem',
           lineHeight: 1.5,
           color: 'var(--text-secondary)'
         }} onClick={e => e.stopPropagation()}>
-          <div style={{ background: 'rgba(0,0,0,0.15)', padding: '0.6rem', borderRadius: '6px', marginBottom: '0.75rem', border: '1px solid rgba(255,255,255,0.02)' }}>
-            <strong style={{ color: '#fff', fontSize: '0.75rem', display: 'block', marginBottom: '0.25rem' }}>Question:</strong>
+          <div style={{ background: 'var(--bg-tertiary)', padding: '0.6rem', borderRadius: '6px', marginBottom: '0.75rem', border: '1px solid var(--border)' }}>
+            <strong style={{ color: 'var(--text)', fontSize: '0.75rem', display: 'block', marginBottom: '0.25rem' }}>Question:</strong>
             <span style={{ fontSize: '0.78rem' }}>{att.questionText}</span>
           </div>
 
@@ -2801,8 +2801,8 @@ JSON Structure:
 
                   return (
                     <div style={{
-                      background: 'rgba(255, 255, 255, 0.02)',
-                      border: '1px solid rgba(255, 255, 255, 0.05)',
+                      background: 'var(--bg-secondary)',
+                      border: '1px solid var(--border)',
                       borderRadius: '12px',
                       padding: '1rem',
                       marginBottom: '1.25rem'
@@ -2810,7 +2810,7 @@ JSON Structure:
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                           <span style={{ fontSize: '0.85rem' }}>🎯</span>
-                          <strong style={{ fontSize: '0.82rem', color: '#fff' }}>Active Syllabus Chapters:</strong>
+                          <strong style={{ fontSize: '0.82rem', color: 'var(--text)' }}>Active Syllabus Chapters:</strong>
                           <button
                             onClick={() => setShowChaptersConfig(!showChaptersConfig)}
                             style={{
@@ -2955,7 +2955,7 @@ JSON Structure:
                       <div style={{
                         position: 'absolute', top: '-20px', right: '-20px',
                         width: '80px', height: '80px',
-                        background: 'radial-gradient(circle, rgba(239, 68, 68, 0.25) 0%, rgba(239, 68, 68, 0) 70%)',
+                        background: 'radial-gradient(circle, var(--danger) 0%, rgba(239, 68, 68, 0) 70%)',
                         borderRadius: '50%'
                       }} />
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
@@ -2971,8 +2971,8 @@ JSON Structure:
                     </div>
                   ) : (
                     <div style={{
-                      background: 'linear-gradient(135deg, rgba(108, 99, 255, 0.1), rgba(239, 68, 68, 0.08))',
-                      border: '1px solid rgba(108, 99, 255, 0.2)',
+                      background: 'var(--bg-secondary)',
+                      border: '1px solid var(--border)',
                       borderRadius: '12px',
                       padding: '1.25rem',
                       marginBottom: '1.25rem',
@@ -2983,12 +2983,12 @@ JSON Structure:
                       <div style={{
                         position: 'absolute', top: '-20px', right: '-20px',
                         width: '80px', height: '80px',
-                        background: 'radial-gradient(circle, rgba(108,99,255,0.2) 0%, rgba(108,99,255,0) 70%)',
+                        background: 'radial-gradient(circle, var(--primary-light) 0%, transparent 70%)',
                         borderRadius: '50%'
                       }} />
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
                         <span style={{ fontSize: '1.25rem' }}>👑</span>
-                        <strong style={{ fontSize: '0.88rem', color: '#fff' }}>Unlock TaniOS Pro Study Targets</strong>
+                        <strong style={{ fontSize: '0.88rem', color: 'var(--text)' }}>Unlock TaniOS Pro Study Targets</strong>
                       </div>
                       <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: '0 0 1rem 0', lineHeight: 1.45 }}>
                         You are currently on the **Free Tier (1-Day Trial active today)**. Upgrade to unlock all subjects targets daily, textbook uploads, and CBSE/RBSE board repeated question banks!
@@ -3552,12 +3552,12 @@ JSON Structure:
             }} />
 
             {/* Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '0.75rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.75rem' }}>
               <div>
                 <span style={{ fontSize: '0.68rem', fontWeight: 800, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '1px', display: 'block', marginBottom: '0.2rem' }}>
                   🧠 CONCEPT TEACHING MASTERCLASS
                 </span>
-                <h4 style={{ margin: 0, color: '#fff', fontSize: '1.1rem', fontWeight: 800 }}>
+                <h4 style={{ margin: 0, color: 'var(--text)', fontSize: '1.1rem', fontWeight: 800 }}>
                   {activeMission.subject || 'General Study'} : {activeMission.chapter || 'Chapter'}
                 </h4>
               </div>
@@ -3578,7 +3578,7 @@ JSON Structure:
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '300px', gap: '1.5rem', textAlign: 'center' }}>
                   <Loader2 size={40} style={{ color: 'var(--primary)', animation: 'spin 1.5s linear infinite' }} />
                   <div>
-                    <h4 style={{ margin: '0 0 0.5rem 0', color: '#fff', fontSize: '1.1rem', fontWeight: 800 }}>TaniOS AI Study Engine</h4>
+                    <h4 style={{ margin: '0 0 0.5rem 0', color: 'var(--text)', fontSize: '1.1rem', fontWeight: 800 }}>TaniOS AI Study Engine</h4>
                     <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
                       Engineering a high-yield concept-teaching MCQ masterclass for <strong>{activeMission.subject}</strong>...
                     </p>
@@ -3665,11 +3665,11 @@ JSON Structure:
 
                     {/* Question Card */}
                     <div style={{
-                      background: 'rgba(255, 255, 255, 0.02)',
-                      border: '1px solid rgba(255, 255, 255, 0.05)',
+                      background: 'var(--bg-tertiary)',
+                      border: '1px solid var(--border)',
                       borderRadius: '12px', padding: '1.25rem',
                       marginBottom: '1.25rem', fontSize: '0.95rem',
-                      fontWeight: 700, color: '#fff', lineHeight: 1.5
+                      fontWeight: 700, color: 'var(--text)', lineHeight: 1.5
                     }}>
                       <div style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>❓ MCQ Challenge</div>
                       <ReactMarkdown
@@ -3691,16 +3691,16 @@ JSON Structure:
                             style={{
                               display: 'flex', alignItems: 'center', gap: '1rem',
                               width: '100%', padding: '0.85rem 1.25rem',
-                              background: isSelected ? 'rgba(108, 99, 255, 0.12)' : 'rgba(255, 255, 255, 0.01)',
-                              border: isSelected ? '1px solid var(--primary)' : '1px solid rgba(255,255,255,0.05)',
-                              borderRadius: '10px', color: '#fff', textAlign: 'left',
+                              background: isSelected ? 'var(--primary-light)' : 'var(--bg-secondary)',
+                              border: isSelected ? '1px solid var(--primary)' : '1px solid var(--border)',
+                              borderRadius: '10px', color: 'var(--text)', textAlign: 'left',
                               cursor: missionSubmitted ? 'default' : 'pointer',
                               transition: 'all 0.2s'
                             }}
                           >
                             <div style={{
                               width: '24px', height: '24px', borderRadius: '50%',
-                              background: isSelected ? 'var(--primary)' : 'rgba(255,255,255,0.05)',
+                              background: isSelected ? 'var(--primary)' : 'var(--bg-tertiary)',
                               display: 'flex', alignItems: 'center', justifyContent: 'center',
                               fontSize: '0.75rem', fontWeight: 800, color: isSelected ? '#fff' : 'var(--text-secondary)',
                               flexShrink: 0
@@ -3935,7 +3935,7 @@ JSON Structure:
             </div>
 
             {/* Title & Desc */}
-            <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#fff', margin: '0 0 0.5rem 0' }}>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text)', margin: '0 0 0.5rem 0' }}>
               TaniOS Pro Upgrade Required
             </h3>
             <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.5, margin: '0 0 1.5rem 0' }}>
@@ -3944,8 +3944,8 @@ JSON Structure:
 
             {/* Perks Grid */}
             <div style={{
-              background: 'rgba(255, 255, 255, 0.02)',
-              border: '1px solid rgba(255, 255, 255, 0.04)',
+              background: 'var(--bg-tertiary)',
+              border: '1px solid var(--border)',
               borderRadius: '10px',
               padding: '1rem',
               textAlign: 'left',

@@ -464,7 +464,7 @@ export default function History() {
         }}>
           <Bookmark size={36} color="var(--primary)" />
         </div>
-        <h2 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '0.5rem', color: '#fff' }}>
+        <h2 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '0.5rem', color: 'var(--text)' }}>
           Save &amp; Access Your Study Materials! 📚
         </h2>
         <p style={{ color: 'var(--text-secondary)', maxWidth: '400px', lineHeight: 1.6, marginBottom: '1.75rem' }}>

@@ -103,7 +103,7 @@ export function AuthProvider({ children }) {
             .then(async (mongoData) => {
               // Only send welcome email on very first login (loginCount === 1)
               if (mongoData?.user?.loginCount === 1) {
-                const BACKEND_URL = import.meta.env.DEV ? 'http://localhost:3001' : '';
+                const BACKEND_URL = '';
                 fetch(`${BACKEND_URL}/api/notify/welcome`, {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
@@ -157,7 +157,7 @@ export function AuthProvider({ children }) {
     } catch (err) {}
 
     // MongoDB sync
-    const BACKEND_URL = import.meta.env.DEV ? 'http://localhost:3001' : '';
+    const BACKEND_URL = '';
     const fetchMongoSubscription = async () => {
       try {
         const response = await fetch(`${BACKEND_URL}/api/track/user`, {

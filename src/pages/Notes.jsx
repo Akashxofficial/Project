@@ -71,7 +71,7 @@ function NotesViewer({ result, onClose, onDownloadPDF, onCopy, copied, saving, s
   return createPortal(
     <div style={{
       position: 'fixed', inset: 0, zIndex: 10000,
-      background: '#07090e',
+      background: 'var(--bg)',
       display: 'flex', flexDirection: 'column',
       animation: 'fadeIn 0.25s ease both',
       overflow: 'hidden'
@@ -80,8 +80,8 @@ function NotesViewer({ result, onClose, onDownloadPDF, onCopy, copied, saving, s
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         padding: '1rem 1.5rem',
-        background: 'rgba(15,18,28,0.95)',
-        borderBottom: '1px solid rgba(255,255,255,0.08)',
+        background: 'var(--bg-secondary)',
+        borderBottom: '1px solid var(--border)',
         flexShrink: 0,
         backdropFilter: 'blur(20px)',
         WebkitBackdropFilter: 'blur(20px)',
@@ -100,7 +100,7 @@ function NotesViewer({ result, onClose, onDownloadPDF, onCopy, copied, saving, s
             <div style={{ fontSize: '0.72rem', color: 'var(--primary)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
               AI Notes — Saved ✓
             </div>
-            <div style={{ fontSize: '0.88rem', fontWeight: 700, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            <div style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {result.title}
             </div>
           </div>
@@ -173,8 +173,8 @@ function NotesViewer({ result, onClose, onDownloadPDF, onCopy, copied, saving, s
         <div
           ref={contentRef}
           style={{
-            background: 'rgba(15,18,28,0.7)',
-            border: '1px solid rgba(255,255,255,0.07)',
+            background: 'var(--bg-secondary)',
+            border: '1px solid var(--border)',
             borderRadius: '14px',
             padding: '2rem 2.5rem',
             lineHeight: '1.85',
@@ -183,8 +183,8 @@ function NotesViewer({ result, onClose, onDownloadPDF, onCopy, copied, saving, s
         >
           <h1 style={{
             fontSize: '1.3rem', fontWeight: 800, marginBottom: '1.5rem',
-            paddingBottom: '1rem', borderBottom: '1px solid rgba(255,255,255,0.08)',
-            color: '#fff', lineHeight: 1.3
+            paddingBottom: '1rem', borderBottom: '1px solid var(--border)',
+            color: 'var(--text)', lineHeight: 1.3
           }}>
             {result.title}
           </h1>
@@ -348,7 +348,7 @@ Ensure that any scientific, mathematical, or numerical equations are properly fo
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <div className="page-content">
+    <div className="page-content" style={{ maxWidth: '640px', margin: '0 auto' }}>
 
       {/* Full-Screen Viewer Portal */}
       {viewerOpen && result && (
@@ -415,7 +415,7 @@ Ensure that any scientific, mathematical, or numerical equations are properly fo
       )}
 
       {/* Form */}
-      <form onSubmit={handleGenerate} className="card" style={{ maxWidth: '640px' }}>
+      <form onSubmit={handleGenerate} className="card">
 
         {/* Board */}
         <div className="input-group">
@@ -533,15 +533,15 @@ Ensure that any scientific, mathematical, or numerical equations are properly fo
 
       <style>{`
         .notes-viewer-content h1, .notes-viewer-content h2, .notes-viewer-content h3 {
-          color: #f0f6fc !important;
+          color: var(--primary) !important;
           margin-top: 1.5rem !important;
         }
         .notes-viewer-content p, .notes-viewer-content li {
-          color: #c9d1d9 !important;
+          color: var(--text) !important;
           line-height: 1.85 !important;
         }
         .notes-viewer-content strong {
-          color: #fff !important;
+          color: var(--text) !important;
         }
       `}</style>
     </div>

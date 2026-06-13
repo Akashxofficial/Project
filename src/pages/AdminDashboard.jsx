@@ -78,7 +78,7 @@ export default function AdminDashboard() {
   const [reminderSending, setReminderSending] = useState('');
   const [reminderResult, setReminderResult] = useState(null);
 
-  const BACKEND_URL_EMAIL = import.meta.env.DEV ? 'http://localhost:3001' : '';
+  const BACKEND_URL_EMAIL = '';
 
   const fetchEmailStats = async () => {
     try {
@@ -131,7 +131,7 @@ export default function AdminDashboard() {
 
   const fetchRequests = async () => {
     setFetchingReqs(true);
-    const BACKEND_URL = import.meta.env.DEV ? 'http://localhost:3001' : '';
+    const BACKEND_URL = '';
     try {
       // 1. Try to fetch payment requests from backend server (MongoDB)
       const res = await fetch(`${BACKEND_URL}/api/admin/payments`);
@@ -190,7 +190,7 @@ export default function AdminDashboard() {
   const handleApprove = async (req) => {
     if (!window.confirm(`Are you sure you want to APPROVE UTR ${req.utr} for ${req.userName}?`)) return;
 
-    const BACKEND_URL = import.meta.env.DEV ? 'http://localhost:3001' : '';
+    const BACKEND_URL = '';
 
     try {
       // ── PRIMARY: Try server-side approval (bypasses Firestore permissions) ──
@@ -282,7 +282,7 @@ export default function AdminDashboard() {
   const handleReject = async (req) => {
     if (!window.confirm(`Are you sure you want to REJECT UTR ${req.utr} for ${req.userName}?`)) return;
 
-    const BACKEND_URL = import.meta.env.DEV ? 'http://localhost:3001' : '';
+    const BACKEND_URL = '';
 
     try {
       // ── PRIMARY: Try server-side rejection ──
