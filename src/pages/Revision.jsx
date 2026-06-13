@@ -138,7 +138,7 @@ export default function Revision() {
             </h2>
             
             <div className="generated-content" style={{ marginTop: '1rem', backgroundColor: 'var(--bg)' }}>
-              <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]} components={markdownComponents}>{result.content}</ReactMarkdown>
+              <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]} components={markdownComponents} children={String(result?.content || '')} />
             </div>
             
             <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>

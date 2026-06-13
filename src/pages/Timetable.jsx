@@ -140,7 +140,7 @@ export default function Timetable() {
             </h2>
             
             <div className="generated-content" style={{ marginTop: 0, backgroundColor: 'var(--bg)' }}>
-              <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]} components={markdownComponents}>{result}</ReactMarkdown>
+              <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]} components={markdownComponents} children={String(result || '')} />
             </div>
           </div>
         )}

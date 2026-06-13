@@ -187,7 +187,7 @@ export default function TestGenerator() {
             </div>
             
             <div ref={contentRef} className="generated-content" style={{ marginTop: 0, backgroundColor: 'var(--bg-secondary)' }}>
-              <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]} components={markdownComponents}>{result.content}</ReactMarkdown>
+              <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]} components={markdownComponents} children={String(result?.content || '')} />
             </div>
             
             <div style={{ marginTop: '1rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'flex-end' }}>

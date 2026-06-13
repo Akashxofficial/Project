@@ -579,9 +579,8 @@ export default function StudyGenerator() {
               remarkPlugins={[remarkGfm, remarkMath]}
               rehypePlugins={[rehypeKatex]}
               components={markdownComponents}
-            >
-              {result}
-            </ReactMarkdown>
+              children={String(result || '')}
+            />
           </div>
         </div>
       )}

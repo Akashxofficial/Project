@@ -606,7 +606,7 @@ export default function History() {
                 padding: '1.5rem', background: 'var(--bg)', border: '1px solid var(--border)',
                 borderRadius: 'var(--radius-sm)', lineHeight: '1.8'
               }}>
-                <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]} components={markdownComponents}>{selectedDoc.content}</ReactMarkdown>
+                <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]} components={markdownComponents} children={String(selectedDoc?.content || '')} />
               </div>
             </div>
 

@@ -200,9 +200,8 @@ function NotesViewer({ result, onClose, onDownloadPDF, onCopy, copied, saving, s
             remarkPlugins={[remarkGfm, remarkMath]}
             rehypePlugins={[rehypeKatex]}
             components={markdownComponents}
-          >
-            {result.content}
-          </ReactMarkdown>
+            children={String(result?.content || '')}
+          />
         </div>
       </div>
     </div>,

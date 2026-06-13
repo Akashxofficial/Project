@@ -1260,7 +1260,8 @@ const AttemptItem = ({ att }) => {
                     return <div className="md-code-block"><code className={className} {...props}>{children}</code></div>;
                   },
                 }}
-              >{att.explanation}</ReactMarkdown>
+                children={String(att?.explanation || '')}
+              />
             </div>
           </div>
         </div>
@@ -2359,7 +2360,7 @@ JSON Structure:
         .daily-mission-overlay {
           position: fixed;
           top: 0; left: 0; right: 0; bottom: 0;
-          background: rgba(10, 10, 12, 0.98);
+          background: var(--loader-bg-overlay, rgba(10, 10, 12, 0.95));
           backdrop-filter: blur(12px);
           -webkit-backdrop-filter: blur(12px);
           display: flex;
@@ -2378,7 +2379,7 @@ JSON Structure:
           max-width: 100%;
           max-height: 100%;
           border-radius: 0;
-          background: #0c0c0e;
+          background: var(--bg-secondary);
           border: none;
           box-shadow: none;
           padding: 2rem 1.25rem;
@@ -2388,11 +2389,12 @@ JSON Structure:
           overflow-y: auto;
           animation: scaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
           box-sizing: border-box;
+          color: var(--text);
         }
         @media (min-width: 769px) {
           .daily-mission-overlay {
             padding: 2rem;
-            background: rgba(10, 10, 12, 0.85);
+            background: var(--loader-bg-overlay, rgba(10, 10, 12, 0.85));
           }
           .daily-mission-card {
             width: 90%;
@@ -2400,9 +2402,9 @@ JSON Structure:
             max-width: 850px;
             max-height: 85vh;
             border-radius: 20px;
-            background: rgba(20, 20, 25, 0.95);
-            border: 1px solid rgba(108, 99, 255, 0.2);
-            box-shadow: 0 25px 50px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.05);
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-lg);
             padding: 2.5rem 2rem;
             box-sizing: border-box;
           }
@@ -3510,31 +3512,44 @@ JSON Structure:
                             <span style={{ fontSize: '1rem' }}>📖</span>
                             <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#a78bfa', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Topic Quick Summary</span>
                           </div>
-                          <div className="generated-content" style={{ fontSize: '0.83rem', lineHeight: 1.65, color: 'var(--text)' }}>
+                          <div className="generated-content" style={{
+                            fontSize: '0.83rem',
+                            lineHeight: 1.65,
+                            color: 'var(--text)',
+                            background: 'transparent',
+                            border: 'none',
+                            padding: 0,
+                            marginTop: 0,
+                            boxShadow: 'none'
+                          }}>
                             <ReactMarkdown
                               remarkPlugins={[remarkGfm, remarkMath]}
                               rehypePlugins={[rehypeKatex]}
                               components={markdownComponents}
-                            >{summaryToShow}</ReactMarkdown>
+                              children={String(summaryToShow || '')}
+                            />
                           </div>
                         </div>
                       );
                     })()}
 
                     {/* Question Card */}
-                    <div style={{
+                    <div className="generated-content" style={{
                       background: 'var(--bg-tertiary)',
                       border: '1px solid var(--border)',
                       borderRadius: '12px', padding: '1.25rem',
                       marginBottom: '1.25rem', fontSize: '0.95rem',
-                      fontWeight: 700, color: 'var(--text)', lineHeight: 1.5
+                      fontWeight: 700, color: 'var(--text)', lineHeight: 1.5,
+                      marginTop: 0,
+                      boxShadow: 'none'
                     }}>
                       <div style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>❓ MCQ Challenge</div>
                       <ReactMarkdown
                         remarkPlugins={[remarkGfm, remarkMath]}
                         rehypePlugins={[rehypeKatex]}
                         components={markdownComponents}
-                      >{data.questionText}</ReactMarkdown>
+                        children={String(data?.questionText || '')}
+                      />
                     </div>
 
                     {/* Options Grid */}
@@ -3569,8 +3584,12 @@ JSON Structure:
                               <ReactMarkdown
                                 remarkPlugins={[remarkGfm, remarkMath]}
                                 rehypePlugins={[rehypeKatex]}
-                                components={markdownComponents}
-                              >{opt.desc || opt.text}</ReactMarkdown>
+                                components={{
+                                  ...markdownComponents,
+                                  p: ({ children }) => <span style={{ margin: 0, display: 'inline' }}>{children}</span>
+                                }}
+                                children={String(opt?.desc || opt?.text || '')}
+                              />
                             </span>
                           </button>
                         );
@@ -3590,12 +3609,21 @@ JSON Structure:
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem', color: '#10b981', fontWeight: 800, fontSize: '0.95rem' }}>
                               🎉 <span>Correct Answer! Topic Masterclass Unlocked</span>
                             </div>
-                            <div style={{ color: 'var(--text)', background: 'rgba(255,255,255,0.01)', padding: '0.75rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.03)' }}>
+                            <div className="generated-content" style={{
+                              color: 'var(--text)',
+                              background: 'transparent',
+                              padding: 0,
+                              border: 'none',
+                              marginTop: '0.5rem',
+                              fontSize: '0.85rem',
+                              boxShadow: 'none'
+                            }}>
                               <ReactMarkdown
                                 remarkPlugins={[remarkGfm, remarkMath]}
                                 rehypePlugins={[rehypeKatex]}
                                 components={markdownComponents}
-                              >{data.explanation}</ReactMarkdown>
+                                children={String(data?.explanation || '')}
+                              />
                             </div>
                           </div>
                         ) : (
@@ -3763,9 +3791,9 @@ JSON Structure:
             maxHeight: '480px',
             height: 'auto',
             borderRadius: '16px',
-            background: 'rgba(20, 20, 25, 0.98)',
-            border: '1px solid rgba(108, 99, 255, 0.3)',
-            boxShadow: '0 20px 40px rgba(0,0,0,0.5)',
+            background: 'var(--bg-secondary)',
+            border: '1px solid var(--border)',
+            boxShadow: 'var(--shadow-lg)',
             padding: '2rem',
             textAlign: 'center',
             position: 'relative'
