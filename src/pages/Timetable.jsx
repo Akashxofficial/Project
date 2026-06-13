@@ -8,6 +8,28 @@ import rehypeKatex from 'rehype-katex';
 import 'katex/dist/katex.min.css';
 import { saveDocument } from '../lib/firebase';
 import { useAuth } from '../context/AuthContext';
+import MathRenderer from '../components/MathRenderer';
+
+const markdownComponents = {
+  table: ({ children }) => (<div className="md-table-wrapper"><table className="md-table">{children}</table></div>),
+  thead: ({ children }) => <thead className="md-thead">{children}</thead>,
+  tbody: ({ children }) => <tbody>{children}</tbody>,
+  tr: ({ children }) => <tr className="md-tr">{children}</tr>,
+  th: ({ children }) => <th className="md-th">{children}</th>,
+  td: ({ children }) => <td className="md-td">{children}</td>,
+  text: ({ children }) => <MathRenderer text={children} />,
+  code: ({ className, children, ...props }) => {
+    const isInline = !className && typeof children === 'string' && !children.includes('\n');
+    if (isInline) {
+      if (typeof children === 'string' && children.includes('$')) {
+        return <MathRenderer text={children} />;
+      }
+      return <code className="md-inline-code" {...props}>{children}</code>;
+    }
+    return <div className="md-code-block"><code className={className} {...props}>{children}</code></div>;
+  },
+  blockquote: ({ children }) => <blockquote className="md-blockquote">{children}</blockquote>,
+};
 
 export default function Timetable() {
   const { currentUser, incrementGuestUsage } = useAuth();
@@ -118,7 +140,7 @@ export default function Timetable() {
             </h2>
             
             <div className="generated-content" style={{ marginTop: 0, backgroundColor: 'var(--bg)' }}>
-              <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}>{result}</ReactMarkdown>
+              <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]} components={markdownComponents}>{result}</ReactMarkdown>
             </div>
           </div>
         )}

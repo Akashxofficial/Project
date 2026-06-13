@@ -9,6 +9,7 @@ import rehypeKatex from 'rehype-katex';
 import 'katex/dist/katex.min.css';
 import { useAuth } from '../context/AuthContext';
 import { saveChatSession, getUserChatSessions, deleteChatSession, logActivity } from '../lib/firebase';
+import MathRenderer from '../components/MathRenderer';
 
 // Custom renderers for beautiful markdown tables
 const markdownComponents = {
@@ -22,13 +23,18 @@ const markdownComponents = {
   tr: ({ children }) => <tr className="md-tr">{children}</tr>,
   th: ({ children }) => <th className="md-th">{children}</th>,
   td: ({ children }) => <td className="md-td">{children}</td>,
-  code: ({ inline, className, children }) => {
-    if (inline) {
-      return <code className="md-inline-code">{children}</code>;
+  text: ({ children }) => <MathRenderer text={children} />,
+  code: ({ className, children, ...props }) => {
+    const isInline = !className && typeof children === 'string' && !children.includes('\n');
+    if (isInline) {
+      if (typeof children === 'string' && children.includes('$')) {
+        return <MathRenderer text={children} />;
+      }
+      return <code className="md-inline-code" {...props}>{children}</code>;
     }
     return (
       <div className="md-code-block">
-        <code>{children}</code>
+        <code className={className} {...props}>{children}</code>
       </div>
     );
   },
@@ -650,7 +656,7 @@ export default function Chat() {
                               <img src={msg.image.url} alt="Uploaded doubt" style={{ width: '100%', height: 'auto', display: 'block' }} />
                             </div>
                           )}
-                          {msg.text && <span>{msg.text}</span>}
+                          {msg.text && <span><MathRenderer text={msg.text} /></span>}
                         </div>
                       )}
                     </div>

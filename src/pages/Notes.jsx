@@ -11,6 +11,7 @@ import rehypeKatex from 'rehype-katex';
 import 'katex/dist/katex.min.css';
 import { saveDocument } from '../lib/firebase';
 import { useAuth } from '../context/AuthContext';
+import MathRenderer from '../components/MathRenderer';
 
 const markdownComponents = {
   table: ({ children }) => (<div className="md-table-wrapper"><table className="md-table">{children}</table></div>),
@@ -19,10 +20,17 @@ const markdownComponents = {
   tr: ({ children }) => <tr className="md-tr">{children}</tr>,
   th: ({ children }) => <th className="md-th">{children}</th>,
   td: ({ children }) => <td className="md-td">{children}</td>,
-  code: ({ inline, children }) =>
-    inline
-      ? <code className="md-inline-code">{children}</code>
-      : <div className="md-code-block"><code>{children}</code></div>,
+  text: ({ children }) => <MathRenderer text={children} />,
+  code: ({ className, children, ...props }) => {
+    const isInline = !className && typeof children === 'string' && !children.includes('\n');
+    if (isInline) {
+      if (typeof children === 'string' && children.includes('$')) {
+        return <MathRenderer text={children} />;
+      }
+      return <code className="md-inline-code" {...props}>{children}</code>;
+    }
+    return <div className="md-code-block"><code className={className} {...props}>{children}</code></div>;
+  },
   blockquote: ({ children }) => <blockquote className="md-blockquote">{children}</blockquote>,
 };
 

@@ -447,7 +447,7 @@ Make it easy to read, student-friendly, and focused on CBSE/State board patterns
 
 CRITICAL FORMATTING & FORMULA RULES:
 - Comparison Tables: ALWAYS use clean Markdown tables with single pipes (\`|\`) and proper \`| :--- | :--- |\` separator rows.
-- Math & Science Formulas: Use LaTeX syntax. Inline: \`$formula$\`. Block: \`$$formula$$\`. Examples: \`$H_2SO_4$\`, \`$E = mc^2$\`, \`$x = \\frac{-b \\pm \\sqrt{b^2-4ac}}{2a}$\`. NEVER use Unicode subscripts/superscripts like H₂SO₄ — always use LaTeX.`;
+- Math & Science Formulas: Use LaTeX syntax. Inline: $formula$. Block: $$formula$$. Examples: $H_2SO_4$, $E = mc^2$, $x = \\frac{-b \\pm \\sqrt{b^2-4ac}}{2a}$. NEVER use Unicode subscripts/superscripts like H₂SO₄ — always use LaTeX.`;
 };
 
 export const generateRevisionPrompt = (subject, chapter, time) => {
@@ -458,7 +458,7 @@ Output in clean Markdown.
 
 CRITICAL FORMATTING & FORMULA RULES:
 - Comparison Tables: ALWAYS use clean Markdown tables with single pipes (\`|\`) and proper \`| :--- | :--- |\` separator rows.
-- Math & Science Formulas: Use LaTeX syntax. Inline: \`$formula$\`. Block: \`$$formula$$\`. Examples: \`$H_2SO_4$\`, \`$E = mc^2$\`, \`$x = \\frac{-b \\pm \\sqrt{b^2-4ac}}{2a}$\`. NEVER use Unicode subscripts/superscripts like H₂SO₄.`;
+- Math & Science Formulas: Use LaTeX syntax. Inline: $formula$. Block: $$formula$$. Examples: $H_2SO_4$, $E = mc^2$, $x = \\frac{-b \\pm \\sqrt{b^2-4ac}}{2a}$. NEVER use Unicode subscripts/superscripts like H₂SO₄.`;
 };
 
 export const generateTimetablePrompt = (date, subjects, hours, preference) => {
@@ -504,7 +504,7 @@ Provide the test cleanly formatted. Do NOT provide the answers immediately. Prov
 
 CRITICAL FORMATTING & FORMULA RULES:
 - Comparison Tables: ALWAYS use clean Markdown tables with single pipes (\`|\`) and proper \`| :--- | :--- |\` separator rows.
-- Math & Science Formulas: Use LaTeX syntax. Inline: \`$formula$\`. Block: \`$$formula$$\`. Examples: \`$H_2SO_4$\`, \`$E = mc^2$\`. NEVER use Unicode subscripts/superscripts.`;
+- Math & Science Formulas: Use LaTeX syntax. Inline: $formula$. Block: $$formula$$. Examples: $H_2SO_4$, $E = mc^2$. NEVER use Unicode subscripts/superscripts.`;
 };
 
 export const generateExamRoadmapPrompt = (board, grade, subject, days) => {
@@ -525,7 +525,7 @@ Use beautiful bolding, list formatting, and a structured layout so it feels extr
 
 CRITICAL FORMATTING & FORMULA RULES:
 - Comparison Tables: ALWAYS use clean Markdown tables with single pipes (\`|\`) and proper \`| :--- | :--- |\` separator rows.
-- Math & Science Formulas: Use LaTeX syntax. Inline: \`$formula$\`. Block: \`$$formula$$\`. Examples: \`$H_2SO_4$\`, \`$E = mc^2$\`, \`$x = \\frac{-b \\pm \\sqrt{b^2-4ac}}{2a}$\`. NEVER use Unicode subscripts/superscripts.`;
+- Math & Science Formulas: Use LaTeX syntax. Inline: $formula$. Block: $$formula$$. Examples: $H_2SO_4$, $E = mc^2$, $x = \\frac{-b \\pm \\sqrt{b^2-4ac}}{2a}$. NEVER use Unicode subscripts/superscripts.`;
 };
 
 export const generateOneClickPrompt = (type, topic, grade, board = 'CBSE') => {
@@ -565,7 +565,7 @@ Break it down into:
 - The absolute core definition (1 sentence).
 - 3 bullet points containing the only things you MUST know.
 - 1 quick mnemonic device or trick to memorize this concept forever.
-Make it extremely crisp, engaging, and fast.`;
+- Make it extremely crisp, engaging, and fast.`;
   } else {
     promptText = `Provide a comprehensive, high-quality study resource on "${topic}" for Class ${grade} under the ${board} syllabus. Use formatting, bold headers, and easy explanations.`;
   }
@@ -582,7 +582,7 @@ Always use markdown tables, list layouts, clear spacing, and bullet points to ma
 
 CRITICAL FORMATTING, FORMULA & SPEED RULES:
 - Comparison Tables: ALWAYS use clean Markdown tables with single pipes (\`|\`) and proper \`| :--- | :--- |\` separator rows. NEVER use double pipes.
-- Math & Science Formulas: Use LaTeX syntax always. Inline: \`$formula$\`. Block: \`$$formula$$\`. Examples: \`$H_2SO_4$\`, \`$E = mc^2$\`, \`$x = \\frac{-b \\pm \\sqrt{b^2-4ac}}{2a}$\`. NEVER use Unicode subscripts/superscripts like H₂SO₄.
+- Math & Science Formulas: Use LaTeX syntax always. Inline: $formula$. Block: $$formula$$. Examples: $H_2SO_4$, $E = mc^2$, $x = \\frac{-b \\pm \\sqrt{b^2-4ac}}{2a}$. NEVER use Unicode subscripts/superscripts like H₂SO₄.
 - Be highly direct, crisp, and concise. 
 - Eliminate all unnecessary conversational filler, preambles, and postambles (do NOT write "Here is your plan..." or "I hope this helps..."). Start writing the markdown resource immediately.
 - Use clear bullet points and short 1-2 sentence paragraphs to ensure the model responds under 2-3 seconds!`;

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
+import MathRenderer from '../components/MathRenderer';
 import {
   ArrowLeft, Sparkles, Copy, Check, Download, Loader2,
   Zap, BookOpen, FileText, HelpCircle, BarChart2, Brain, Clock, Lightbulb
@@ -25,11 +26,18 @@ const markdownComponents = {
   tr: ({ children }) => <tr className="md-tr">{children}</tr>,
   th: ({ children }) => <th className="md-th">{children}</th>,
   td: ({ children }) => <td className="md-td">{children}</td>,
-  code: ({ inline, className, children }) => {
-    if (inline) return <code className="md-inline-code">{children}</code>;
+  text: ({ children }) => <MathRenderer text={children} />,
+  code: ({ className, children, ...props }) => {
+    const isInline = !className && typeof children === 'string' && !children.includes('\n');
+    if (isInline) {
+      if (typeof children === 'string' && children.includes('$')) {
+        return <MathRenderer text={children} />;
+      }
+      return <code className="md-inline-code" {...props}>{children}</code>;
+    }
     return (
       <div className="md-code-block">
-        <code>{children}</code>
+        <code className={className} {...props}>{children}</code>
       </div>
     );
   },
@@ -225,41 +233,101 @@ export default function StudyGenerator() {
           margin-top: 1rem;
           animation: fadeUp 0.2s ease;
         }
+        .sg-header {
+          display: flex;
+          align-items: flex-start;
+          gap: 1rem;
+          margin-bottom: 1.5rem;
+          width: 100%;
+        }
+        .sg-back-btn {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 0.4rem;
+          background: var(--bg-tertiary);
+          border: 1px solid var(--border);
+          border-radius: var(--radius-sm);
+          padding: 0.5rem 0.875rem;
+          color: var(--text-secondary);
+          font-size: 0.82rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s;
+          flex-shrink: 0;
+          height: 38px;
+        }
+        .sg-back-btn:hover {
+          background: var(--bg-secondary);
+          color: var(--text);
+          border-color: var(--border-focus);
+          transform: translateX(-2px);
+        }
+        .sg-title-area {
+          flex: 1;
+          min-width: 0;
+        }
+        .sg-title-row {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+        }
+        .sg-title-text {
+          font-size: clamp(1.1rem, 3vw, 1.5rem);
+          font-weight: 800;
+          margin: 0;
+          letter-spacing: -0.02em;
+          color: var(--text);
+          line-height: 1.2;
+        }
+        .sg-subtitle {
+          margin: 0.2rem 0 0;
+          font-size: 0.82rem;
+          color: var(--text-secondary);
+          line-height: 1.4;
+        }
         @media (max-width: 640px) {
           .sg-tool-pills-wrap { gap: 0.4rem !important; }
           .sg-tool-pill { font-size: 0.72rem; padding: 0.35rem 0.65rem; }
           .sg-form-row { flex-direction: column !important; }
           .sg-form-row > * { width: 100% !important; }
+          .sg-header {
+            gap: 0.75rem;
+            align-items: flex-start;
+          }
+          .sg-back-btn {
+            padding: 0;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+          }
+          .sg-back-btn-text {
+            display: none;
+          }
+          .sg-subtitle {
+            font-size: 0.78rem;
+          }
         }
       `}</style>
 
       {/* ── Header ── */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
+      <div className="sg-header">
         <button
           onClick={() => navigate(-1)}
-          style={{
-            display: 'flex', alignItems: 'center', gap: '0.4rem',
-            background: 'var(--bg-tertiary)', border: '1px solid var(--border)',
-            borderRadius: 'var(--radius-sm)', padding: '0.5rem 0.875rem',
-            color: 'var(--text-secondary)', fontSize: '0.82rem', fontWeight: 600,
-            cursor: 'pointer', transition: 'all 0.2s', flexShrink: 0
-          }}
-          className="btn btn-secondary"
+          className="sg-back-btn"
         >
-          <ArrowLeft size={15} /> Back
+          <ArrowLeft size={15} />
+          <span className="sg-back-btn-text">Back</span>
         </button>
 
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Zap size={20} color="#f59e0b" />
-            <h1 style={{
-              fontSize: 'clamp(1.1rem, 3vw, 1.5rem)', fontWeight: 800,
-              margin: 0, letterSpacing: '-0.02em', color: 'var(--text)'
-            }}>
+        <div className="sg-title-area">
+          <div className="sg-title-row">
+            <Zap size={20} color="#f59e0b" style={{ flexShrink: 0 }} />
+            <h1 className="sg-title-text">
               One-Click Study Generator
             </h1>
           </div>
-          <p style={{ margin: '0.2rem 0 0', fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
+          <p className="sg-subtitle">
             Instant AI-powered study materials — no prompting needed.
           </p>
         </div>
