@@ -2144,16 +2144,20 @@ JSON Structure:
         .quick-action-btn {
           background: var(--bg-secondary);
           border: 1px solid var(--border);
-          padding: 1rem 0.5rem;
+          padding: 1rem 0.75rem;
           border-radius: var(--radius-sm);
           text-align: center;
           cursor: pointer;
-          transition: all 0.2s;
+          transition: all 0.22s cubic-bezier(0.34,1.56,0.64,1);
+          display: flex;
+          flex-direction: column;
+          align-items: center;
         }
         .quick-action-btn:hover {
-          transform: translateY(-3px);
+          transform: translateY(-4px);
           border-color: var(--primary);
-          box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15);
+          box-shadow: 0 6px 20px rgba(99, 102, 241, 0.2);
+          background: var(--bg-tertiary);
         }
         .exam-banner {
           background: linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(239, 68, 68, 0.08));
@@ -3128,189 +3132,27 @@ JSON Structure:
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <Zap color="#f59e0b" size={20} />
                 <h2 style={{ fontSize: '1.25rem', margin: 0 }}>One-Click Study Generators</h2>
-                <button
-                  onClick={() => setShowOneClickTools(!showOneClickTools)}
-                  style={{
-                    background: showOneClickTools ? 'rgba(59,130,246,0.15)' : 'rgba(59,130,246,0.1)',
-                    border: '1px solid rgba(59,130,246,0.4)',
-                    color: '#60a5fa',
-                    cursor: 'pointer',
-                    fontSize: '0.72rem',
-                    fontWeight: 700,
-                    padding: '0.2rem 0.6rem',
-                    borderRadius: '6px',
-                    marginLeft: '0.25rem',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '0.25rem',
-                    boxShadow: showOneClickTools ? 'none' : '0 0 8px rgba(59,130,246,0.35)',
-                    animation: showOneClickTools ? 'none' : 'btnPulseBlue 2s ease-in-out infinite',
-                    transition: 'all 0.2s ease'
-                  }}
-                >
-                  {showOneClickTools ? 'Hide Tools ✕' : 'Open Tools ⚡'}
-                </button>
               </div>
             </div>
 
-            {showOneClickTools ? (
-              <>
-                <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '1.25rem' }}>
-                  No prompting required. Get instant, board-focused outputs customized for Indian syllabus in seconds.
-                </p>
+            {/* Always show the tool grid — each button navigates to the dedicated generator page */}
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '1.25rem' }}>
+              No prompting required — each tool opens in its own dedicated page with full AI output, copy &amp; download.
+            </p>
 
-                <div className="quick-action-grid">
-                  {quickActions.map(action => (
-                    <button
-                      key={action.label}
-                      onClick={() => {
-                        setActiveOneClickTool(action.label);
-                        setOneClickResult('');
-                        setOneClickTopic('');
-                      }}
-                      className="quick-action-btn"
-                      style={activeOneClickTool === action.label ? { borderColor: 'var(--primary)', background: 'var(--primary-light)' } : {}}
-                    >
-                      <div style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}>{action.icon}</div>
-                      <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text)' }}>{action.label}</div>
-                    </button>
-                  ))}
-                </div>
-              </>
-            ) : (
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.82rem', margin: 0 }}>
-                Get instant, board-focused outputs (Revision Sheets, Mind Maps, Important Questions) in seconds. Click <strong>Open Tools ⚡</strong> to begin.
-              </p>
-            )}
-
-            {/* Display active tool generation window */}
-            {activeOneClickTool && (
-              <div style={{
-                background: 'var(--bg-tertiary)',
-                borderRadius: '10px',
-                padding: '1.25rem',
-                border: '1px solid var(--border)',
-                animation: 'fadeUp 0.3s cubic-bezier(.4,0,.2,1) both'
-              }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                  <h3 style={{ fontSize: '1rem', color: 'var(--primary)', margin: 0 }}>
-                    ⚡ Companion Tool: {activeOneClickTool}
-                  </h3>
-                  <button 
-                    onClick={() => setActiveOneClickTool(null)}
-                    style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 700 }}
-                  >
-                    Close [X]
-                  </button>
-                </div>
-
-                <form onSubmit={handleOneClickGenerate}>
-                  <div className="oneclick-form-row" style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', marginBottom: '0.75rem' }}>
-                    <div style={{ flex: 1.5, minWidth: '150px' }}>
-                      <label className="input-label" style={{ fontSize: '0.7rem' }}>Topic or Chapter Name</label>
-                      <input 
-                        type="text" 
-                        className="input-field" 
-                        required 
-                        placeholder="e.g. Life Processes, Trigonometry, Acids Bases"
-                        value={oneClickTopic}
-                        onChange={e => setOneClickTopic(e.target.value)}
-                        style={{ padding: '0.5rem 0.75rem', fontSize: '0.85rem' }}
-                      />
-                    </div>
-                    <div style={{ width: '130px' }}>
-                      <label className="input-label" style={{ fontSize: '0.7rem' }}>Select Board</label>
-                      <select 
-                        className="input-field"
-                        value={oneClickBoard}
-                        onChange={e => setOneClickBoard(e.target.value)}
-                        style={{ padding: '0.5rem 0.75rem', fontSize: '0.85rem', width: '100%' }}
-                      >
-                        <option value="CBSE">CBSE</option>
-                        <option value="RBSE">RBSE</option>
-                        <option value="UP Board">UP Board</option>
-                        <option value="Bihar Board">Bihar Board</option>
-                        <option value="MP Board">MP Board</option>
-                        <option value="ICSE">ICSE</option>
-                        <option value="Other Board">Other Board</option>
-                      </select>
-                    </div>
-                    <div style={{ width: '110px' }}>
-                      <label className="input-label" style={{ fontSize: '0.7rem' }}>Class Grade</label>
-                      <select 
-                        className="input-field"
-                        value={oneClickGrade}
-                        onChange={e => setOneClickGrade(e.target.value)}
-                        style={{ padding: '0.5rem 0.75rem', fontSize: '0.85rem', width: '100%' }}
-                      >
-                        <option value="8">Class 8</option>
-                        <option value="9">Class 9</option>
-                        <option value="10">Class 10</option>
-                        <option value="11">Class 11</option>
-                        <option value="12">Class 12</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    <button 
-                      id="quick-gen-btn"
-                      type="submit" 
-                      className="btn btn-primary" 
-                      style={{ padding: '0.5rem 1.25rem', fontSize: '0.82rem', flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
-                      disabled={oneClickLoading || !oneClickTopic}
-                    >
-                      {oneClickLoading ? (
-                        <>
-                          <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />
-                          {oneClickStatus && oneClickStatus !== 'thinking' ? oneClickStatus : `Generating ${activeOneClickTool}...`}
-                        </>
-                      ) : (
-                        `Instant Generate ${activeOneClickTool}`
-                      )}
-                    </button>
-                    <button 
-                      type="button" 
-                      className="btn btn-secondary"
-                      onClick={() => navigate(`/chat?prompt=${encodeURIComponent(`Give me a detailed board summary of "${oneClickTopic}" focused on Class ${oneClickGrade} (${oneClickBoard} Board) including definitions, board patterns, and solved questions.`)}`)}
-                      style={{ padding: '0.5rem 1rem', fontSize: '0.82rem' }}
-                    >
-                      Open in Tutor Chat 💬
-                    </button>
-                  </div>
-                </form>
-
-                {/* Show Generated One-Click Material */}
-                {oneClickResult && (
-                  <div style={{
-                    marginTop: '1.25rem',
-                    padding: '1rem',
-                    background: 'var(--bg-secondary)',
-                    borderRadius: '8px',
-                    border: '1px solid var(--border)',
-                    maxHeight: '400px',
-                    overflowY: 'auto'
-                  }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem' }}>
-                      <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Generated Success</span>
-                      <div style={{ display: 'flex', gap: '0.5rem' }}>
-                        <button onClick={handleCopyOneClick} className="btn btn-secondary" style={{ padding: '0.25rem 0.5rem', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                          {oneClickCopied ? <Check size={12} color="var(--success)" /> : <Copy size={12} />}
-                          {oneClickCopied ? 'Copied' : 'Copy'}
-                        </button>
-                      </div>
-                    </div>
-                    <div className="generated-content" style={{ fontSize: '0.88rem', lineHeight: 1.7, background: 'transparent', border: 'none', padding: 0, margin: 0, boxShadow: 'none' }}>
-                      <ReactMarkdown
-                        remarkPlugins={[remarkGfm, remarkMath]}
-                        rehypePlugins={[rehypeKatex]}
-                        components={markdownComponents}
-                      >{oneClickResult}</ReactMarkdown>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
+            <div className="quick-action-grid">
+              {quickActions.map(action => (
+                <button
+                  key={action.label}
+                  onClick={() => navigate(`/study-generator?tool=${encodeURIComponent(action.label)}`)}
+                  className="quick-action-btn"
+                >
+                  <div style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}>{action.icon}</div>
+                  <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text)' }}>{action.label}</div>
+                  <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>{action.desc}</div>
+                </button>
+              ))}
+            </div>
           </section>
 
 

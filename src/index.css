@@ -1382,6 +1382,15 @@ h3 { font-size: 1.15rem; }
 }
 .md-td:last-child { border-right: none; }
 
+/* KaTeX inside table cells must also be visible */
+.md-td .katex,
+.md-td .katex *,
+.md-td .katex span,
+.md-th .katex,
+.md-th .katex * {
+  color: var(--gen-katex-color) !important;
+}
+
 .md-inline-code {
   background: var(--code-bg);
   color: var(--code-color);
@@ -1438,17 +1447,91 @@ h3 { font-size: 1.15rem; }
 .generated-content em { color: var(--gen-em-color); font-style: italic; }
 .generated-content hr { border: none; border-top: 1px solid var(--gen-hr-border); margin: 1rem 0; }
 
-/* ─── KATEX MATH ─────────────────────────────────────────────────────────────── */
-.katex { font-size: 1em !important; color: var(--gen-katex-color); }
-.katex-display {
-  margin: 0.75rem 0 !important;
-  padding: 0.75rem 1rem;
-  background: rgba(99,102,241,0.07);
-  border-radius: 8px;
-  border-left: 3px solid rgba(139,92,246,0.5);
-  overflow-x: auto;
+/* ─── KATEX MATH — DARK MODE FORCED OVERRIDES ────────────────────────────────── */
+
+/* Force ALL KaTeX text to be visible — overrides browser's default black color
+   that causes the "dark box" issue on dark backgrounds */
+.katex,
+.katex *,
+.katex .mord,
+.katex .mrel,
+.katex .mop,
+.katex .mbin,
+.katex .mopen,
+.katex .mclose,
+.katex .mpunct,
+.katex .minner,
+.katex .delimsizing,
+.katex .mfrac,
+.katex .msupsub,
+.katex .mspace,
+.katex .accent,
+.katex .sqrt,
+.katex .overline,
+.katex .underline,
+.katex .text,
+.katex .rule,
+.katex span,
+.katex-html span {
+  color: var(--gen-katex-color) !important;
+  border-color: var(--gen-katex-color) !important;
 }
-.katex-display .katex { font-size: 1.1em !important; }
+
+/* KaTeX root sizing */
+.katex { font-size: 1em !important; }
+
+/* Inline math — subtle highlight */
+.katex-html {
+  background: transparent !important;
+}
+
+/* Block / display math */
+.katex-display {
+  margin: 0.85rem 0 !important;
+  padding: 0.875rem 1.25rem;
+  background: rgba(99, 102, 241, 0.06);
+  border-radius: 10px;
+  border-left: 3px solid rgba(139, 92, 246, 0.45);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.katex-display .katex { font-size: 1.12em !important; }
+.katex-display .katex,
+.katex-display .katex * {
+  color: var(--gen-katex-color) !important;
+  border-color: var(--gen-katex-color) !important;
+}
+
+/* Fix KaTeX fraction lines and rules (SVG-drawn) */
+.katex .frac-line,
+.katex .overline-line,
+.katex .underline-line,
+.katex .sqrt > .hide-tail,
+.katex .vlist-r .vlist > span > span.pstrut {
+  border-color: var(--gen-katex-color) !important;
+  background: var(--gen-katex-color) !important;
+}
+
+/* Light theme KaTeX overrides */
+.light-theme .katex,
+.light-theme .katex *,
+.light-theme .katex-html span,
+.light-theme .katex-display .katex,
+.light-theme .katex-display .katex * {
+  color: var(--gen-katex-color) !important;
+  border-color: var(--gen-katex-color) !important;
+}
+.light-theme .katex-display {
+  background: rgba(79, 70, 229, 0.05);
+  border-left-color: rgba(79, 70, 229, 0.4);
+}
+.light-theme .katex .frac-line,
+.light-theme .katex .overline-line,
+.light-theme .katex .underline-line {
+  border-color: var(--gen-katex-color) !important;
+  background: var(--gen-katex-color) !important;
+}
+
 
 .message-content.generated-content > *:first-child { margin-top: 0; }
 .message-content.generated-content > *:last-child { margin-bottom: 0; }

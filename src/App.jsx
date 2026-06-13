@@ -19,6 +19,7 @@ import LoginPage from './pages/LoginPage';
 import RAGUpload from './pages/RAGUpload';
 import AdminDashboard from './pages/AdminDashboard';
 import Subscribe from './pages/Subscribe';
+import StudyGenerator from './pages/StudyGenerator';
 
 
 
@@ -380,6 +381,7 @@ function MainApp() {
           <Route path="/timetable" element={<SubscriptionRoute><Timetable /></SubscriptionRoute>} />
           <Route path="/test" element={<SubscriptionRoute><TestGenerator /></SubscriptionRoute>} />
 
+          <Route path="/study-generator" element={<SubscriptionRoute><StudyGenerator /></SubscriptionRoute>} />
           <Route path="/history" element={<History />} />
           <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
         </Routes>
