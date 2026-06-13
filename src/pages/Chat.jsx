@@ -461,10 +461,11 @@ export default function Chat() {
     setMessages(finalMessages);
     syncSession(sessionId, finalMessages, title);
 
-    // Reward +10 XP for solving doubts!
+    // Reward +10 XP for solving doubts! (write to user-specific key)
     try {
-      const currentXP = parseInt(localStorage.getItem('tanios_xp') || '120', 10);
-      localStorage.setItem('tanios_xp', (currentXP + 10).toString());
+      const xpKey = `tanios_xp_${userId}`;
+      const currentXP = parseInt(localStorage.getItem(xpKey) || '0', 10);
+      localStorage.setItem(xpKey, (currentXP + 10).toString());
       window.dispatchEvent(new Event('tanios_xp_update'));
     } catch (e) {
       console.warn(e);

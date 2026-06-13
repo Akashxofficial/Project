@@ -64,19 +64,17 @@ const CLASS_SYLLABUS = {
       'Chapter 1: Rational Numbers',
       'Chapter 2: Linear Equations in One Variable',
       'Chapter 3: Understanding Quadrilaterals',
-      'Chapter 4: Practical Geometry',
-      'Chapter 5: Data Handling',
-      'Chapter 6: Squares and Square Roots',
-      'Chapter 7: Cubes and Cube Roots',
-      'Chapter 8: Comparing Quantities',
-      'Chapter 9: Algebraic Expressions and Identities',
-      'Chapter 10: Visualising Solid Shapes',
-      'Chapter 11: Mensuration',
-      'Chapter 12: Exponents and Powers',
-      'Chapter 13: Direct and Inverse Proportions',
-      'Chapter 14: Factorisation',
-      'Chapter 15: Introduction to Graphs',
-      'Chapter 16: Playing with Numbers'
+      'Chapter 4: Data Handling',
+      'Chapter 5: Squares and Square Roots',
+      'Chapter 6: Cubes and Cube Roots',
+      'Chapter 7: Comparing Quantities',
+      'Chapter 8: Algebraic Expressions and Identities',
+      'Chapter 9: Visualising Solid Shapes',
+      'Chapter 10: Mensuration',
+      'Chapter 11: Exponents and Powers',
+      'Chapter 12: Direct and Inverse Proportions',
+      'Chapter 13: Factorisation',
+      'Chapter 14: Introduction to Graphs'
     ],
     'Science': [
       'Chapter 1: Crop Production and Management',
@@ -88,15 +86,14 @@ const CLASS_SYLLABUS = {
       'Chapter 7: Conservation of Plants and Animals',
       'Chapter 8: Cell - Structure and Functions',
       'Chapter 9: Reproduction in Animals',
-      'Chapter 10: Reaching the Age of Adolescence',
-      'Chapter 11: Force and Pressure',
-      'Chapter 12: Friction',
-      'Chapter 13: Sound',
-      'Chapter 14: Chemical Effects of Electric Current',
-      'Chapter 15: Some Natural Phenomena',
-      'Chapter 16: Light',
-      'Chapter 17: Stars and the Solar System',
-      'Chapter 18: Pollution of Air and Water'
+      'Chapter 10: Force and Pressure',
+      'Chapter 11: Friction',
+      'Chapter 12: Sound',
+      'Chapter 13: Chemical Effects of Electric Current',
+      'Chapter 14: Some Natural Phenomena',
+      'Chapter 15: Light',
+      'Chapter 16: Stars and the Solar System',
+      'Chapter 17: Pollution of Air and Water'
     ],
     'Social Science': [
       // History: Our Pasts III
@@ -1604,12 +1601,15 @@ export default function Home() {
   // Listen to doubt solved event from Chat page to dynamically update XP!
   useEffect(() => {
     const handleXpUpdate = () => {
-      const currentXP = parseInt(localStorage.getItem('tanios_xp') || '0', 10);
+      // Read from user-specific key — userId is captured from the outer scope
+      const uid = currentUser?.uid || currentUser?.email || 'guest';
+      const currentXP = parseInt(localStorage.getItem(`tanios_xp_${uid}`) || '0', 10);
       setXp(currentXP);
     };
     window.addEventListener('tanios_xp_update', handleXpUpdate);
     return () => window.removeEventListener('tanios_xp_update', handleXpUpdate);
-  }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId]);
 
   // Automatically open tools when one is activated (e.g. from mistake clinic)
   useEffect(() => {
@@ -1620,12 +1620,15 @@ export default function Home() {
 
 
 
-  // Award XP function with animation trigger
+  // Award XP function with animation trigger — reads fresh from storage to avoid stale closure
   const awardXp = (amount, reason) => {
-    const newXp = xp + amount;
-    setXp(newXp);
-    saveState('tanios_xp', newXp);
-
+    setXp(prevXp => {
+      const freshXp = parseInt(localStorage.getItem(getUserKey('tanios_xp')) || '0', 10);
+      const base = Math.max(prevXp, freshXp);
+      const newXp = base + amount;
+      try { localStorage.setItem(getUserKey('tanios_xp'), newXp.toString()); } catch(e) {}
+      return newXp;
+    });
     setXpAwardedMsg(`+${amount} XP Earned! (${reason}) ✨`);
     setTimeout(() => setXpAwardedMsg(''), 4000);
   };
@@ -1746,9 +1749,11 @@ export default function Home() {
     }
 
     // Update consistency score
-    const newCons = Math.min(100, consistency + 2);
-    setConsistency(newCons);
-    saveState('tanios_consistency', newCons);
+    setConsistency(prev => {
+      const newCons = Math.min(100, prev + 2);
+      try { localStorage.setItem(getUserKey('tanios_consistency'), newCons.toString()); } catch(e) {}
+      return newCons;
+    });
 
     // ── STREAK LOGIC: increment streak only when ALL non-login missions are done ──
     if (isLastMission) {
@@ -1756,10 +1761,14 @@ export default function Home() {
       const lastStreakDay = localStorage.getItem(getUserKey('tanios_streak_day')) || '';
 
       if (lastStreakDay !== todayKey) {
-        // First time completing all missions today → increment streak
-        const newStreak = streak + 1;
-        setStreak(newStreak);
-        saveState('tanios_streak', newStreak);
+        // First time completing all missions today → increment streak using fresh value
+        setStreak(prevStreak => {
+          const freshStreak = parseInt(localStorage.getItem(getUserKey('tanios_streak')) || '0', 10);
+          const base = Math.max(prevStreak, freshStreak);
+          const newStreak = base + 1;
+          try { localStorage.setItem(getUserKey('tanios_streak'), newStreak.toString()); } catch(e) {}
+          return newStreak;
+        });
         localStorage.setItem(getUserKey('tanios_streak_day'), todayKey);
         // Extra XP bonus for completing all daily missions
         setTimeout(() => awardXp(10, '🔥 All Daily Missions Complete!'), 600);
