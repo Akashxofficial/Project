@@ -1286,9 +1286,9 @@ export default function AdminDashboard() {
                           ) : (
                             <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
                               • Campaign Target: <strong style={{ color: 'var(--text)' }}>{reminderResult.type === 'streak-reminder' ? 'Inactive Streakers' : 'All Opted-in'}</strong><br />
-                              • Successfully Dispatched: <strong style={{ color: '#10b981' }}>{reminderResult.sent} emails</strong><br />
-                              • Failures / Skipped: <strong style={{ color: '#ef4444' }}>{reminderResult.failed} emails</strong><br />
-                              • Total Candidates: <strong style={{ color: 'var(--text)' }}>{reminderResult.total}</strong>
+                              • Successfully Dispatched: <strong style={{ color: '#10b981' }}>{reminderResult.sent ?? 0} emails</strong><br />
+                              • Failures / Skipped: <strong style={{ color: '#ef4444' }}>{reminderResult.failed ?? 0} emails</strong><br />
+                              • Total Candidates: <strong style={{ color: 'var(--text)' }}>{reminderResult.total ?? 0}</strong>
                             </div>
                           )}
                         </div>

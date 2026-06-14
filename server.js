@@ -518,7 +518,7 @@ app.post('/api/admin/notify/streak-reminder', async (req, res) => {
     }).select('email displayName streak -_id');
 
     if (!students.length) {
-      return res.status(200).json({ success: true, sent: 0, message: 'All students are active today!' });
+      return res.status(200).json({ success: true, sent: 0, failed: 0, total: 0, message: 'All students are active today!' });
     }
 
     let sent = 0, failed = 0;
@@ -546,7 +546,7 @@ app.post('/api/admin/notify/study-reminder', async (req, res) => {
     }).select('email displayName -_id');
 
     if (!students.length) {
-      return res.status(200).json({ success: true, sent: 0 });
+      return res.status(200).json({ success: true, sent: 0, failed: 0, total: 0 });
     }
 
     let sent = 0, failed = 0;
