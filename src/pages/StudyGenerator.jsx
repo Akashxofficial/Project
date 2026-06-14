@@ -144,14 +144,8 @@ export default function StudyGenerator() {
   const handleSave = async () => {
     if (!result) return;
     try {
-      await saveDocument(userId, {
-        type: activeTool,
-        topic,
-        grade,
-        board,
-        content: result,
-        createdAt: new Date().toISOString(),
-      });
+      const docTitle = `[${board} Cl.${grade}] ${topic} (${activeTool})`;
+      await saveDocument(userId, activeTool, docTitle, result);
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     } catch {

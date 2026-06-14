@@ -71,7 +71,7 @@ export const saveDocument = async (userId, type, title, content, docId = null) =
   }
 
   // Then attempt Firestore sync in background
-  if (!import.meta.env.VITE_FIREBASE_API_KEY || import.meta.env.VITE_FIREBASE_API_KEY === 'dummy-api-key') {
+  if (!import.meta.env.VITE_FIREBASE_API_KEY || import.meta.env.VITE_FIREBASE_API_KEY === 'dummy-api-key' || !auth.currentUser) {
     return resolvedDocId;
   }
 
@@ -94,7 +94,7 @@ export const saveDocument = async (userId, type, title, content, docId = null) =
 export const getUserDocuments = async (userId) => {
   const documents = [];
 
-  if (import.meta.env.VITE_FIREBASE_API_KEY && import.meta.env.VITE_FIREBASE_API_KEY !== 'dummy-api-key') {
+  if (import.meta.env.VITE_FIREBASE_API_KEY && import.meta.env.VITE_FIREBASE_API_KEY !== 'dummy-api-key' && auth.currentUser) {
     try {
       const fetchPromise = (async () => {
         // Try with orderBy first (requires Firestore composite index)
@@ -212,7 +212,7 @@ export const saveChatSession = async (userId, sessionId, title, messages) => {
   }
 
   // Then attempt Firestore sync in background
-  if (!import.meta.env.VITE_FIREBASE_API_KEY || import.meta.env.VITE_FIREBASE_API_KEY === 'dummy-api-key') return;
+  if (!import.meta.env.VITE_FIREBASE_API_KEY || import.meta.env.VITE_FIREBASE_API_KEY === 'dummy-api-key' || !auth.currentUser) return;
   try {
     await setDoc(doc(db, "chat_sessions", sessionId), {
       userId,
@@ -228,7 +228,7 @@ export const saveChatSession = async (userId, sessionId, title, messages) => {
 export const getUserChatSessions = async (userId) => {
   const sessions = [];
 
-  if (import.meta.env.VITE_FIREBASE_API_KEY && import.meta.env.VITE_FIREBASE_API_KEY !== 'dummy-api-key') {
+  if (import.meta.env.VITE_FIREBASE_API_KEY && import.meta.env.VITE_FIREBASE_API_KEY !== 'dummy-api-key' && auth.currentUser) {
     try {
       const fetchPromise = (async () => {
         const q = query(collection(db, "chat_sessions"), where("userId", "==", userId));
@@ -273,7 +273,7 @@ export const getUserChatSessions = async (userId) => {
 };
 
 export const deleteChatSession = async (sessionId) => {
-  if (!import.meta.env.VITE_FIREBASE_API_KEY || import.meta.env.VITE_FIREBASE_API_KEY === 'dummy-api-key') return;
+  if (!import.meta.env.VITE_FIREBASE_API_KEY || import.meta.env.VITE_FIREBASE_API_KEY === 'dummy-api-key' || !auth.currentUser) return;
   try {
     await deleteDoc(doc(db, "chat_sessions", sessionId));
   } catch (e) {
