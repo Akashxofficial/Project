@@ -18,6 +18,7 @@ export default async function handler(req, res) {
     else if (urlPath.includes('streak-reminder')) action = 'streak-reminder';
     else if (urlPath.includes('study-reminder')) action = 'study-reminder';
     else if (urlPath.includes('cron-reminder')) action = 'cron-reminder';
+    else if (req.headers['x-vercel-cron'] === 'true') action = 'cron-reminder';
   }
 
   if (!action) {

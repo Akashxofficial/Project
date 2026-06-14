@@ -578,6 +578,7 @@ app.get('/api/admin/notify/stats', async (req, res) => {
 
 // ── Daily Cron Reminder Endpoint ───────────────────────────────────────────────
 app.all('/api/admin/notify/cron-reminder', cronReminderHandler);
+app.all('/api/admin/notify', cronReminderHandler);
 
 const PORT = 3001;
 app.listen(PORT, () => {
