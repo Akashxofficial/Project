@@ -26,6 +26,16 @@ export default defineConfig({
   build: {
     chunkSizeWarningLimit: 1000,
     rollupOptions: {
+      onwarn(warning, warn) {
+        if (
+          warning.code === 'SOURCEMAP_ERROR' ||
+          warning.code === 'CIRCULAR_DEPENDENCY' ||
+          warning.code === 'MODULE_LEVEL_DIRECTIVE'
+        ) {
+          return;
+        }
+        console.warn(`[Rollup Warning: ${warning.code}] ${warning.message}`);
+      },
       output: {
         manualChunks(id) {
           if (id.includes('node_modules')) {
