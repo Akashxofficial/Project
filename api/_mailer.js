@@ -251,11 +251,25 @@ export const sendStudyReminderEmail = (email, name) => {
   ];
   const tip = tips[new Date().getDay() % tips.length];
 
+  // Calculate Indian Standard Time (IST) (UTC + 5:30)
+  const now = new Date();
+  const utcHour = now.getUTCHours();
+  const utcMinute = now.getUTCMinutes();
+  const totalMinutesIST = (utcHour * 60 + utcMinute + 330) % 1440;
+  const hourIST = Math.floor(totalMinutesIST / 60);
+
+  let greeting = 'Good evening';
+  if (hourIST >= 5 && hourIST < 12) {
+    greeting = 'Good morning';
+  } else if (hourIST >= 12 && hourIST < 17) {
+    greeting = 'Good afternoon';
+  }
+
   const html = emailShell(`
     <div style="text-align:center;margin-bottom:28px;">
       <div style="font-size:3rem;margin-bottom:12px;">📚</div>
       <h1 style="font-size:1.5rem;font-weight:800;color:#fff;margin:0 0 10px;letter-spacing:-0.02em;">
-        Good morning, ${firstName}!
+        ${greeting}, ${firstName}!
       </h1>
       <p style="color:rgba(255,255,255,0.55);font-size:0.95rem;line-height:1.7;margin:0;">
         Your study session for today is ready. Let's crush it!
