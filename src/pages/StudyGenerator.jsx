@@ -3,7 +3,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import MathRenderer from '../components/MathRenderer';
 import {
   ArrowLeft, Sparkles, Copy, Check, Download, Loader2,
-  Zap, BookOpen, FileText, HelpCircle, BarChart2, Brain, Clock, Lightbulb
+  Zap, BookOpen, FileText, HelpCircle, BarChart2, Brain, Clock, Lightbulb, Bookmark
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -145,7 +145,9 @@ export default function StudyGenerator() {
     if (!result) return;
     try {
       const docTitle = `[${board} Cl.${grade}] ${topic} (${activeTool})`;
-      await saveDocument(userId, activeTool, docTitle, result);
+      // Map activeTool to allowed Firestore categories ('note', 'revision') to satisfy Security Rules
+      const dbType = activeTool === 'Revision Sheet' || activeTool === '5-Minute Study' ? 'revision' : 'note';
+      await saveDocument(userId, dbType, docTitle, result);
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     } catch {
@@ -551,7 +553,15 @@ export default function StudyGenerator() {
                 style={{ padding: '0.4rem 0.875rem', fontSize: '0.78rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}
               >
                 <Download size={13} />
-                Save
+                Export TXT
+              </button>
+              <button
+                onClick={handleSave}
+                className="btn btn-secondary"
+                style={{ padding: '0.4rem 0.875rem', fontSize: '0.78rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}
+              >
+                {saved ? <Check size={13} color="var(--success)" /> : <Bookmark size={13} />}
+                {saved ? 'Saved ✓' : 'Save to History'}
               </button>
             </div>
           </div>

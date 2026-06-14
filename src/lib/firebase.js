@@ -401,3 +401,90 @@ export const getStudents = async () => {
   }
   return [];
 };
+
+// Sync guest offline-first data (documents & chats) to the logged-in user account
+export const syncGuestDataToUser = async (user) => {
+  if (!user || user.isGuest) return;
+  const guestEmail = "guest@tanios.ai";
+  const newUserId = user.uid;
+
+  // 1. Sync fallback_documents
+  try {
+    const guestDocsKey = `fallback_documents_${guestEmail}`;
+    const guestDocs = JSON.parse(localStorage.getItem(guestDocsKey) || '[]');
+    if (guestDocs.length > 0) {
+      console.log(`Syncing ${guestDocs.length} guest documents to user ${newUserId}...`);
+      
+      const userDocsKey = `fallback_documents_${newUserId}`;
+      const userDocs = JSON.parse(localStorage.getItem(userDocsKey) || '[]');
+
+      for (const docObj of guestDocs) {
+        // Update userId inside the doc
+        const updatedDoc = { ...docObj, userId: newUserId };
+        
+        // Save to Firestore (since user is logged in, auth.currentUser is populated)
+        try {
+          await setDoc(doc(db, "saved_materials", updatedDoc.id), {
+            userId: newUserId,
+            type: updatedDoc.type,
+            title: updatedDoc.title,
+            content: updatedDoc.content,
+            createdAt: serverTimestamp()
+          }, { merge: true });
+        } catch (fsErr) {
+          console.error("Firestore sync failed for document", updatedDoc.id, fsErr);
+        }
+
+        // Add to user local storage list if not exists
+        if (!userDocs.find(d => d.id === updatedDoc.id)) {
+          userDocs.push(updatedDoc);
+        }
+      }
+
+      localStorage.setItem(userDocsKey, JSON.stringify(userDocs));
+      localStorage.removeItem(guestDocsKey);
+      console.log("Guest documents synced successfully.");
+    }
+  } catch (err) {
+    console.error("Failed to sync guest documents:", err);
+  }
+
+  // 2. Sync fallback_chats
+  try {
+    const guestChatsKey = `fallback_chats_${guestEmail}`;
+    const guestChats = JSON.parse(localStorage.getItem(guestChatsKey) || '[]');
+    if (guestChats.length > 0) {
+      console.log(`Syncing ${guestChats.length} guest chats to user ${newUserId}...`);
+
+      const userChatsKey = `fallback_chats_${newUserId}`;
+      const userChats = JSON.parse(localStorage.getItem(userChatsKey) || '[]');
+
+      for (const chatObj of guestChats) {
+        const updatedChat = { ...chatObj, userId: newUserId };
+
+        // Save to Firestore
+        try {
+          await setDoc(doc(db, "chat_sessions", updatedChat.id), {
+            userId: newUserId,
+            title: updatedChat.title,
+            messages: updatedChat.messages,
+            updatedAt: serverTimestamp()
+          }, { merge: true });
+        } catch (fsErr) {
+          console.warn("Firestore sync skipped/failed for chat", updatedChat.id, fsErr.message);
+        }
+
+        // Add to user local storage if not exists
+        if (!userChats.find(c => c.id === updatedChat.id)) {
+          userChats.push(updatedChat);
+        }
+      }
+
+      localStorage.setItem(userChatsKey, JSON.stringify(userChats));
+      localStorage.removeItem(guestChatsKey);
+      console.log("Guest chats synced successfully.");
+    }
+  } catch (err) {
+    console.error("Failed to sync guest chats:", err);
+  }
+};

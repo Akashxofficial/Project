@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { auth, db, loginWithGoogle, logout, logActivity, syncUserToMongo } from '../lib/firebase';
+import { auth, db, loginWithGoogle, logout, logActivity, syncUserToMongo, syncGuestDataToUser } from '../lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, onSnapshot } from 'firebase/firestore';
 
@@ -97,6 +97,9 @@ export function AuthProvider({ children }) {
           };
           setCurrentUser(userObj);
           localStorage.setItem('tanios_user', JSON.stringify(userObj));
+          
+          // Sync guest offline-first data to the newly logged-in user profile
+          syncGuestDataToUser(userObj).catch(console.error);
 
           // Sync user to MongoDB and send welcome email on first login
           syncUserToMongo(userObj.uid, userObj.email, userObj.displayName, userObj.photoURL)
