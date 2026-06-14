@@ -13,6 +13,7 @@ import 'katex/dist/katex.min.css';
 import { generateAIContent, generateOneClickPrompt, fixMathFormatting } from '../lib/ai';
 import { useAuth } from '../context/AuthContext';
 import { saveDocument } from '../lib/firebase';
+import { downloadAsPDF } from '../lib/pdfHelper';
 
 // Markdown components identical to Notes/Chat pages
 const markdownComponents = {
@@ -155,14 +156,10 @@ export default function StudyGenerator() {
     }
   };
 
-  const handleDownload = () => {
-    const blob = new Blob([result], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `TaniOS_${activeTool.replace(/\s+/g, '_')}_${topic.slice(0, 30).replace(/\s+/g, '_')}.txt`;
-    a.click();
-    URL.revokeObjectURL(url);
+  const handleDownload = async () => {
+    if (!result) return;
+    const docTitle = `[${board} Cl.${grade}] ${topic} (${activeTool})`;
+    await downloadAsPDF(docTitle, result, activeTool);
   };
 
   const switchTool = (label) => {
@@ -553,7 +550,7 @@ export default function StudyGenerator() {
                 style={{ padding: '0.4rem 0.875rem', fontSize: '0.78rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}
               >
                 <Download size={13} />
-                Export TXT
+                Download PDF
               </button>
               <button
                 onClick={handleSave}
