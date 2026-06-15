@@ -143,7 +143,7 @@ export default function AdminDashboard() {
       }
     } catch (backendErr) {
       console.warn("Backend payment fetch failed, trying Firestore fallback:", backendErr.message);
-      
+
       // 2. Fallback to Firestore client SDK query
       try {
         if (import.meta.env.VITE_FIREBASE_API_KEY && import.meta.env.VITE_FIREBASE_API_KEY !== 'dummy-api-key') {
@@ -240,7 +240,7 @@ export default function AdminDashboard() {
       }
     } catch (e) {
       console.warn("Server approval failed, attempting direct Firestore fallback:", e.message);
-      
+
       // ── FALLBACK: Direct Firestore if server is down or error occurred ──
       try {
         if (import.meta.env.VITE_FIREBASE_API_KEY && import.meta.env.VITE_FIREBASE_API_KEY !== 'dummy-api-key') {
@@ -319,7 +319,7 @@ export default function AdminDashboard() {
       }
     } catch (e) {
       console.warn("Server rejection failed, attempting direct Firestore fallback:", e.message);
-      
+
       // ── FALLBACK: Direct Firestore ──
       try {
         if (import.meta.env.VITE_FIREBASE_API_KEY && import.meta.env.VITE_FIREBASE_API_KEY !== 'dummy-api-key') {
@@ -356,7 +356,7 @@ export default function AdminDashboard() {
 
   return (
     <div className="page-content">
-      
+
       {/* Scope style */}
       <style>{`
         .admin-grid {
@@ -499,7 +499,7 @@ export default function AdminDashboard() {
       `}</style>
 
       <div>
-        
+
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.5rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -518,8 +518,8 @@ export default function AdminDashboard() {
               </p>
             </div>
           </div>
-          
-          <button 
+
+          <button
             onClick={handleTriggerRotation}
             className="btn btn-primary"
             style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', backgroundColor: '#ef4444', border: 'none', padding: '0.6rem 1.25rem' }}
@@ -532,40 +532,40 @@ export default function AdminDashboard() {
 
         {/* Master Admin Workspace Layout */}
         <div className="admin-grid">
-          
+
           {/* Navigation Sidebar */}
           <aside className="admin-sidebar">
-            <button 
+            <button
               onClick={() => setActiveTab('diagnostics')}
               className={`admin-nav-item ${activeTab === 'diagnostics' ? 'active' : ''}`}
             >
               <Activity size={16} /> Diagnostics & Metrics
             </button>
-            <button 
+            <button
               onClick={() => setActiveTab('keys')}
               className={`admin-nav-item ${activeTab === 'keys' ? 'active' : ''}`}
             >
               <Key size={16} /> API Key Rotation Locker
             </button>
-            <button 
+            <button
               onClick={() => setActiveTab('students')}
               className={`admin-nav-item ${activeTab === 'students' ? 'active' : ''}`}
             >
               <Users size={16} /> Student Registry Database
             </button>
-            <button 
+            <button
               onClick={() => setActiveTab('settings')}
               className={`admin-nav-item ${activeTab === 'settings' ? 'active' : ''}`}
             >
               <Settings size={16} /> Configuration Overrides
             </button>
-            <button 
+            <button
               onClick={() => setActiveTab('subscriptions')}
               className={`admin-nav-item ${activeTab === 'subscriptions' ? 'active' : ''}`}
             >
               <CreditCard size={16} /> Subscription Queue 💳
             </button>
-            <button 
+            <button
               onClick={() => setActiveTab('activities')}
               className={`admin-nav-item ${activeTab === 'activities' ? 'active' : ''}`}
             >
@@ -581,11 +581,11 @@ export default function AdminDashboard() {
 
           {/* Tab Contents */}
           <main style={{ minWidth: 0 }}>
-            
+
             {/* TAB 1: DIAGNOSTICS & METRICS */}
             {activeTab === 'diagnostics' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                
+
                 {/* Visual Stats Row */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem' }}>
                   <div className="card" style={{ padding: '1.25rem', textAlign: 'center' }}>
@@ -633,7 +633,7 @@ export default function AdminDashboard() {
                   <h3 style={{ fontSize: '1.05rem', margin: 0 }}>Active Rotating API Keys (Locker Registry)</h3>
                   <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>4 Loaded Keys | Sequential Failover Mode</span>
                 </div>
-                
+
                 <div style={{ overflowX: 'auto' }}>
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem' }}>
                     <thead>
@@ -704,7 +704,7 @@ export default function AdminDashboard() {
                     Refresh
                   </button>
                 </div>
-                
+
                 {fetchingStudents ? (
                   <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>Loading students from MongoDB...</div>
                 ) : students.length === 0 ? (
@@ -712,62 +712,62 @@ export default function AdminDashboard() {
                     🎓 No students registered yet. Students appear here after first login.
                   </div>
                 ) : (
-                <div style={{ overflowX: 'auto' }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem' }}>
-                    <thead>
-                      <tr style={{ borderBottom: '1px solid var(--border)', textAlign: 'left', color: 'var(--text-secondary)' }}>
-                        <th style={{ padding: '0.75rem 0.5rem' }}>Student</th>
-                        <th style={{ padding: '0.75rem 0.5rem' }}>Email</th>
-                        <th style={{ padding: '0.75rem 0.5rem' }}>Subscription</th>
-                        <th style={{ padding: '0.75rem 0.5rem' }}>Logins</th>
-                        <th style={{ padding: '0.75rem 0.5rem' }}>Last Login</th>
-                        <th style={{ padding: '0.75rem 0.5rem' }}>Joined</th>
-                        <th style={{ padding: '0.75rem 0.5rem' }}>XP</th>
-                        <th style={{ padding: '0.75rem 0.5rem' }}>Streak</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {students.map(s => (
-                        <tr key={s._id || s.uid} style={{ borderBottom: '1px solid var(--border)' }}>
-                          <td style={{ padding: '0.75rem 0.5rem' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                              {s.photoURL ? (
-                                <img src={s.photoURL} alt={s.displayName} style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover' }} />
-                              ) : (
-                                <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'rgba(99,102,241,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', fontWeight: 700, color: 'var(--primary)' }}>
-                                  {(s.displayName || s.email || 'S')[0].toUpperCase()}
-                                </div>
-                              )}
-                              <span style={{ fontWeight: 700 }}>{s.displayName || 'Student'}</span>
-                            </div>
-                          </td>
-                          <td style={{ padding: '0.75rem 0.5rem', color: 'var(--text-secondary)', fontSize: '0.78rem' }}>{s.email}</td>
-                          <td style={{ padding: '0.75rem 0.5rem' }}>
-                            <span style={{
-                              padding: '0.2rem 0.5rem',
-                              borderRadius: '4px',
-                              fontSize: '0.7rem',
-                              fontWeight: 700,
-                              background: s.subscriptionActive ? 'rgba(16,185,129,0.1)' : 'rgba(100,100,100,0.08)',
-                              color: s.subscriptionActive ? '#10b981' : 'var(--text-secondary)'
-                            }}>
-                              {s.subscriptionActive ? `✅ ${s.subscriptionPlan || 'Pro'}` : '⬜ Free'}
-                            </span>
-                          </td>
-                          <td style={{ padding: '0.75rem 0.5rem', fontWeight: 600, color: 'var(--primary)' }}>{s.loginCount || 0}x</td>
-                          <td style={{ padding: '0.75rem 0.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem' }}>
-                            {s.lastLoginAt ? new Date(s.lastLoginAt).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'Never'}
-                          </td>
-                          <td style={{ padding: '0.75rem 0.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem' }}>
-                            {s.createdAt ? new Date(s.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: '2-digit' }) : '-'}
-                          </td>
-                          <td style={{ padding: '0.75rem 0.5rem', color: 'var(--primary)', fontWeight: 'bold' }}>{s.xp || 0} XP</td>
-                          <td style={{ padding: '0.75rem 0.5rem', color: '#ef4444', fontWeight: 'bold' }}>🔥 {s.streak || 0}</td>
+                  <div style={{ overflowX: 'auto' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem' }}>
+                      <thead>
+                        <tr style={{ borderBottom: '1px solid var(--border)', textAlign: 'left', color: 'var(--text-secondary)' }}>
+                          <th style={{ padding: '0.75rem 0.5rem' }}>Student</th>
+                          <th style={{ padding: '0.75rem 0.5rem' }}>Email</th>
+                          <th style={{ padding: '0.75rem 0.5rem' }}>Subscription</th>
+                          <th style={{ padding: '0.75rem 0.5rem' }}>Logins</th>
+                          <th style={{ padding: '0.75rem 0.5rem' }}>Last Login</th>
+                          <th style={{ padding: '0.75rem 0.5rem' }}>Joined</th>
+                          <th style={{ padding: '0.75rem 0.5rem' }}>XP</th>
+                          <th style={{ padding: '0.75rem 0.5rem' }}>Streak</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                      </thead>
+                      <tbody>
+                        {students.map(s => (
+                          <tr key={s._id || s.uid} style={{ borderBottom: '1px solid var(--border)' }}>
+                            <td style={{ padding: '0.75rem 0.5rem' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                {s.photoURL ? (
+                                  <img src={s.photoURL} alt={s.displayName} style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover' }} />
+                                ) : (
+                                  <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'rgba(99,102,241,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', fontWeight: 700, color: 'var(--primary)' }}>
+                                    {(s.displayName || s.email || 'S')[0].toUpperCase()}
+                                  </div>
+                                )}
+                                <span style={{ fontWeight: 700 }}>{s.displayName || 'Student'}</span>
+                              </div>
+                            </td>
+                            <td style={{ padding: '0.75rem 0.5rem', color: 'var(--text-secondary)', fontSize: '0.78rem' }}>{s.email}</td>
+                            <td style={{ padding: '0.75rem 0.5rem' }}>
+                              <span style={{
+                                padding: '0.2rem 0.5rem',
+                                borderRadius: '4px',
+                                fontSize: '0.7rem',
+                                fontWeight: 700,
+                                background: s.subscriptionActive ? 'rgba(16,185,129,0.1)' : 'rgba(100,100,100,0.08)',
+                                color: s.subscriptionActive ? '#10b981' : 'var(--text-secondary)'
+                              }}>
+                                {s.subscriptionActive ? `✅ ${s.subscriptionPlan || 'Pro'}` : '⬜ Free'}
+                              </span>
+                            </td>
+                            <td style={{ padding: '0.75rem 0.5rem', fontWeight: 600, color: 'var(--primary)' }}>{s.loginCount || 0}x</td>
+                            <td style={{ padding: '0.75rem 0.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem' }}>
+                              {s.lastLoginAt ? new Date(s.lastLoginAt).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'Never'}
+                            </td>
+                            <td style={{ padding: '0.75rem 0.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem' }}>
+                              {s.createdAt ? new Date(s.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: '2-digit' }) : '-'}
+                            </td>
+                            <td style={{ padding: '0.75rem 0.5rem', color: 'var(--primary)', fontWeight: 'bold' }}>{s.xp || 0} XP</td>
+                            <td style={{ padding: '0.75rem 0.5rem', color: '#ef4444', fontWeight: 'bold' }}>🔥 {s.streak || 0}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 )}
               </section>
             )}
@@ -776,9 +776,9 @@ export default function AdminDashboard() {
             {activeTab === 'settings' && (
               <section className="card">
                 <h3 style={{ fontSize: '1.05rem', margin: '0 0 1.25rem 0' }}>Core Gateway Parameter Overrides</h3>
-                
+
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                  
+
                   {/* Streaming Toggle */}
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border)', paddingBottom: '0.85rem' }}>
                     <div>
@@ -788,10 +788,10 @@ export default function AdminDashboard() {
                       </p>
                     </div>
                     <label className="toggle-switch">
-                      <input 
-                        type="checkbox" 
-                        checked={config.streamingActive} 
-                        onChange={() => handleToggleConfig('streamingActive')} 
+                      <input
+                        type="checkbox"
+                        checked={config.streamingActive}
+                        onChange={() => handleToggleConfig('streamingActive')}
                       />
                       <span className="slider"></span>
                     </label>
@@ -806,10 +806,10 @@ export default function AdminDashboard() {
                       </p>
                     </div>
                     <label className="toggle-switch">
-                      <input 
-                        type="checkbox" 
-                        checked={config.redisCaching} 
-                        onChange={() => handleToggleConfig('redisCaching')} 
+                      <input
+                        type="checkbox"
+                        checked={config.redisCaching}
+                        onChange={() => handleToggleConfig('redisCaching')}
                       />
                     </label>
                   </div>
@@ -823,10 +823,10 @@ export default function AdminDashboard() {
                       </p>
                     </div>
                     <label className="toggle-switch">
-                      <input 
-                        type="checkbox" 
-                        checked={config.errorNormalization} 
-                        onChange={() => handleToggleConfig('errorNormalization')} 
+                      <input
+                        type="checkbox"
+                        checked={config.errorNormalization}
+                        onChange={() => handleToggleConfig('errorNormalization')}
                       />
                       <span className="slider"></span>
                     </label>
@@ -846,9 +846,9 @@ export default function AdminDashboard() {
                       Inspect submitted bank UTR codes against your merchant UPI statement and click Approve to instantly unlock active study tools.
                     </p>
                   </div>
-                  <button 
-                    onClick={fetchRequests} 
-                    className="btn btn-primary" 
+                  <button
+                    onClick={fetchRequests}
+                    className="btn btn-primary"
                     style={{ padding: '0.4rem 0.85rem', fontSize: '0.78rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
                     disabled={fetchingReqs}
                   >
@@ -897,14 +897,14 @@ export default function AdminDashboard() {
                             <td style={{ padding: '0.75rem 0.5rem', display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
                               {r.status === 'pending' ? (
                                 <>
-                                  <button 
+                                  <button
                                     onClick={() => handleApprove(r)}
                                     className="btn btn-primary"
                                     style={{ background: '#10b981', border: 'none', padding: '0.35rem 0.65rem', fontSize: '0.72rem', borderRadius: '4px' }}
                                   >
                                     Approve ✅
                                   </button>
-                                  <button 
+                                  <button
                                     onClick={() => handleReject(r)}
                                     className="btn btn-primary"
                                     style={{ background: '#ef4444', border: 'none', padding: '0.35rem 0.65rem', fontSize: '0.72rem', borderRadius: '4px' }}
@@ -950,7 +950,7 @@ export default function AdminDashboard() {
                     <RefreshCw size={14} className={fetchingActivities ? 'spin' : ''} style={fetchingActivities ? { animation: 'spin 1s linear infinite' } : {}} /> Refresh
                   </button>
                 </div>
-                
+
                 {fetchingActivities ? (
                   <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>Loading activities...</div>
                 ) : platformActivities.length === 0 ? (
@@ -1001,7 +1001,7 @@ export default function AdminDashboard() {
             {/* TAB 7: EMAIL NOTIFICATIONS */}
             {activeTab === 'email' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', animation: 'fadeUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) both' }}>
-                
+
                 {/* Stats Row */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem' }}>
                   <div className="card" style={{ padding: '1.25rem', textAlign: 'center' }}>
@@ -1027,7 +1027,7 @@ export default function AdminDashboard() {
                 </div>
 
                 <div className="email-grid">
-                  
+
                   {/* Left Column: Send Broadcast */}
                   <section className="card" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                     <h3 style={{ fontSize: '1.05rem', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -1171,7 +1171,7 @@ export default function AdminDashboard() {
                     </p>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '0.5rem' }}>
-                      
+
                       {/* Campaign 1: Streak Reminder */}
                       <div style={{
                         padding: '1rem',

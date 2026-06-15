@@ -3,7 +3,7 @@
   "crons": [
     {
       "path": "/api/admin/notify",
-      "schedule": "0 2,8,14 * * *"
+      "schedule": "0 14 * * *"
     }
   ],
   "rewrites": [
