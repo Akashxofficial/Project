@@ -12,25 +12,44 @@ const GUEST_USER = {
   isGuest: true
 };
 
-// ── Daily quota config ──────────────────────────────────────────────────────
-const QUOTA = {
-  guest: 3,       // 3 free calls/day for guests → push them to sign up
-  freeTrial: 3,   // 3 free calls for unsubscribed logged-in students → push to subscribe
-  pro: 20         // 20 calls/day for subscribed Pro members!
+// ── Per-Feature Trial Quota Config ──────────────────────────────────────────
+// Free/Guest users get lifetime trials per feature (not daily).
+// Pro users get 20 AI calls/day across all features.
+const FEATURE_TRIALS = {
+  doubt: 3,   // 3 lifetime doubt-solving (Chat) trials for free users
+  mcq:   1,   // 1 lifetime MCQ/Test generator trial
+  study: 1,   // 1 lifetime study-material trial (Notes + Revision + StudyGenerator shared)
 };
 
-const getQuotaKey = (userId) => `quota_${userId}_${new Date().toDateString()}`;
+const QUOTA = {
+  pro: 20,    // 20 calls/day for Pro members
+};
 
-const getUsageCount = (userId) => {
+// ── Per-feature trial helpers (lifetime, not daily) ──────────────────────────
+const getTrialKey  = (userId, feature) => `tanios_trial_${feature}_${userId}`;
+const getTrialUsed = (userId, feature) => {
+  try { return parseInt(localStorage.getItem(getTrialKey(userId, feature)) || '0', 10); }
+  catch { return 0; }
+};
+const incrementTrial = (userId, feature) => {
   try {
-    return parseInt(localStorage.getItem(getQuotaKey(userId)) || '0', 10);
+    const key   = getTrialKey(userId, feature);
+    const count = getTrialUsed(userId, feature) + 1;
+    localStorage.setItem(key, count.toString());
+    return count;
   } catch { return 0; }
 };
 
-const incrementUsageCount = (userId) => {
+// ── Pro daily-cap helpers ────────────────────────────────────────────────────
+const getProDailyKey   = (userId) => `tanios_pro_daily_${userId}_${new Date().toDateString()}`;
+const getProDailyUsed  = (userId) => {
+  try { return parseInt(localStorage.getItem(getProDailyKey(userId)) || '0', 10); }
+  catch { return 0; }
+};
+const incrementProDaily = (userId) => {
   try {
-    const key = getQuotaKey(userId);
-    const count = parseInt(localStorage.getItem(key) || '0', 10) + 1;
+    const key   = getProDailyKey(userId);
+    const count = getProDailyUsed(userId) + 1;
     localStorage.setItem(key, count.toString());
     return count;
   } catch { return 0; }
@@ -287,53 +306,62 @@ export function AuthProvider({ children }) {
     localStorage.setItem('tanios_user', JSON.stringify(GUEST_USER));
   };
 
-  // Returns true if allowed, false if blocked
-  const incrementGuestUsage = () => {
-    const userId = currentUser?.uid || currentUser?.email || 'guest';
+  // ── Feature-specific quota gate ─────────────────────────────────────────
+  // feature: 'doubt' | 'mcq' | 'study'
+  // Returns true if the action is allowed, false if blocked.
+  const incrementGuestUsage = (feature = 'doubt') => {
+    const userId  = currentUser?.uid || currentUser?.email || 'guest';
     const isGuest = currentUser?.isGuest;
-    const isPro = subscription?.active;
+    const isPro   = subscription?.active;
 
-    // 1. Pro Member Daily Limit (20 requests per day)
+    // 1. Pro Member — daily cap across all features
     if (isPro) {
-      const proUsed = getUsageCount(userId);
+      const proUsed = getProDailyUsed(userId);
       if (proUsed >= QUOTA.pro) {
-        setShowQuotaModal(true); // Show daily limit exhausted modal!
+        setShowQuotaModal(true);
         return false;
       }
-      incrementUsageCount(userId);
+      incrementProDaily(userId);
       return true;
     }
 
-    // 2. Unsubscribed Guest / Free Trial (3 requests limit)
-    const limit = isGuest ? QUOTA.guest : QUOTA.freeTrial;
-    const used = getUsageCount(userId);
+    // 2. Free / Guest — per-feature lifetime trial
+    const limit = FEATURE_TRIALS[feature] ?? 1;
+    const used  = getTrialUsed(userId, feature);
 
     if (used >= limit) {
       if (isGuest) {
-        setShowLoginModal(true);   // push to sign up
+        setShowLoginModal(true);   // push to sign up first
       } else {
-        // Automatically redirect to subscribe checkout page
-        window.location.href = '/subscribe';
+        window.location.href = '/subscribe'; // push to subscribe
       }
       return false;
     }
-    incrementUsageCount(userId);
+    incrementTrial(userId, feature);
     return true;
   };
 
-  const getRemainingQuota = () => {
+  // Returns remaining trials for a given feature (or Pro daily remaining)
+  const getRemainingQuota = (feature = 'doubt') => {
     const userId = currentUser?.uid || currentUser?.email || 'guest';
-    const isGuest = currentUser?.isGuest;
-    const isPro = subscription?.active;
+    const isPro  = subscription?.active;
 
     if (isPro) {
-      const used = getUsageCount(userId);
-      return Math.max(0, QUOTA.pro - used);
+      return Math.max(0, QUOTA.pro - getProDailyUsed(userId));
     }
 
-    const limit = isGuest ? QUOTA.guest : QUOTA.freeTrial;
-    const used = getUsageCount(userId);
-    return Math.max(0, limit - used);
+    const limit = FEATURE_TRIALS[feature] ?? 1;
+    return Math.max(0, limit - getTrialUsed(userId, feature));
+  };
+
+  // Returns full trial info for display in Subscribe/Home pages
+  const getFeatureTrialInfo = (feature) => {
+    const userId = currentUser?.uid || currentUser?.email || 'guest';
+    const isPro  = subscription?.active;
+    if (isPro) return { used: 0, limit: QUOTA.pro, remaining: getRemainingQuota(feature), isPro: true };
+    const limit  = FEATURE_TRIALS[feature] ?? 1;
+    const used   = getTrialUsed(userId, feature);
+    return { used, limit, remaining: Math.max(0, limit - used), isPro: false };
   };
 
   const value = {
@@ -348,7 +376,9 @@ export function AuthProvider({ children }) {
     logout: handleLogout,
     incrementGuestUsage,
     getRemainingQuota,
+    getFeatureTrialInfo,
     QUOTA,
+    FEATURE_TRIALS,
     subscription,
     setSubscription,
   };

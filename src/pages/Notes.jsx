@@ -251,7 +251,7 @@ export default function Notes() {
   const handleGenerate = async (e) => {
     e.preventDefault();
 
-    if (!incrementGuestUsage()) {
+    if (!incrementGuestUsage('study')) {
       return;
     }
 

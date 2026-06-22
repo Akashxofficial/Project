@@ -64,7 +64,7 @@ const GRADES = ['8', '9', '10', '11', '12'];
 export default function StudyGenerator() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { currentUser, subscription } = useAuth();
+  const { currentUser, subscription, incrementGuestUsage } = useAuth();
 
   const userId = currentUser?.uid || currentUser?.email || 'guest';
   const getUserKey = (key) => `${key}_${userId}`;
@@ -114,6 +114,9 @@ export default function StudyGenerator() {
   const handleGenerate = async (e) => {
     e.preventDefault();
     if (!topic.trim() || loading) return;
+
+    // Study material quota gate (shared 1-trial pool with Notes & Revision)
+    if (!incrementGuestUsage('study')) return;
 
     setLoading(true);
     setResult('');

@@ -47,7 +47,7 @@ export default function Timetable() {
   const handleGenerate = async (e) => {
     e.preventDefault();
     
-    if (!incrementGuestUsage()) {
+    if (!incrementGuestUsage('study')) {
       return;
     }
 

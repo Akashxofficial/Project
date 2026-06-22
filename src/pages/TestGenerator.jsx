@@ -52,7 +52,7 @@ export default function TestGenerator() {
   const handleGenerate = async (e) => {
     e.preventDefault();
     
-    if (!incrementGuestUsage()) {
+    if (!incrementGuestUsage('mcq')) {
       return;
     }
 

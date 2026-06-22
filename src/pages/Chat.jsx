@@ -145,13 +145,13 @@ const saveGuestSessions = (sessions) => {
 // ── Component ────────────────────────────────────────────────────────────────
 export default function Chat() {
   const navigate = useNavigate();
-  const { currentUser, incrementGuestUsage, getRemainingQuota, QUOTA, subscription } = useAuth();
+  const { currentUser, incrementGuestUsage, getRemainingQuota, QUOTA, FEATURE_TRIALS, subscription } = useAuth();
   const isGuest = !currentUser || currentUser.isGuest || currentUser.email === 'guest@tanios.ai';
   const userId = currentUser?.uid || currentUser?.email || 'guest';
   
   const isPro = subscription?.active;
-  const limit = isGuest ? QUOTA?.guest : (isPro ? QUOTA?.pro : QUOTA?.freeTrial);
-  const remaining = getRemainingQuota?.() ?? limit;
+  const limit = isPro ? QUOTA?.pro : FEATURE_TRIALS?.doubt;
+  const remaining = getRemainingQuota?.('doubt') ?? limit;
 
   // Session list & active session
   const [sessions, setSessions] = useState([]);           // [{ id, title, messages }]
@@ -385,8 +385,8 @@ export default function Chat() {
     if (!textToSend && !selectedImage) return;
     if (isLoading || isCompacting) return;
 
-    // Guest limit gate
-    if (!incrementGuestUsage()) return;
+    // Feature quota gate
+    if (!incrementGuestUsage('doubt')) return;
 
     const imageToSend = selectedImage;
     setSelectedImage(null);
@@ -592,9 +592,19 @@ export default function Chat() {
           fontSize: '0.72rem',
           color: 'var(--text-secondary)',
         }}>
+          <div style={{
+            fontSize: '0.72rem',
+            color: 'var(--text-secondary)',
+            fontStyle: 'italic',
+            marginTop: '0.2rem'
+          }}>
+            {isPro ? 'Daily AI Requests' : `Free Doubt Trials Used`}
+          </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
-            <span>Daily AI Requests</span>
-            <span style={{ color: remaining === 0 ? '#f87171' : remaining <= 3 ? '#fb923c' : '#a78bfa', fontWeight: 700 }}>
+            <span style={{ fontWeight: 600 }}>
+              {isPro ? `Today's Requests` : 'Doubt Trials'}
+            </span>
+            <span style={{ color: remaining === 0 ? '#f87171' : remaining <= 1 ? '#fb923c' : '#a78bfa', fontWeight: 700 }}>
               {remaining}/{limit}
             </span>
           </div>
@@ -602,13 +612,20 @@ export default function Chat() {
             <div style={{
               height: '100%',
               width: `${limit > 0 ? (remaining / limit) * 100 : 0}%`,
-              background: remaining === 0 ? '#f87171' : remaining <= 3 ? 'linear-gradient(90deg,#fb923c,#f87171)' : 'linear-gradient(90deg,var(--primary),var(--accent))',
+              background: remaining === 0 ? '#f87171' : remaining <= 1 ? 'linear-gradient(90deg,#fb923c,#f87171)' : 'linear-gradient(90deg,var(--primary),var(--accent))',
               borderRadius: '99px',
               transition: 'width 0.4s ease'
             }} />
           </div>
           {remaining === 0 && (
-            <div style={{ color: '#f87171', marginTop: '0.35rem', fontSize: '0.68rem' }}>Resets at midnight 🌙</div>
+            <div style={{ color: '#f87171', marginTop: '0.35rem', fontSize: '0.68rem' }}>
+              {isPro ? 'Resets at midnight 🌙' : '🔒 Trial exhausted — Subscribe to continue!'}
+            </div>
+          )}
+          {!isPro && remaining > 0 && (
+            <div style={{ color: 'var(--text-secondary)', marginTop: '0.25rem', fontSize: '0.66rem' }}>
+              ✨ {remaining} free doubt{remaining !== 1 ? 's' : ''} left (lifetime)
+            </div>
           )}
         </div>
       </aside>
