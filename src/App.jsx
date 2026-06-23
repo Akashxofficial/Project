@@ -34,7 +34,14 @@ const navItems = [
   { to: '/history', icon: <Bookmark size={18} />, label: 'Saved Materials' },
 ];
 
-
+// Helper: triggers login modal for guests who exhausted their trials
+function GuestTrialExhausted() {
+  const { setShowLoginModal } = useAuth();
+  useEffect(() => {
+    setShowLoginModal(true);
+  }, [setShowLoginModal]);
+  return <Navigate to="/" replace />;
+}
 
 // Secure Subscription Guard Component
 const SubscriptionRoute = ({ children }) => {
@@ -68,12 +75,11 @@ const SubscriptionRoute = ({ children }) => {
   );
 
   if (allExhausted) {
-    // Guests → push to sign up first (login modal handled by incrementGuestUsage)
-    // Logged-in free users → push to subscribe
+    // Guest → show login popup (they might not know they need to subscribe yet)
     if (!currentUser || currentUser.isGuest) {
-      // Guest who exhausted all trials → redirect to subscribe page
-      return <Navigate to="/subscribe" replace />;
+      return <GuestTrialExhausted />;
     }
+    // Logged-in free user → push to subscribe
     return <Navigate to="/subscribe" replace />;
   }
 
