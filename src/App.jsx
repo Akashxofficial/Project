@@ -40,29 +40,47 @@ const navItems = [
 const SubscriptionRoute = ({ children }) => {
   const { currentUser, subscription } = useAuth();
 
-  // Admins bypass subscription checks
+  // Admins always bypass all checks
   const isAdmin = currentUser && (
     currentUser.email === 'admin@tanios.ai' ||
     currentUser.email === 'akashxofficial.in@gmail.com' ||
     localStorage.getItem('tanios_user_role') === 'admin'
   );
-
   if (isAdmin) return children;
 
-  // Signed in or guest, but subscription is inactive
-  if (!subscription || !subscription.active) {
-    const userId = currentUser?.uid || currentUser?.email || 'guest';
-    const quotaKey = `quota_${userId}_${new Date().toDateString()}`;
-    const used = parseInt(localStorage.getItem(quotaKey) || '0', 10);
+  // Pro subscribers — always allowed
+  if (subscription?.active) return children;
 
-    // Block access only after exceeding the 3-request free trial limit!
-    if (used >= 3) {
+  // ── Free / Guest trial gate ──────────────────────────────────────────────
+  // Read per-feature trial usage from the new key format
+  const userId = currentUser?.uid || currentUser?.email || 'guest';
+  const getTrialUsed = (feature) => {
+    try {
+      return parseInt(localStorage.getItem(`tanios_trial_${feature}_${userId}`) || '0', 10);
+    } catch { return 0; }
+  };
+
+  const LIMITS = { doubt: 3, mcq: 1, study: 1 };
+
+  // Check if ALL feature trials are exhausted
+  const allExhausted = Object.entries(LIMITS).every(
+    ([feature, limit]) => getTrialUsed(feature) >= limit
+  );
+
+  if (allExhausted) {
+    // Guests → push to sign up first (login modal handled by incrementGuestUsage)
+    // Logged-in free users → push to subscribe
+    if (!currentUser || currentUser.isGuest) {
+      // Guest who exhausted all trials → redirect to subscribe page
       return <Navigate to="/subscribe" replace />;
     }
+    return <Navigate to="/subscribe" replace />;
   }
 
+  // Still has trials remaining → allow access
   return children;
 };
+
 
 // Secure Role-Based Private Route Guard Component
 const AdminRoute = ({ children }) => {
@@ -393,9 +411,9 @@ function MainApp() {
 // ── Root app — includes dynamic login modal wrapper ──────────────────────────
 function App() {
   // Fetch global custom notifications from auth hooks
-  const { showLoginModal, setShowLoginModal, showQuotaModal, setShowQuotaModal, login, loading, QUOTA, subscription } = useAuth();
+  const { showLoginModal, setShowLoginModal, showQuotaModal, setShowQuotaModal, login, loading, QUOTA, FEATURE_TRIALS, subscription } = useAuth();
   const isPro = subscription?.active;
-  const activeLimit = isPro ? QUOTA?.pro : QUOTA?.freeTrial;
+  const activeLimit = isPro ? QUOTA?.pro : null;
 
 
   if (loading) {
@@ -512,7 +530,7 @@ function App() {
               Unlock Premium AI Features! 🚀
             </h3>
             <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '2.25rem' }}>
-              Sign in with Google to get <strong style={{ color: '#fff' }}>{QUOTA?.freeTrial} free AI requests/day</strong> — unlimited study plans, mock tests, notes, and your chat history saved forever!
+              Sign in with Google to get <strong style={{ color: '#fff' }}>{FEATURE_TRIALS?.doubt} free doubt-solving requests</strong>, plus <strong style={{ color: '#fff' }}>1 free MCQ test</strong> &amp; <strong style={{ color: '#fff' }}>1 study material</strong> — with your chat history saved forever!
             </p>
             <button onClick={login} style={primaryBtn}><Sparkles size={16} /> Continue with Google</button>
             <button onClick={() => setShowLoginModal(false)} style={ghostBtn}>Keep Browsing as Guest</button>
@@ -531,7 +549,7 @@ function App() {
               Daily Limit Reached
             </h3>
             <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '0.75rem' }}>
-              You've used your <strong style={{ color: '#fff' }}>{activeLimit} free AI requests</strong> for today.
+              You've used your <strong style={{ color: '#fff' }}>{activeLimit ?? 20} daily AI requests</strong> for today.
             </p>
             <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginBottom: '2rem' }}>
               Your quota resets at <strong style={{ color: '#a78bfa' }}>midnight 🌙</strong> — come back tomorrow!
