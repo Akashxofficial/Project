@@ -1757,6 +1757,11 @@ export default function Home() {
 
   // Award XP function with animation trigger — reads fresh from storage to avoid stale closure
   const awardXp = (amount, reason) => {
+    if (amount <= 0) {
+      setXpAwardedMsg(`${reason} 💡`);
+      setTimeout(() => setXpAwardedMsg(''), 4000);
+      return;
+    }
     setXp(prevXp => {
       const freshXp = parseInt(localStorage.getItem(getUserKey('tanios_xp')) || '0', 10);
       const base = Math.max(prevXp, freshXp);
@@ -1805,7 +1810,29 @@ export default function Home() {
     }
 
     // Award XP for this mission
-    awardXp(target.xp, 'Completed Target Task');
+    let isIncorrectMCQ = false;
+    if (target.type === 'teaching_mcq') {
+      try {
+        const stored = localStorage.getItem(getUserKey('tanios_mcq_attempts'));
+        const attempts = stored ? JSON.parse(stored) : [];
+        const matchingAttempt = attempts.find(a => 
+          a.missionId === target.id && 
+          a.dateKey === target.dateKey &&
+          (a.firstIncorrectKey !== null || a.isCorrect === false)
+        );
+        if (matchingAttempt) {
+          isIncorrectMCQ = true;
+        }
+      } catch (e) {
+        console.warn("Could not check MCQ attempts in toggleMission:", e);
+      }
+    }
+
+    if (isIncorrectMCQ) {
+      awardXp(0, 'Mission Completed! (No XP for incorrect attempts)');
+    } else {
+      awardXp(target.xp, 'Completed Target Task');
+    }
 
     // ── Update systematic syllabus chapter progress ──
     if (target.subject && target.chapter) {
@@ -1957,12 +1984,60 @@ export default function Home() {
     // Replace invalid single quote escapes
     cleaned = cleaned.replace(/\\'/g, "'");
 
-    // Escape backslashes that are not valid JSON escapes (\", \\, \n, \r)
-    cleaned = cleaned.replace(/\\(["\\nr])|\\/g, (match, g1) => {
-      return g1 ? match : '\\\\';
-    });
-
-    return JSON.parse(cleaned);
+    try {
+      // 1. First attempt: escape invalid backslashes (excluding valid JSON escapes except \t, \b, \f, \/ which get doubled)
+      let tempCleaned = cleaned.replace(/\\(["\\nr])|\\/g, (match, g1) => {
+        return g1 ? match : '\\\\';
+      });
+      return JSON.parse(tempCleaned);
+    } catch (e) {
+      console.warn("safeJsonParse: Initial parse failed, attempting aggressive escape cleanup:", e.message);
+      
+      // 2. Second attempt: aggressive character-by-character backslash correction
+      let resolved = "";
+      let i = 0;
+      while (i < cleaned.length) {
+        if (cleaned[i] === '\\') {
+          const nextChar = cleaned[i + 1];
+          if (!nextChar) {
+            resolved += '\\\\';
+            i++;
+            continue;
+          }
+          
+          // If it's a valid JSON escape character, keep it as is
+          if (['"', '\\', '/', 'b', 'f', 'n', 'r', 't'].includes(nextChar)) {
+            resolved += '\\' + nextChar;
+            i += 2;
+          } else if (nextChar === 'u') {
+            // Check if it's a valid unicode escape sequence (e.g. \u2212)
+            const hexPart = cleaned.substring(i + 2, i + 6);
+            if (/^[0-9a-fA-F]{4}$/.test(hexPart)) {
+              resolved += '\\u' + hexPart;
+              i += 6;
+            } else {
+              // Not a valid unicode escape, double escape the backslash
+              resolved += '\\\\u';
+              i += 2;
+            }
+          } else {
+            // Double escape any other invalid escape
+            resolved += '\\\\' + nextChar;
+            i += 2;
+          }
+        } else {
+          resolved += cleaned[i];
+          i++;
+        }
+      }
+      
+      try {
+        return JSON.parse(resolved);
+      } catch (e2) {
+        console.error("safeJsonParse: Aggressive cleanup also failed:", e2.message);
+        throw e2;
+      }
+    }
   };
 
   const fetchDynamicMission = async (mission, chosenTopics = []) => {
@@ -4292,6 +4367,8 @@ Do not include any markdown, code blocks, or conversational text. Output raw JSO
 
                           const newAttempt = {
                             id: `attempt_${Date.now()}`,
+                            missionId: activeMission.id,
+                            dateKey: activeMission.dateKey || new Date().toISOString().slice(0, 10),
                             subject: activeMission.subject,
                             chapter: activeMission.chapter,
                             topic: data.topic || "Core Concept",
@@ -4316,17 +4393,35 @@ Do not include any markdown, code blocks, or conversational text. Output raw JSO
                           // ── Target Scoring Update ──
                           const storedNetScore = localStorage.getItem(getUserKey('tanios_net_score'));
                           const currentNetScore = storedNetScore ? parseInt(storedNetScore, 10) : 0;
-                          const scoreDelta = isCorrect ? 10 : -5;
+                          
+                          const hasPreviousWrong = existing && !existing.isCorrect;
+                          let scoreDelta = 0;
+                          
+                          if (isCorrect) {
+                            scoreDelta = hasPreviousWrong ? 0 : 10;
+                          } else {
+                            // Only penalize on the first wrong attempt
+                            scoreDelta = existing ? 0 : -5;
+                          }
+                          
                           const nextNetScore = currentNetScore + scoreDelta;
                           localStorage.setItem(getUserKey('tanios_net_score'), nextNetScore.toString());
                           setNetScore(nextNetScore);
-
+                          
                           if (isCorrect) {
-                            awardXp(10, 'Correct MCQ Answer');
-                            setXpAwardedMsg(`+10 Marks Earned! 🎯`);
+                            if (!hasPreviousWrong) {
+                              awardXp(10, 'Correct MCQ Answer');
+                              setXpAwardedMsg(`+10 Marks Earned! 🎯`);
+                            } else {
+                              setXpAwardedMsg(`Corrected! (No Marks/XP for retries) 💡`);
+                            }
                             setTimeout(() => setXpAwardedMsg(''), 3000);
                           } else {
-                            setXpAwardedMsg(`Penalty Applied: -5 Marks! ❌`);
+                            if (!existing) {
+                              setXpAwardedMsg(`Penalty Applied: -5 Marks! ❌`);
+                            } else {
+                              setXpAwardedMsg(`Incorrect Option! (Try again) ❌`);
+                            }
                             setTimeout(() => setXpAwardedMsg(''), 3000);
                           }
                         } catch (err) {

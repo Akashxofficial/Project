@@ -16,18 +16,60 @@ const safeJsonParse = (str) => {
   // Replace invalid single quote escapes
   cleaned = cleaned.replace(/\\'/g, "'");
 
-  // Escape backslashes that are not valid JSON escapes (\", \\, \n, \r)
-  cleaned = cleaned.replace(/\\(["\\nr])|\\/g, (match, g1) => {
-    console.log(`Match: ${JSON.stringify(match)}, g1: ${JSON.stringify(g1)}`);
-    return g1 ? match : '\\\\';
-  });
-
-  return JSON.parse(cleaned);
+  try {
+    // 1. First attempt: escape invalid backslashes (excluding valid JSON escapes except \t, \b, \f, \/ which get doubled)
+    let tempCleaned = cleaned.replace(/\\(["\\nr])|\\/g, (match, g1) => {
+      return g1 ? match : '\\\\';
+    });
+    return JSON.parse(tempCleaned);
+  } catch (e) {
+    console.warn("safeJsonParse: Initial parse failed, attempting aggressive escape cleanup:", e.message);
+    
+    // 2. Second attempt: aggressive character-by-character backslash correction
+    let resolved = "";
+    let i = 0;
+    while (i < cleaned.length) {
+      if (cleaned[i] === '\\') {
+        const nextChar = cleaned[i + 1];
+        if (!nextChar) {
+          resolved += '\\\\';
+          i++;
+          continue;
+        }
+        
+        // If it's a valid JSON escape character, keep it as is
+        if (['"', '\\', '/', 'b', 'f', 'n', 'r', 't'].includes(nextChar)) {
+          resolved += '\\' + nextChar;
+          i += 2;
+        } else if (nextChar === 'u') {
+          // Check if it's a valid unicode escape sequence (e.g. \u2212)
+          const hexPart = cleaned.substring(i + 2, i + 6);
+          if (/^[0-9a-fA-F]{4}$/.test(hexPart)) {
+            resolved += '\\u' + hexPart;
+            i += 6;
+          } else {
+            // Not a valid unicode escape, double escape the backslash
+            resolved += '\\\\u';
+            i += 2;
+          }
+        } else {
+          // Double escape any other invalid escape
+          resolved += '\\\\' + nextChar;
+          i += 2;
+        }
+      } else {
+        resolved += cleaned[i];
+        i++;
+      }
+    }
+    
+    return JSON.parse(resolved);
+  }
 };
 
-// Let's test with a LaTeX formula in JSON
+// Test 1: valid LaTeX containing \frac{1}{u} (double backslash in JSON)
 const testStr1 = `{
-  "topicSummary": "- Light travels in straight lines.\\n- Reflection is the bouncing of light.\\n- Laws of reflection: $\\\\theta_i = \\\\theta_r$."
+  "text": "Mirror formula is $\\\\frac{1}{f} = \\\\frac{1}{v} + \\\\frac{1}{u}$"
 }`;
 
 try {
@@ -38,9 +80,9 @@ try {
   console.error("Failed:", e.message);
 }
 
-// Let's test with an unescaped single backslash in JSON
+// Test 2: invalid escape \u} (single backslash in JSON)
 const testStr2 = `{
-  "topicSummary": "- Formula: $\\theta_i = \\theta_r$."
+  "text": "Mirror formula is $\\frac{1}{f} = \\frac{1}{v} + \\frac{1}{u}$"
 }`;
 
 try {
@@ -51,9 +93,9 @@ try {
   console.error("Failed:", e.message);
 }
 
-// Let's test with a tab escape \t and unicode escape \u0026
+// Test 3: literal invalid JSON backslashes like \g or \z
 const testStr3 = `{
-  "topicSummary": "This\\tcontains\\ta\\ttab\\tand\\tunicode\\t\\u0026\\tcharacter."
+  "text": "This has invalid escapes: \\g and \\z."
 }`;
 
 try {
@@ -63,16 +105,3 @@ try {
 } catch (e) {
   console.error("Failed:", e.message);
 }
-
-const testStr4 = `{
-  "topicSummary": "This \t contains literal tab and a \\t tab escape."
-}`;
-
-try {
-  console.log("\nParsing testStr4...");
-  const parsed4 = safeJsonParse(testStr4);
-  console.log("Success:", parsed4);
-} catch (e) {
-  console.error("Failed:", e.message);
-}
-
