@@ -2010,8 +2010,15 @@ JSON Structure:
 
       // Securely extract and parse the JSON block
       let cleanText = response.text.trim();
-      // Remove any markdown code block wrap: ```json ... ``` or ``` ... ```
-      cleanText = cleanText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
+      const firstBrace = cleanText.indexOf('{');
+      const lastBrace = cleanText.lastIndexOf('}');
+      if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+        cleanText = cleanText.substring(firstBrace, lastBrace + 1);
+      } else {
+        cleanText = cleanText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
+      }
+      // Replace invalid JSON single quote escapes
+      cleanText = cleanText.replace(/\\'/g, "'");
       
       const parsed = JSON.parse(cleanText);
       setDynamicMissionContent(parsed);
@@ -2049,6 +2056,8 @@ Do not include any markdown, code blocks, or conversational text. Output raw JSO
       } else if (cleanText.startsWith('```')) {
         cleanText = cleanText.replace(/^```json\s*/i, '').replace(/```$/, '').trim();
       }
+      // Replace invalid JSON single quote escapes
+      cleanText = cleanText.replace(/\\'/g, "'");
 
       const parsed = JSON.parse(cleanText);
       if (Array.isArray(parsed)) {

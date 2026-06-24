@@ -214,6 +214,7 @@ export default async function handler(req, res) {
     let chosenModel = "gemini-2.5-flash";
     const modelsToTry = [
       "gemini-2.5-flash",
+      "gemini-2.0-flash",
       "gemini-2.5-pro"
     ];
 
