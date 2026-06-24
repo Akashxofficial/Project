@@ -2045,22 +2045,26 @@ Do not include any markdown, code blocks, or conversational text. Output raw JSO
 
       const response = await generateAIContent(prompt);
       console.log("TaniOS AI Response Debug:", response);
-      if (response.error || typeof response.text !== 'string') {
+      if (response.error || (typeof response.text !== 'string' && !Array.isArray(response.text))) {
         throw new Error(response.message || 'Failed to fetch topics');
       }
 
-      let cleanText = response.text.trim();
-      const firstBracket = cleanText.indexOf('[');
-      const lastBracket = cleanText.lastIndexOf(']');
-      if (firstBracket !== -1 && lastBracket !== -1 && lastBracket > firstBracket) {
-        cleanText = cleanText.substring(firstBracket, lastBracket + 1);
-      } else if (cleanText.startsWith('```')) {
-        cleanText = cleanText.replace(/^```json\s*/i, '').replace(/```$/, '').trim();
+      let parsed = [];
+      if (Array.isArray(response.text)) {
+        parsed = response.text;
+      } else {
+        let cleanText = response.text.trim();
+        const firstBracket = cleanText.indexOf('[');
+        const lastBracket = cleanText.lastIndexOf(']');
+        if (firstBracket !== -1 && lastBracket !== -1 && lastBracket > firstBracket) {
+          cleanText = cleanText.substring(firstBracket, lastBracket + 1);
+        } else if (cleanText.startsWith('```')) {
+          cleanText = cleanText.replace(/^```json\s*/i, '').replace(/```$/, '').trim();
+        }
+        // Replace invalid JSON single quote escapes
+        cleanText = cleanText.replace(/\\'/g, "'");
+        parsed = JSON.parse(cleanText);
       }
-      // Replace invalid JSON single quote escapes
-      cleanText = cleanText.replace(/\\'/g, "'");
-
-      const parsed = JSON.parse(cleanText);
       if (Array.isArray(parsed)) {
         setTopicsToSelect(parsed);
         let completedList = [];

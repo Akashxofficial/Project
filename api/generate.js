@@ -166,9 +166,13 @@ export default async function handler(req, res) {
     if (!hasImage) {
       const cacheKey = getCacheKey(prompt);
       try {
-        const cachedResponse = await redis.get(cacheKey);
+        let cachedResponse = await redis.get(cacheKey);
         if (cachedResponse) {
           console.log(`[Cache HIT] Returning cached result for key ${cacheKey}`);
+          // Ensure cachedResponse is a string (Upstash Redis auto-parses stored JSON arrays/objects)
+          if (typeof cachedResponse !== 'string') {
+            cachedResponse = JSON.stringify(cachedResponse);
+          }
           if (stream === true) {
             res.setHeader('Content-Type', 'text/event-stream');
             res.setHeader('Cache-Control', 'no-cache');
@@ -204,11 +208,16 @@ export default async function handler(req, res) {
     const rawKeys = process.env.GEMINI_API_KEYS || process.env.GEMINI_API_KEY;
     if (!rawKeys) {
       console.error('No Gemini API keys configured');
-      return res.status(500).json({ error: 'API key not configured' });
+      return res.status(500).json({ 
+        error: 'Gemini API Key is not configured in Vercel environment variables. Please add GEMINI_API_KEYS or GEMINI_API_KEY to your Vercel project.',
+        code: 'API_KEY_MISSING' 
+      });
     }
 
-    // Split by commas, semicolons, newlines, or general whitespace so it never breaks!
-    const apiKeys = rawKeys.split(/[\s,;\n]+/).map(k => k.trim()).filter(Boolean);
+    // Split by commas, semicolons, newlines, or general whitespace so it never breaks, and strip any surrounding quotes!
+    const apiKeys = rawKeys.split(/[\s,;\n]+/)
+      .map(k => k.trim().replace(/^["']|["']$/g, ""))
+      .filter(Boolean);
     let lastError = null;
     let responseText = null;
     let chosenModel = "gemini-2.5-flash";
@@ -373,10 +382,22 @@ export default async function handler(req, res) {
     }
 
     const rawKeys = process.env.GEMINI_API_KEYS || process.env.GEMINI_API_KEY || "";
-    const apiKeys = rawKeys.split(/[\s,;\n]+/).map(k => k.trim()).filter(Boolean);
+    const apiKeys = rawKeys.split(/[\s,;\n]+/)
+      .map(k => k.trim().replace(/^["']|["']$/g, ""))
+      .filter(Boolean);
     const maskedKeys = apiKeys.map(k => k.length > 8 ? k.substring(0, 8) + '...' : 'invalid');
 
     const sanitizedErrorMessage = sanitizeSensitiveInfo(error.message || '');
+    const errText = sanitizedErrorMessage.toLowerCase();
+
+    // Detect invalid API key
+    if (errText.includes('api key not valid') || errText.includes('invalid api key') || errText.includes('key not found') || errText.includes('key_invalid')) {
+      return res.status(401).json({
+        error: 'Gemini API key is invalid or unauthorized. Please verify the environment variables on the Vercel Dashboard.',
+        code: 'INVALID_API_KEY',
+        diagnostics: { keysFound: apiKeys.length, maskedKeys, lastError: sanitizedErrorMessage.split('\n')[0] }
+      });
+    }
 
     if (error.name === 'AbortError') {
       return res.status(504).json({
@@ -387,7 +408,6 @@ export default async function handler(req, res) {
     }
 
     // Detect permanent key exhaustion (Daily limit 1500 reached / Billing block)
-    const errText = sanitizedErrorMessage.toLowerCase();
     if (errText.includes('exceeded your current quota') || errText.includes('billing') || errText.includes('check your plan')) {
       return res.status(403).json({
         error: 'TaniOS AI is experiencing temporary high load. Please try again in a few seconds.',
