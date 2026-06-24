@@ -1301,6 +1301,29 @@ export default function Home() {
   const [profileSetupDone, setProfileSetupDone] = useState(false);
   const [showProfileSetup, setShowProfileSetup] = useState(false);
   const [showChaptersConfig, setShowChaptersConfig] = useState(false);
+
+  const openChaptersConfig = () => {
+    setShowChaptersConfig(true);
+    profileSubjects.forEach(subj => {
+      const currentCh = activeChapters[subj];
+      if (currentCh) {
+        fetchInlineSubTopics(subj, currentCh);
+      }
+    });
+  };
+
+  const handleToggleChaptersConfig = () => {
+    const nextState = !showChaptersConfig;
+    setShowChaptersConfig(nextState);
+    if (nextState) {
+      profileSubjects.forEach(subj => {
+        const currentCh = activeChapters[subj];
+        if (currentCh) {
+          fetchInlineSubTopics(subj, currentCh);
+        }
+      });
+    }
+  };
   const [showOneClickTools, setShowOneClickTools] = useState(false);
   const [showMistakeLocker, setShowMistakeLocker] = useState(false);
   const [showTimelineModal, setShowTimelineModal] = useState(false);
@@ -1325,10 +1348,15 @@ export default function Home() {
   const [showShortAnswer, setShowShortAnswer] = useState(false);
 
   // Dynamic Topic Customizer states
-  const [topicsToSelect, setTopicsToSelect] = useState([]);
-  const [selectedTopics, setSelectedTopics] = useState([]);
-  const [topicsLoading, setTopicsLoading] = useState(false);
-  const [topicsError, setTopicsError] = useState('');
+  const [selectedSubTopicsMap, setSelectedSubTopicsMap] = useState(() => {
+    try {
+      const stored = localStorage.getItem(getUserKey('tanios_selected_subtopics'));
+      return stored ? JSON.parse(stored) : {};
+    } catch (e) {
+      return {};
+    }
+  });
+  const [inlineSubTopics, setInlineSubTopics] = useState({});
   const [customTopicInput, setCustomTopicInput] = useState('');
 
   // ── DYNAMIC AI STUDY MISSIONS STATE ──
@@ -1649,6 +1677,20 @@ export default function Home() {
         // Sync one-click grade with profile
         setOneClickGrade(profile.grade);
         setOneClickBoard(profile.board || 'CBSE');
+
+        // Pre-fetch subtopics in the background for active chapters of all subjects
+        profile.subjects.forEach(subj => {
+          const currentCh = activeChaptersMap[subj];
+          if (currentCh) {
+            const savedSelected = JSON.parse(localStorage.getItem(getUserKey('tanios_selected_subtopics')) || '{}');
+            const hasSubtopics = savedSelected[subj]?.[currentCh]?.length > 0;
+            if (!hasSubtopics) {
+              fetchInlineSubTopics(subj, currentCh).catch(err =>
+                console.warn("Background prefetch failed for", subj, err)
+              );
+            }
+          }
+        });
       } else {
         // No profile found → new user or just logged out → show setup form
         setProfileSetupDone(false);
@@ -1793,7 +1835,9 @@ export default function Home() {
         completedMap[subject] = {};
       }
       const currentCompleted = completedMap[subject][currentChapter] || [];
-      const newCompleted = [...new Set([...currentCompleted, ...selectedTopics])];
+      const savedSelected = JSON.parse(localStorage.getItem(getUserKey('tanios_selected_subtopics')) || '{}');
+      const activeSelected = savedSelected[subject]?.[currentChapter] || [];
+      const newCompleted = [...new Set([...currentCompleted, ...activeSelected])];
       completedMap[subject][currentChapter] = newCompleted;
       localStorage.setItem(getUserKey('tanios_completed_topics'), JSON.stringify(completedMap));
 
@@ -1830,8 +1874,9 @@ export default function Home() {
 
       // Check if the chapter is complete (either all sub-topics are done, or fallback days pacing reached)
       let isChapterComplete = false;
-      if (topicsToSelect.length > 0) {
-        isChapterComplete = topicsToSelect.every(t => newCompleted.includes(t));
+      const chapterTopics = inlineSubTopics[subject]?.topics || [];
+      if (chapterTopics.length > 0) {
+        isChapterComplete = chapterTopics.every(t => newCompleted.includes(t));
       } else {
         isChapterComplete = nextCount >= daysPerChapter;
       }
@@ -1892,6 +1937,32 @@ export default function Home() {
         setTimeout(() => awardXp(10, '🔥 All Daily Missions Complete!'), 600);
       }
     }
+  };
+
+  const safeJsonParse = (str) => {
+    let cleaned = str.trim();
+    const firstBrace = cleaned.indexOf('{');
+    const lastBrace = cleaned.lastIndexOf('}');
+    const firstBracket = cleaned.indexOf('[');
+    const lastBracket = cleaned.lastIndexOf(']');
+
+    if (firstBrace !== -1 && lastBrace !== -1 && (firstBracket === -1 || firstBrace < firstBracket)) {
+      cleaned = cleaned.substring(firstBrace, lastBrace + 1);
+    } else if (firstBracket !== -1 && lastBracket !== -1) {
+      cleaned = cleaned.substring(firstBracket, lastBracket + 1);
+    } else {
+      cleaned = cleaned.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
+    }
+
+    // Replace invalid single quote escapes
+    cleaned = cleaned.replace(/\\'/g, "'");
+
+    // Escape backslashes that are not valid JSON escapes (\", \\, \n, \r)
+    cleaned = cleaned.replace(/\\(["\\nr])|\\/g, (match, g1) => {
+      return g1 ? match : '\\\\';
+    });
+
+    return JSON.parse(cleaned);
   };
 
   const fetchDynamicMission = async (mission, chosenTopics = []) => {
@@ -2008,19 +2079,7 @@ JSON Structure:
         throw new Error(response.message || 'AI generation failed');
       }
 
-      // Securely extract and parse the JSON block
-      let cleanText = response.text.trim();
-      const firstBrace = cleanText.indexOf('{');
-      const lastBrace = cleanText.lastIndexOf('}');
-      if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
-        cleanText = cleanText.substring(firstBrace, lastBrace + 1);
-      } else {
-        cleanText = cleanText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
-      }
-      // Replace invalid JSON single quote escapes
-      cleanText = cleanText.replace(/\\'/g, "'");
-      
-      const parsed = JSON.parse(cleanText);
+      const parsed = safeJsonParse(response.text);
       setDynamicMissionContent(parsed);
     } catch (e) {
       console.warn("⚠️ Dynamic mission generation failed, using fallback:", e.message);
@@ -2031,20 +2090,23 @@ JSON Structure:
     }
   };
 
-  const fetchChapterTopics = async (subject, chapter, grade, board) => {
-    setTopicsLoading(true);
-    setTopicsError('');
-    setTopicsToSelect([]);
-    setSelectedTopics([]);
+  const fetchInlineSubTopics = async (subject, chapter) => {
+    if (!subject || !chapter) return;
+
+    setInlineSubTopics(prev => ({
+      ...prev,
+      [subject]: { ...(prev[subject] || {}), loading: true, error: '' }
+    }));
+
     try {
+      const cleanProfileClass = (profileClass || '10').toString().replace(/\D/g, '') || '10';
       const prompt = `You are a CBSE and RBSE board syllabus expert. 
-Generate a list of exactly 4 to 6 core chronological sub-topics or key concepts for Class ${grade}, ${board} Board, Subject: ${subject}, Chapter: "${chapter}".
+Generate a list of exactly 4 to 6 core chronological sub-topics or key concepts for Class ${cleanProfileClass}, ${profileBoard || 'CBSE'} Board, Subject: ${subject}, Chapter: "${chapter}".
 Return ONLY a valid JSON array of strings, where each string represents a specific chronological sub-topic or key concept.
 Do not include any markdown, code blocks, or conversational text. Output raw JSON only. E.g.:
 ["Topic 1", "Topic 2", "Topic 3", "Topic 4"]`;
 
       const response = await generateAIContent(prompt);
-      console.log("TaniOS AI Response Debug:", response);
       if (response.error || (typeof response.text !== 'string' && !Array.isArray(response.text))) {
         throw new Error(response.message || 'Failed to fetch topics');
       }
@@ -2053,50 +2115,59 @@ Do not include any markdown, code blocks, or conversational text. Output raw JSO
       if (Array.isArray(response.text)) {
         parsed = response.text;
       } else {
-        let cleanText = response.text.trim();
-        const firstBracket = cleanText.indexOf('[');
-        const lastBracket = cleanText.lastIndexOf(']');
-        if (firstBracket !== -1 && lastBracket !== -1 && lastBracket > firstBracket) {
-          cleanText = cleanText.substring(firstBracket, lastBracket + 1);
-        } else if (cleanText.startsWith('```')) {
-          cleanText = cleanText.replace(/^```json\s*/i, '').replace(/```$/, '').trim();
-        }
-        // Replace invalid JSON single quote escapes
-        cleanText = cleanText.replace(/\\'/g, "'");
-        parsed = JSON.parse(cleanText);
+        parsed = safeJsonParse(response.text);
       }
+
       if (Array.isArray(parsed)) {
-        setTopicsToSelect(parsed);
-        let completedList = [];
-        try {
-          const stored = localStorage.getItem(getUserKey('tanios_completed_topics'));
-          const completedMap = stored ? JSON.parse(stored) : {};
-          completedList = completedMap[subject]?.[chapter] || [];
-        } catch (storageErr) {
-          console.warn("Could not read completed topics from localStorage", storageErr);
-        }
-        const remaining = parsed.filter(t => !completedList.includes(t));
-        setSelectedTopics(remaining.length > 0 ? remaining : parsed);
+        setInlineSubTopics(prev => ({
+          ...prev,
+          [subject]: { topics: parsed, loading: false, error: '' }
+        }));
+
+        // Sync initial selection in state and localStorage
+        setSelectedSubTopicsMap(prev => {
+          const currentSelection = prev[subject]?.[chapter];
+          if (!currentSelection || currentSelection.length === 0) {
+            let completedList = [];
+            try {
+              const stored = localStorage.getItem(getUserKey('tanios_completed_topics'));
+              const completedMap = stored ? JSON.parse(stored) : {};
+              completedList = completedMap[subject]?.[chapter] || [];
+            } catch (e) {}
+            const remaining = parsed.filter(t => !completedList.includes(t));
+            const initialSelection = remaining.length > 0 ? remaining : parsed;
+
+            const updated = {
+              ...prev,
+              [subject]: {
+                ...(prev[subject] || {}),
+                [chapter]: initialSelection
+              }
+            };
+            localStorage.setItem(getUserKey('tanios_selected_subtopics'), JSON.stringify(updated));
+            return updated;
+          }
+          return prev;
+        });
       } else {
         throw new Error('Response is not a JSON array');
       }
     } catch (err) {
-      console.error(err);
-      setTopicsError(err.message || 'Failed to load sub-topics list. You can proceed with standard targets.');
+      console.error(`Error loading inline topics for ${subject}:`, err);
       const fallbackList = [
         'Foundational Concepts & Definitions',
         'Core Mechanisms & Theories',
         'Advanced Applications & Practice',
         'Board Exam Repeated Questions'
       ];
-      setTopicsToSelect(fallbackList);
-      setSelectedTopics([fallbackList[0]]);
-    } finally {
-      setTopicsLoading(false);
+      setInlineSubTopics(prev => ({
+        ...prev,
+        [subject]: { topics: fallbackList, loading: false, error: err.message || 'Failed to load sub-topics' }
+      }));
     }
   };
 
-  const startStudyMission = (mission) => {
+  const startStudyMission = async (mission) => {
     setMissionAnswer(null);
     setMissionSubmitted(false);
     setShowShortAnswer(false);
@@ -2104,22 +2175,72 @@ Do not include any markdown, code blocks, or conversational text. Output raw JSO
     setQuizAnswers({});
     setActiveMission(mission);
     
-    // Reset topic customizer states
-    setTopicsToSelect([]);
-    setSelectedTopics([]);
-    setTopicsError('');
-    setTopicsLoading(false);
+    // Clear and reset dynamic mission state
     setDynamicMissionContent(null);
+    setMissionLoading(true);
+    setMissionError('');
 
-    if (mission.type !== 'login') {
-      fetchChapterTopics(
-        mission.subject,
-        mission.chapter,
-        profileClass || '10',
-        profileBoard || 'CBSE'
-      );
+    const savedSelected = JSON.parse(localStorage.getItem(getUserKey('tanios_selected_subtopics')) || '{}');
+    let chosenTopics = savedSelected[mission.subject]?.[mission.chapter];
+
+    if (mission.type === 'teaching_mcq' || mission.type === 'study' || mission.type === 'revision') {
+      try {
+        if (!chosenTopics || chosenTopics.length === 0) {
+          const cleanProfileClass = (profileClass || '10').toString().replace(/\D/g, '') || '10';
+          const prompt = `You are a CBSE and RBSE board syllabus expert. 
+Generate a list of exactly 4 to 6 core chronological sub-topics or key concepts for Class ${cleanProfileClass}, ${profileBoard || 'CBSE'} Board, Subject: ${mission.subject}, Chapter: "${mission.chapter}".
+Return ONLY a valid JSON array of strings, where each string represents a specific chronological sub-topic or key concept.
+Do not include any markdown, code blocks, or conversational text. Output raw JSON only. E.g.:
+["Topic 1", "Topic 2", "Topic 3", "Topic 4"]`;
+
+          const response = await generateAIContent(prompt);
+          if (response.error || (typeof response.text !== 'string' && !Array.isArray(response.text))) {
+            throw new Error(response.message || 'Failed to fetch topics');
+          }
+
+          let parsed = [];
+          if (Array.isArray(response.text)) {
+            parsed = response.text;
+          } else {
+            parsed = safeJsonParse(response.text);
+          }
+
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            let completedList = [];
+            try {
+              const stored = localStorage.getItem(getUserKey('tanios_completed_topics'));
+              const completedMap = stored ? JSON.parse(stored) : {};
+              completedList = completedMap[mission.subject]?.[mission.chapter] || [];
+            } catch (e) {}
+            const remaining = parsed.filter(t => !completedList.includes(t));
+            chosenTopics = remaining.length > 0 ? remaining : parsed;
+
+            if (!savedSelected[mission.subject]) savedSelected[mission.subject] = {};
+            savedSelected[mission.subject][mission.chapter] = chosenTopics;
+            localStorage.setItem(getUserKey('tanios_selected_subtopics'), JSON.stringify(savedSelected));
+
+            setInlineSubTopics(prev => ({
+              ...prev,
+              [mission.subject]: { topics: parsed, loading: false, error: '' }
+            }));
+          } else {
+            throw new Error('Invalid sub-topics array returned');
+          }
+        }
+
+        await fetchDynamicMission(mission, chosenTopics);
+      } catch (err) {
+        console.error("Default topics fallback run:", err);
+        const fallbackList = [
+          'Foundational Concepts & Definitions',
+          'Core Mechanisms & Theories',
+          'Advanced Applications & Practice',
+          'Board Exam Repeated Questions'
+        ];
+        await fetchDynamicMission(mission, [fallbackList[0]]);
+      }
     } else {
-      fetchDynamicMission(mission);
+      await fetchDynamicMission(mission);
     }
 
     logActivity(
@@ -3169,7 +3290,7 @@ Do not include any markdown, code blocks, or conversational text. Output raw JSO
                           <span style={{ fontSize: '0.85rem' }}>🎯</span>
                           <strong style={{ fontSize: '0.82rem', color: 'var(--text)' }}>Active Syllabus Chapters:</strong>
                           <button
-                            onClick={() => setShowChaptersConfig(!showChaptersConfig)}
+                            onClick={handleToggleChaptersConfig}
                             style={{
                               background: 'rgba(99, 102, 241, 0.08)',
                               border: '1px solid rgba(99, 102, 241, 0.2)',
@@ -3233,8 +3354,9 @@ Do not include any markdown, code blocks, or conversational text. Output raw JSO
                                       const newMissions = generateMissionsFromProfile(profileBoard, profileClass, profileSubjects, updated);
                                       setMissions(newMissions);
                                       localStorage.setItem(getUserKey('tanios_missions'), JSON.stringify(newMissions));
+                                      fetchInlineSubTopics(subj, val);
                                     }}
-                                    style={{ width: '100%', fontSize: '0.72rem', background: 'var(--bg-secondary)', border: '1px solid var(--border)', color: 'var(--text)', borderRadius: '4px', padding: '0.2rem 0.4rem', textOverflow: 'ellipsis' }}
+                                    style={{ width: '100%', fontSize: '0.72rem', background: 'var(--bg-secondary)', border: '1px solid var(--border)', color: 'var(--text)', borderRadius: '4px', padding: '0.2rem 0.4rem', textOverflow: 'ellipsis', marginBottom: '0.4rem' }}
                                   >
                                     {chapters.map(ch => (
                                       <option key={ch} value={ch} title={ch}>{ch}</option>
@@ -3255,9 +3377,143 @@ Do not include any markdown, code blocks, or conversational text. Output raw JSO
                                       setMissions(newMissions);
                                       localStorage.setItem(getUserKey('tanios_missions'), JSON.stringify(newMissions));
                                     }}
-                                    style={{ width: '100%', fontSize: '0.72rem', background: 'var(--bg-secondary)', border: '1px solid var(--border)', color: 'var(--text)', borderRadius: '4px', padding: '0.2rem 0.4rem', textOverflow: 'ellipsis' }}
+                                    style={{ width: '100%', fontSize: '0.72rem', background: 'var(--bg-secondary)', border: '1px solid var(--border)', color: 'var(--text)', borderRadius: '4px', padding: '0.2rem 0.4rem', textOverflow: 'ellipsis', marginBottom: '0.4rem' }}
                                   />
                                 )}
+
+                                {/* Inline Sub-topics selector */}
+                                {currentCh && (() => {
+                                  const state = inlineSubTopics[subj] || {};
+                                  if (state.loading) {
+                                    return (
+                                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.25rem 0', fontSize: '0.68rem', color: 'var(--text-secondary)' }}>
+                                        <Loader2 size={12} style={{ animation: 'spin 1.5s linear infinite', color: 'var(--primary)' }} />
+                                        <span>Loading sub-topics...</span>
+                                      </div>
+                                    );
+                                  }
+
+                                  const topics = state.topics || [];
+                                  if (topics.length === 0) return null;
+
+                                  const selected = selectedSubTopicsMap[subj]?.[currentCh] || [];
+                                  const completed = JSON.parse(localStorage.getItem(getUserKey('tanios_completed_topics')) || '{}')[subj]?.[currentCh] || [];
+
+                                  return (
+                                    <div style={{ marginTop: '0.4rem', borderTop: '1px dashed rgba(255,255,255,0.06)', paddingTop: '0.4rem' }}>
+                                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+                                        <span style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
+                                          Target Concepts:
+                                        </span>
+                                        <span 
+                                          style={{ fontSize: '0.62rem', color: 'var(--primary)', cursor: 'pointer', fontWeight: 700 }}
+                                          onClick={() => {
+                                            fetchInlineSubTopics(subj, currentCh);
+                                          }}
+                                        >
+                                          ↻ Refresh
+                                        </span>
+                                      </div>
+                                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', maxHeight: '120px', overflowY: 'auto', paddingRight: '0.2rem' }} className="custom-scrollbar">
+                                        {topics.map(topic => {
+                                          const isCompleted = completed.includes(topic);
+                                          const isSelected = selected.includes(topic);
+                                          return (
+                                            <label
+                                              key={topic}
+                                              style={{
+                                                display: 'flex',
+                                                alignItems: 'flex-start',
+                                                gap: '0.35rem',
+                                                padding: '0.25rem 0.35rem',
+                                                background: isCompleted ? 'rgba(16, 185, 129, 0.02)' : isSelected ? 'rgba(99, 102, 241, 0.03)' : 'transparent',
+                                                borderRadius: '4px',
+                                                cursor: isCompleted ? 'default' : 'pointer',
+                                                opacity: isCompleted ? 0.6 : 1,
+                                                fontSize: '0.68rem',
+                                                userSelect: 'none'
+                                              }}
+                                            >
+                                              <input
+                                                type="checkbox"
+                                                checked={isSelected || isCompleted}
+                                                disabled={isCompleted}
+                                                onChange={() => {
+                                                  if (isCompleted) return;
+                                                  let updatedList = [];
+                                                  if (isSelected) {
+                                                    updatedList = selected.filter(t => t !== topic);
+                                                  } else {
+                                                    updatedList = [...selected, topic];
+                                                  }
+                                                  const newMap = {
+                                                    ...selectedSubTopicsMap,
+                                                    [subj]: {
+                                                      ...(selectedSubTopicsMap[subj] || {}),
+                                                      [currentCh]: updatedList
+                                                    }
+                                                  };
+                                                  setSelectedSubTopicsMap(newMap);
+                                                  localStorage.setItem(getUserKey('tanios_selected_subtopics'), JSON.stringify(newMap));
+                                                }}
+                                                style={{ marginTop: '0.08rem', width: '12px', height: '12px', accentColor: 'var(--primary)' }}
+                                              />
+                                              <span style={{ 
+                                                color: 'var(--text)', 
+                                                textDecoration: isCompleted ? 'line-through' : 'none',
+                                                lineHeight: '1.2'
+                                              }}>
+                                                {topic}
+                                              </span>
+                                            </label>
+                                          );
+                                        })}
+                                      </div>
+
+                                      {/* Inline Add Custom Topic Input */}
+                                      <div style={{ display: 'flex', gap: '0.25rem', marginTop: '0.35rem' }}>
+                                        <input
+                                          type="text"
+                                          placeholder="Add custom topic..."
+                                          style={{
+                                            flex: 1,
+                                            fontSize: '0.65rem',
+                                            background: 'var(--bg-tertiary)',
+                                            border: '1px solid var(--border)',
+                                            borderRadius: '4px',
+                                            color: 'var(--text)',
+                                            padding: '0.15rem 0.35rem',
+                                          }}
+                                          onKeyDown={(e) => {
+                                            if (e.key === 'Enter') {
+                                              e.preventDefault();
+                                              const cleaned = e.target.value.trim();
+                                              if (!cleaned) return;
+                                              if (topics.some(t => t.toLowerCase() === cleaned.toLowerCase())) return;
+                                              
+                                              const updatedTopics = [...topics, cleaned];
+                                              setInlineSubTopics(prev => ({
+                                                ...prev,
+                                                [subj]: { ...prev[subj], topics: updatedTopics }
+                                              }));
+
+                                              const newMap = {
+                                                ...selectedSubTopicsMap,
+                                                [subj]: {
+                                                  ...(selectedSubTopicsMap[subj] || {}),
+                                                  [currentCh]: [...selected, cleaned]
+                                                }
+                                              };
+                                              setSelectedSubTopicsMap(newMap);
+                                              localStorage.setItem(getUserKey('tanios_selected_subtopics'), JSON.stringify(newMap));
+                                              e.target.value = '';
+                                            }
+                                          }}
+                                        />
+                                      </div>
+                                    </div>
+                                  );
+                                })()}
                               </div>
                             );
                           })}
@@ -3281,7 +3537,7 @@ Do not include any markdown, code blocks, or conversational text. Output raw JSO
                                   gap: '0.4rem',
                                   cursor: 'pointer'
                                 }}
-                                onClick={() => setShowChaptersConfig(true)}
+                                onClick={openChaptersConfig}
                                 title="Click to manage active chapters"
                               >
                                 <strong style={{ color: 'var(--text-secondary)' }}>{subj}:</strong>
@@ -3770,191 +4026,23 @@ Do not include any markdown, code blocks, or conversational text. Output raw JSO
             {/* Content Area */}
             {/* Content Area */}
             <div style={{ marginBottom: '1.75rem', flex: 1, overflowY: 'auto', maxHeight: '70vh', paddingRight: '0.25rem' }}>
-              {activeMission.type !== 'login' && !dynamicMissionContent ? (
-                missionLoading ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '300px', gap: '1.5rem', textAlign: 'center' }}>
-                    <Loader2 size={40} style={{ color: 'var(--primary)', animation: 'spin 1.5s linear infinite' }} />
-                    <div>
-                      <h4 style={{ margin: '0 0 0.5rem 0', color: 'var(--text)', fontSize: '1.1rem', fontWeight: 800 }}>TaniOS AI Study Engine</h4>
-                      <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-                        Engineering a high-yield concept-teaching MCQ masterclass for <strong>{activeMission.subject}</strong>...
-                      </p>
-                    </div>
-                  </div>
-                ) : topicsLoading ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '300px', gap: '1.5rem', textAlign: 'center' }}>
-                    <Loader2 size={40} style={{ color: 'var(--primary)', animation: 'spin 1.5s linear infinite' }} />
-                    <div>
-                      <h4 style={{ margin: '0 0 0.5rem 0', color: 'var(--text)', fontSize: '1.1rem', fontWeight: 800 }}>TaniOS AI Study Engine</h4>
-                      <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-                        Analyzing syllabus and retrieving sub-topics for <strong>{activeMission.chapter}</strong>...
-                      </p>
-                    </div>
-                  </div>
-                ) : (
+              {!dynamicMissionContent ? (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '300px', gap: '1.5rem', textAlign: 'center' }}>
+                  <Loader2 size={40} style={{ color: 'var(--primary)', animation: 'spin 1.5s linear infinite' }} />
                   <div>
-                    <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '1.25rem', lineHeight: 1.5 }}>
-                      Customize your target for today. Choose the sub-topics you want to cover from <strong>{activeMission.chapter}</strong>:
+                    <h4 style={{ margin: '0 0 0.5rem 0', color: 'var(--text)', fontSize: '1.1rem', fontWeight: 800 }}>TaniOS AI Study Engine</h4>
+                    <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                      {missionLoading 
+                        ? `Engineering a high-yield concept-teaching MCQ masterclass for ${activeMission?.subject || 'Syllabus'}...`
+                        : "Preparing masterclass..."}
                     </p>
-                    
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1.75rem' }}>
-                      {topicsToSelect.map(topic => {
-                        const isCompleted = (JSON.parse(localStorage.getItem(getUserKey('tanios_completed_topics')) || '{}')[activeMission.subject]?.[activeMission.chapter] || []).includes(topic);
-                        const isSelected = selectedTopics.includes(topic);
-                        
-                        return (
-                          <label
-                            key={topic}
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '0.75rem',
-                              padding: '0.85rem 1rem',
-                              background: isCompleted ? 'rgba(16, 185, 129, 0.03)' : isSelected ? 'rgba(99, 102, 241, 0.05)' : 'var(--bg-secondary)',
-                              border: isCompleted 
-                                ? '1px solid rgba(16, 185, 129, 0.15)' 
-                                : isSelected 
-                                  ? '1px solid var(--primary)' 
-                                  : '1px solid var(--border)',
-                              borderRadius: '8px',
-                              cursor: isCompleted ? 'default' : 'pointer',
-                              opacity: isCompleted ? 0.7 : 1,
-                              transition: 'all 0.2s',
-                              userSelect: 'none'
-                            }}
-                          >
-                            <input
-                              type="checkbox"
-                              checked={isSelected || isCompleted}
-                              disabled={isCompleted}
-                              onChange={() => {
-                                if (isCompleted) return;
-                                if (isSelected) {
-                                  setSelectedTopics(selectedTopics.filter(t => t !== topic));
-                                } else {
-                                  setSelectedTopics([...selectedTopics, topic]);
-                                }
-                              }}
-                              style={{
-                                width: '16px',
-                                height: '16px',
-                                accentColor: isCompleted ? 'var(--success)' : 'var(--primary)',
-                                cursor: 'pointer'
-                              }}
-                            />
-                            <div style={{ flex: 1 }}>
-                              <span style={{ 
-                                fontSize: '0.85rem', 
-                                fontWeight: 600, 
-                                color: isCompleted ? 'var(--text-secondary)' : 'var(--text)',
-                                textDecoration: isCompleted ? 'line-through' : 'none'
-                              }}>
-                                {topic}
-                              </span>
-                              {isCompleted && (
-                                <span style={{ fontSize: '0.68rem', color: 'var(--success)', fontWeight: 700, marginLeft: '0.5rem' }}>
-                                  ✓ Completed
-                                </span>
-                              )}
-                            </div>
-                          </label>
-                        );
-                      })}
-                    </div>
-
-                    {/* Add Custom Sub-Topic Input Row */}
-                    <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', marginTop: '0.5rem' }}>
-                      <input
-                        type="text"
-                        placeholder="Add custom topic (e.g. Raoult's Law, Numericals)..."
-                        value={customTopicInput}
-                        onChange={(e) => setCustomTopicInput(e.target.value)}
-                        style={{
-                          flex: 1,
-                          fontSize: '0.82rem',
-                          background: 'var(--bg-tertiary)',
-                          border: '1px solid var(--border)',
-                          borderRadius: '6px',
-                          color: 'var(--text)',
-                          padding: '0.5rem 0.75rem',
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            e.preventDefault();
-                            const cleaned = customTopicInput.trim();
-                            if (!cleaned) return;
-                            if (topicsToSelect.some(t => t.toLowerCase() === cleaned.toLowerCase())) {
-                              alert("This sub-topic is already in the list!");
-                              return;
-                            }
-                            setTopicsToSelect([...topicsToSelect, cleaned]);
-                            setSelectedTopics([...selectedTopics, cleaned]);
-                            setCustomTopicInput('');
-                          }
-                        }}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const cleaned = customTopicInput.trim();
-                          if (!cleaned) return;
-                          if (topicsToSelect.some(t => t.toLowerCase() === cleaned.toLowerCase())) {
-                            alert("This sub-topic is already in the list!");
-                            return;
-                          }
-                          setTopicsToSelect([...topicsToSelect, cleaned]);
-                          setSelectedTopics([...selectedTopics, cleaned]);
-                          setCustomTopicInput('');
-                        }}
-                        style={{
-                          background: 'var(--bg-secondary)',
-                          border: '1px solid var(--border)',
-                          borderRadius: '6px',
-                          color: 'var(--text)',
-                          fontSize: '0.8rem',
-                          fontWeight: 700,
-                          padding: '0.5rem 0.85rem',
-                          cursor: 'pointer',
-                        }}
-                      >
-                        + Add
-                      </button>
-                    </div>
-
-                    {topicsError && (
-                      <div style={{ fontSize: '0.78rem', color: '#f87171', marginBottom: '1rem' }}>
-                        ⚠️ {topicsError}
+                    {missionError && (
+                      <div style={{ marginTop: '1rem', fontSize: '0.82rem', color: '#f87171' }}>
+                        ⚠️ {missionError}
                       </div>
                     )}
-
-                    <button
-                      onClick={() => {
-                        if (selectedTopics.length === 0) {
-                          alert('Please select at least one topic to study today.');
-                          return;
-                        }
-                        fetchDynamicMission(activeMission, selectedTopics);
-                      }}
-                      className="btn btn-primary"
-                      style={{
-                        width: '100%',
-                        padding: '0.85rem',
-                        fontSize: '0.88rem',
-                        fontWeight: 800,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '0.5rem',
-                        background: 'linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%)',
-                        border: 'none',
-                        borderRadius: '8px',
-                        boxShadow: '0 4px 15px rgba(99, 102, 241, 0.3)'
-                      }}
-                    >
-                      <Sparkles size={16} /> Generate Personalized Practice MCQ ➔
-                    </button>
                   </div>
-                )
+                </div>
               ) : (
                 missionLoading ? (
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '300px', gap: '1.5rem', textAlign: 'center' }}>

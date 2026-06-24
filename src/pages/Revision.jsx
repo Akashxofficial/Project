@@ -19,6 +19,7 @@ const markdownComponents = {
   td: ({ children }) => <td className="md-td">{children}</td>,
   text: ({ children }) => <MathRenderer text={children} />,
   code: ({ className, children, ...props }) => {
+
     const isInline = !className && typeof children === 'string' && !children.includes('\n');
     if (isInline) {
       if (typeof children === 'string' && children.includes('$')) {
@@ -46,7 +47,7 @@ export default function Revision() {
 
   const handleGenerate = async (e) => {
     e.preventDefault();
-    
+
     if (!incrementGuestUsage('study')) {
       return;
     }
@@ -55,7 +56,7 @@ export default function Revision() {
     setError(null);
     setResult(null);
     setStatusMsg('thinking');
-    
+
     const prompt = generateRevisionPrompt(subject, chapter, time);
     const onStatus = (msg) => setStatusMsg(msg || '');
     const response = await generateAIContent(prompt, onStatus);
@@ -71,7 +72,7 @@ export default function Revision() {
     setResult({ title: docTitle, content: fixMathFormatting(response.text) });
     setLoading(false);
     setStatusMsg('');
-    
+
     if (currentUser) {
       saveDocument(currentUser.uid || currentUser.email, 'revision', docTitle, response.text)
         .catch(err => console.warn('Save failed (non-blocking):', err));
@@ -136,11 +137,11 @@ export default function Revision() {
             <h2 style={{ fontSize: '1.25rem', marginBottom: '1rem', color: '#10b981', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <Target size={20} /> {result.title}
             </h2>
-            
+
             <div className="generated-content" style={{ marginTop: '1rem', backgroundColor: 'var(--bg)' }}>
               <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]} components={markdownComponents} children={String(result?.content || '')} />
             </div>
-            
+
             <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>
               <button className="btn btn-primary" style={{ backgroundColor: '#10b981' }} onClick={() => setResult(null)}>Done Revising</button>
             </div>

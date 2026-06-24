@@ -220,10 +220,10 @@ export default async function handler(req, res) {
       .filter(Boolean);
     let lastError = null;
     let responseText = null;
-    let chosenModel = "gemini-2.5-flash";
+    let chosenModel = "gemini-3.1-flash-lite";
     const modelsToTry = [
+      "gemini-3.1-flash-lite",
       "gemini-2.5-flash",
-      "gemini-2.0-flash",
       "gemini-2.5-pro"
     ];
 
@@ -242,7 +242,15 @@ export default async function handler(req, res) {
           }
           const model = genAI.getGenerativeModel(modelOptions);
           const isLastKey = i === apiKeys.length - 1;
-          const timeoutDuration = isLastKey ? 50000 : (modelName === "gemini-2.5-flash" ? 20000 : 35000);
+          
+          let timeoutDuration = 20000;
+          if (modelName === "gemini-3.1-flash-lite") {
+            timeoutDuration = isLastKey ? 12000 : 8000;
+          } else if (modelName === "gemini-2.5-flash") {
+            timeoutDuration = isLastKey ? 20000 : 15000;
+          } else if (modelName === "gemini-2.5-pro") {
+            timeoutDuration = isLastKey ? 25000 : 20000;
+          }
           
           const promptParts = [];
           if (hasImage) {
