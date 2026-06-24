@@ -1,7 +1,7 @@
 // scratch/test-local-api.js
 async function run() {
   const prompt = `You are a CBSE and RBSE board syllabus expert. 
-Generate a list of exactly 4 to 6 core chronological sub-topics or key concepts for Class 10, CBSE Board, Subject: Chemistry, Chapter: "Chapter 1: Solutions".
+Generate a list of exactly 4 to 6 core chronological sub-topics or key concepts for Class 10, CBSE Board, Subject: Physics, Chapter: "Chapter 1: Electric Charges and Fields".
 Return ONLY a valid JSON array of strings, where each string represents a specific chronological sub-topic or key concept.
 Do not include any markdown, code blocks, or conversational text. Output raw JSON only. E.g.:
 ["Topic 1", "Topic 2", "Topic 3", "Topic 4"]`;

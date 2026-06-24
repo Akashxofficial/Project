@@ -2044,7 +2044,8 @@ Do not include any markdown, code blocks, or conversational text. Output raw JSO
 ["Topic 1", "Topic 2", "Topic 3", "Topic 4"]`;
 
       const response = await generateAIContent(prompt);
-      if (response.error || !response.text) {
+      console.log("TaniOS AI Response Debug:", response);
+      if (response.error || typeof response.text !== 'string') {
         throw new Error(response.message || 'Failed to fetch topics');
       }
 
@@ -2062,9 +2063,14 @@ Do not include any markdown, code blocks, or conversational text. Output raw JSO
       const parsed = JSON.parse(cleanText);
       if (Array.isArray(parsed)) {
         setTopicsToSelect(parsed);
-        const stored = localStorage.getItem(getUserKey('tanios_completed_topics'));
-        const completedMap = stored ? JSON.parse(stored) : {};
-        const completedList = completedMap[subject]?.[chapter] || [];
+        let completedList = [];
+        try {
+          const stored = localStorage.getItem(getUserKey('tanios_completed_topics'));
+          const completedMap = stored ? JSON.parse(stored) : {};
+          completedList = completedMap[subject]?.[chapter] || [];
+        } catch (storageErr) {
+          console.warn("Could not read completed topics from localStorage", storageErr);
+        }
         const remaining = parsed.filter(t => !completedList.includes(t));
         setSelectedTopics(remaining.length > 0 ? remaining : parsed);
       } else {
@@ -2072,7 +2078,7 @@ Do not include any markdown, code blocks, or conversational text. Output raw JSO
       }
     } catch (err) {
       console.error(err);
-      setTopicsError('Failed to load sub-topics list. You can proceed with standard targets.');
+      setTopicsError(err.message || 'Failed to load sub-topics list. You can proceed with standard targets.');
       const fallbackList = [
         'Foundational Concepts & Definitions',
         'Core Mechanisms & Theories',
