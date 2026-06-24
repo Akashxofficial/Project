@@ -225,7 +225,12 @@ export default async function handler(req, res) {
       for (const modelName of modelsToTry) {
         try {
           console.log(`[API] Attempting with Key index ${i} using model ${modelName}...`);
-          const model = genAI.getGenerativeModel({ model: modelName });
+          const isJsonPrompt = prompt.includes("JSON Structure:") || prompt.includes("JSON object") || prompt.includes("JSON array") || prompt.includes("Return ONLY a valid JSON array");
+          const modelOptions = { model: modelName };
+          if (isJsonPrompt) {
+            modelOptions.generationConfig = { responseMimeType: "application/json" };
+          }
+          const model = genAI.getGenerativeModel(modelOptions);
           const isLastKey = i === apiKeys.length - 1;
           const timeoutDuration = isLastKey ? 50000 : (modelName === "gemini-2.5-flash" ? 20000 : 35000);
           

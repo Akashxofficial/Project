@@ -1303,6 +1303,8 @@ export default function Home() {
   const [showChaptersConfig, setShowChaptersConfig] = useState(false);
   const [showOneClickTools, setShowOneClickTools] = useState(false);
   const [showMistakeLocker, setShowMistakeLocker] = useState(false);
+  const [showTimelineModal, setShowTimelineModal] = useState(false);
+  const [timelineData, setTimelineData]   = useState(null); // { totalDays, subjects: [{name,chapters,daysPerCh}] }
 
   // Temp state for profile setup form
   const [setupBoard, setSetupBoard] = useState('CBSE');
@@ -1321,6 +1323,13 @@ export default function Home() {
   const [quizStep, setQuizStep] = useState(0);
   const [quizAnswers, setQuizAnswers] = useState({});
   const [showShortAnswer, setShowShortAnswer] = useState(false);
+
+  // Dynamic Topic Customizer states
+  const [topicsToSelect, setTopicsToSelect] = useState([]);
+  const [selectedTopics, setSelectedTopics] = useState([]);
+  const [topicsLoading, setTopicsLoading] = useState(false);
+  const [topicsError, setTopicsError] = useState('');
+  const [customTopicInput, setCustomTopicInput] = useState('');
 
   // ── DYNAMIC AI STUDY MISSIONS STATE ──
   const [dynamicMissionContent, setDynamicMissionContent] = useState(null);
@@ -1360,30 +1369,47 @@ export default function Home() {
   // ── EXAM MODE ROADMAP STATE REMOVED ──
 
   // ── MISSION GENERATOR (generates from student's actual subjects) ──
-  const generateMissionsFromProfile = (board, grade, subjects, activeChaptersMap = {}) => {
+  const generateMissionsFromProfile = (board, grade, subjects, activeChaptersMap = {}, examDateStr = '') => {
     if (!subjects || subjects.length === 0) return [];
 
+    const cleanGrade = (grade || '10').toString().replace(/\D/g, '') || '10';
+
+    // Calculate total days remaining for pacing context
+    const now = new Date();
+    let examDateForPacing;
+    if (examDateStr) {
+      examDateForPacing = new Date(examDateStr);
+    } else {
+      const EXAM_DATES = {
+        CBSE: { '10': { month: 1, day: 15 }, '12': { month: 1, day: 15 }, '8': { month: 2, day: 1 }, '9': { month: 2, day: 1 }, '11': { month: 2, day: 1 } },
+        RBSE: { '10': { month: 2, day: 5 }, '12': { month: 2, day: 5 }, '8': { month: 2, day: 10 }, '9': { month: 2, day: 10 }, '11': { month: 2, day: 10 } },
+      };
+      const ei = EXAM_DATES[board]?.[cleanGrade] || { month: 1, day: 15 };
+      examDateForPacing = new Date(now.getFullYear(), ei.month, ei.day);
+      if (examDateForPacing <= now) examDateForPacing.setFullYear(now.getFullYear() + 1);
+    }
+    const totalDaysLeft = Math.max(30, Math.ceil((examDateForPacing - now) / (1000 * 60 * 60 * 24)));
+
     const getChapterForSubject = (subj) => {
+      // 1. Use manually set active chapter if exists
       if (activeChaptersMap && activeChaptersMap[subj]) {
         return activeChaptersMap[subj];
       }
-      const cleanGrade = (grade || '10').toString().replace(/\D/g, '') || '10';
+      // 2. Try known CLASS_SYLLABUS
       const chaptersList = CLASS_SYLLABUS[cleanGrade]?.[subj];
       if (chaptersList && chaptersList.length > 0) {
         return chaptersList[0];
       }
-      return "General Syllabus";
+      // 3. Custom subject — generate generic chapter 1
+      return `Chapter 1: Introduction to ${subj}`;
     };
 
-    // Ensure all chosen subjects receive daily targets (missions) every day as requested by manager
-    const picked = subjects;
+    const dateKey = new Date().toISOString().slice(0, 10);
 
-    const dateKey = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
-
-    const generated = picked.map((subj, idx) => {
+    const generated = subjects.map((subj, idx) => {
       const activeCh = getChapterForSubject(subj);
       const chClean = activeCh.replace(/^Chapter \d+:\s*/, '');
-      const mission = {
+      return {
         id: `m_${idx + 1}`,
         type: 'teaching_mcq',
         label: `Learn ${subj}: ${chClean} (Topic Masterclass)`,
@@ -1391,12 +1417,10 @@ export default function Home() {
         done: false,
         dateKey,
         subject: subj,
-        chapter: activeCh
+        chapter: activeCh,
       };
-      return mission;
     });
 
-    // Daily check-in is always auto-done
     generated.push({
       id: 'm_checkin',
       type: 'login',
@@ -1409,11 +1433,32 @@ export default function Home() {
     return generated;
   };
 
+  // ── Auto-generate chapter list for custom subjects not in CLASS_SYLLABUS ──
+  const buildChapterListForSubject = (subj, grade, examDateStr) => {
+    const cleanGrade = (grade || '10').toString().replace(/\D/g, '') || '10';
+    const known = CLASS_SYLLABUS[cleanGrade]?.[subj];
+    if (known && known.length > 0) return known;
+
+    // Custom subject: estimate ~10-15 chapters proportional to exam time
+    const now = new Date();
+    let examDate;
+    if (examDateStr) {
+      examDate = new Date(examDateStr);
+    } else {
+      examDate = new Date(now.getFullYear() + 1, 1, 15);
+    }
+    const daysLeft = Math.max(30, Math.ceil((examDate - now) / (1000 * 60 * 60 * 24)));
+    const estimatedChapters = Math.min(15, Math.max(5, Math.round(daysLeft / 14)));
+
+    return Array.from({ length: estimatedChapters }, (_, i) =>
+      `Chapter ${i + 1}: ${subj} — Part ${i + 1}`
+    );
+  };
+
   // ── SAVE PROFILE ──
   const handleSaveProfile = (e) => {
     e.preventDefault();
     
-    // Combine clicked quick subjects and custom entered subjects
     const quickSubjectsList = [...selectedSubjects];
     const customList = setupSubjects.split(',')
       .map(s => s.trim())
@@ -1426,6 +1471,24 @@ export default function Home() {
       return;
     }
 
+    // ── Calculate timeline: days per chapter per subject ──
+    const now = new Date();
+    let examDate;
+    if (setupExamDate) {
+      examDate = new Date(setupExamDate);
+    } else {
+      const EXAM_DATES = {
+        CBSE: { '10': { month: 1, day: 15 }, '12': { month: 1, day: 15 }, '8': { month: 2, day: 1 }, '9': { month: 2, day: 1 }, '11': { month: 2, day: 1 } },
+        RBSE: { '10': { month: 2, day: 5 }, '12': { month: 2, day: 5 }, '8': { month: 2, day: 10 }, '9': { month: 2, day: 10 }, '11': { month: 2, day: 10 } },
+      };
+      const cleanSetupClassNum = (setupClass || '10').toString().replace(/\D/g, '') || '10';
+      const ei = EXAM_DATES[setupBoard]?.[cleanSetupClassNum] || { month: 1, day: 15 };
+      examDate = new Date(now.getFullYear(), ei.month, ei.day);
+      if (examDate <= now) examDate.setFullYear(now.getFullYear() + 1);
+    }
+    const totalDaysLeft = Math.max(30, Math.ceil((examDate - now) / (1000 * 60 * 60 * 24)));
+    const daysPerSubject = Math.floor(totalDaysLeft / subjectsArray.length);
+
     setProfileBoard(setupBoard);
     setProfileClass(setupClass);
     setProfileSubjects(subjectsArray);
@@ -1433,12 +1496,13 @@ export default function Home() {
     setProfileSetupDone(true);
     setShowProfileSetup(false);
 
-    // Initialize active chapters to Chapter 1 for all subjects
+    // ── Initialize active chapters — properly handle custom subjects ──
     const initialActiveChapters = {};
     subjectsArray.forEach(subj => {
       const cleanSetupClass = (setupClass || '10').toString().replace(/\D/g, '') || '10';
-      const chaptersList = CLASS_SYLLABUS[cleanSetupClass]?.[subj] || [];
-      initialActiveChapters[subj] = chaptersList.length > 0 ? chaptersList[0] : '';
+      // Use buildChapterListForSubject which handles both known & custom subjects
+      const chaptersList = buildChapterListForSubject(subj, cleanSetupClass, setupExamDate);
+      initialActiveChapters[subj] = chaptersList.length > 0 ? chaptersList[0] : `Chapter 1: Introduction to ${subj}`;
     });
     setActiveChapters(initialActiveChapters);
     localStorage.setItem(getUserKey('tanios_active_chapters'), JSON.stringify(initialActiveChapters));
@@ -1447,16 +1511,24 @@ export default function Home() {
     const profile = { board: setupBoard, grade: setupClass, subjects: subjectsArray, examDate: setupExamDate };
     localStorage.setItem(getUserKey('tanios_profile'), JSON.stringify(profile));
 
-    // Generate missions
-    const newMissions = generateMissionsFromProfile(setupBoard, setupClass, subjectsArray, initialActiveChapters);
+    // Generate missions (pass examDate for accurate pacing)
+    const newMissions = generateMissionsFromProfile(setupBoard, setupClass, subjectsArray, initialActiveChapters, setupExamDate);
     setMissions(newMissions);
     saveState('tanios_missions', newMissions);
 
-    // Also update one-click defaults
     setOneClickGrade(setupClass);
     setOneClickBoard(setupBoard);
 
     awardXp(10, 'Profile Setup Complete');
+
+    // Show styled timeline modal (sync — React 18 batches all these setState calls)
+    const summaryItems = subjectsArray.map(subj => {
+      const chList = buildChapterListForSubject(subj, (setupClass || '10').toString().replace(/\D/g, '') || '10', setupExamDate);
+      const daysPerCh = Math.max(5, Math.round(daysPerSubject / (chList.length || 1)));
+      return { name: subj, chapters: chList.length, daysPerCh };
+    });
+    setTimelineData({ totalDays: totalDaysLeft, subjects: summaryItems });
+    setShowTimelineModal(true);
   };
 
   // Sync to local storage
@@ -1538,11 +1610,15 @@ export default function Home() {
         let chaptersMapChanged = false;
         profile.subjects.forEach(subj => {
           const cleanProfileGrade = (profile.grade || '10').toString().replace(/\D/g, '') || '10';
-          const chaptersList = CLASS_SYLLABUS[cleanProfileGrade]?.[subj] || [];
+          const knownChapters = CLASS_SYLLABUS[cleanProfileGrade]?.[subj];
+          // For custom subjects not in CLASS_SYLLABUS, generate generic chapters
+          const chaptersList = (knownChapters && knownChapters.length > 0)
+            ? knownChapters
+            : Array.from({ length: 8 }, (_, i) => `Chapter ${i + 1}: ${subj} — Part ${i + 1}`);
           const currentCh = activeChaptersMap[subj];
-          
-          if (!currentCh || !chaptersList.includes(currentCh)) {
-            activeChaptersMap[subj] = chaptersList.length > 0 ? chaptersList[0] : '';
+
+          if (!currentCh) {
+            activeChaptersMap[subj] = chaptersList[0];
             chaptersMapChanged = true;
           }
         });
@@ -1710,6 +1786,17 @@ export default function Home() {
       progressMap[subject][currentChapter] = nextCount;
       localStorage.setItem(getUserKey('tanios_chapter_progress'), JSON.stringify(progressMap));
 
+      // 2b. Persist completed topics list
+      const storedCompleted = localStorage.getItem(getUserKey('tanios_completed_topics'));
+      const completedMap = storedCompleted ? JSON.parse(storedCompleted) : {};
+      if (!completedMap[subject]) {
+        completedMap[subject] = {};
+      }
+      const currentCompleted = completedMap[subject][currentChapter] || [];
+      const newCompleted = [...new Set([...currentCompleted, ...selectedTopics])];
+      completedMap[subject][currentChapter] = newCompleted;
+      localStorage.setItem(getUserKey('tanios_completed_topics'), JSON.stringify(completedMap));
+
       // 3. Calculate exam target pacing
       const now = new Date();
       let examDate;
@@ -1741,8 +1828,22 @@ export default function Home() {
       const chaptersRemaining = Math.max(1, totalChapters - (chapterIdx !== -1 ? chapterIdx + 1 : 1) + 1);
       const daysPerChapter = Math.max(5, Math.round(diffDays / chaptersRemaining));
 
-      // If they completed all days allocated for this chapter, advance to next chapter automatically!
-      if (nextCount >= daysPerChapter) {
+      // Check if the chapter is complete (either all sub-topics are done, or fallback days pacing reached)
+      let isChapterComplete = false;
+      if (topicsToSelect.length > 0) {
+        isChapterComplete = topicsToSelect.every(t => newCompleted.includes(t));
+      } else {
+        isChapterComplete = nextCount >= daysPerChapter;
+      }
+
+      // If chapter is complete, ensure progress count is set to maximum days to sync UI visual
+      if (isChapterComplete && nextCount < daysPerChapter) {
+        progressMap[subject][currentChapter] = daysPerChapter;
+        localStorage.setItem(getUserKey('tanios_chapter_progress'), JSON.stringify(progressMap));
+      }
+
+      // If they completed all days/topics allocated for this chapter, advance to next chapter automatically!
+      if (isChapterComplete) {
         const nextChapterIdx = chapterIdx + 1;
         if (nextChapterIdx < chaptersList.length) {
           const nextChapter = chaptersList[nextChapterIdx];
@@ -1793,7 +1894,7 @@ export default function Home() {
     }
   };
 
-  const fetchDynamicMission = async (mission) => {
+  const fetchDynamicMission = async (mission, chosenTopics = []) => {
     setMissionLoading(true);
     setMissionError('');
     setDynamicMissionContent(null);
@@ -1855,10 +1956,14 @@ export default function Home() {
     const completedTopicsInChapter = progressMap[subject]?.[currentChapter] || 0;
     const currentTopicDay = completedTopicsInChapter + 1;
 
-    let prompt = `You are an elite syllabus-expert personal AI teacher built specifically for Class ${grade} students of the ${board} board, with extreme expertise in both CBSE and RBSE textbook curricula, past exam papers, and question patterns.
+    const topicsStr = chosenTopics.length > 0 
+      ? chosenTopics.map(t => `"${t}"`).join(', ') 
+      : `fractional progress Day ${currentTopicDay} topics of the chapter`;
 
+    let prompt = `You are an elite syllabus-expert personal AI teacher built specifically for Class ${grade} students of the ${board} board, with extreme expertise in curricula, past exam papers, and question patterns.
+ 
 SYSTEMATIC TOPIC-TEACHING MCQ LAW:
-Your goal is to teach a student a SINGLE specific sub-topic or chronological section of the subject ${subject}, chapter: "${currentChapter}" using EXACTLY ONE highly educational Multiple Choice Question (MCQ). The question, options, and explanation MUST be designed with 100% precision for CBSE and RBSE board standards, focusing heavily on high-yield, exam-repeated concepts.
+Your goal is to teach a student the specific sub-topic(s): ${topicsStr} from the subject ${subject}, chapter: "${currentChapter}" using EXACTLY ONE highly educational Multiple Choice Question (MCQ). The question, options, and explanation MUST be designed with 100% precision for CBSE and RBSE board standards, focusing heavily on high-yield, exam-repeated concepts.
 
 SYLLABUS PACING SUMMARY:
 * Subject: ${subject}
@@ -1869,27 +1974,23 @@ SYLLABUS PACING SUMMARY:
 * Chapter Study Day Progress: Today is Day ${currentTopicDay} out of ${daysPerChapter} allocated days for "${currentChapter}".
 
 Systematic Topic-Focused Pacing Directive:
-Please identify exactly ONE highly specific chronological sub-topic or section from the start/middle/end of "${currentChapter}" that corresponds to the fractional progress of Day ${currentTopicDay} of ${daysPerChapter} through this chapter.
-- Day 1: Target the absolute introductory sub-topic / foundational definitions (starting from the very beginning of the chapter).
-- Middle Days: Target a core intermediate concept / core mechanisms or theorems.
-- Final Days: Target the final advanced sub-topic or a critical board-exam hot-spot.
-- IMPORTANT: Do NOT ask a broad question about the entire chapter, and do NOT summarize the whole chapter. You must select ONLY that specific sub-topic. All question texts, options, and explanations must be 100% focused on teaching ONLY that single sub-topic.
+Please design the MCQ, the topic summary, and the explanation strictly to explain and test the selected topics: ${topicsStr}.
+- IMPORTANT: Do NOT ask a broad question about the entire chapter, and do NOT summarize the whole chapter. You must focus ONLY on the specified sub-topics.
+
+SPEED & CONCISENESS RULE (MANDATORY):
+To ensure ultra-fast generation and instant response times (< 2 seconds), be extremely crisp, high-density, and direct. Keep the topicSummary to exactly 3 short bullet points (max 40 words total). Keep the explanation to a short, high-yield topper guide of max 120 words total containing a 1-bullet concept explanation, a 1-sentence topper trick, and a 1-sentence mistake warning.
 
 Your output must be a single master Multiple Choice Question (MCQ) that:
 1. Question: Renders a highly detailed, clear, concept-introducing scenario or problem. Wrap any math formulas, variables, or chemical equations in LaTeX $ delimiters (e.g. $A + B \\rightarrow AB$).
 2. Options: The options (A, B, C, D) should represent distinct sub-topics or conceptual states, clearly teaching the key distinctions.
-3. Explanation: Provide an absolute MASTERCLASS topper explanation. This explanation must be a beautiful, comprehensive, Markdown-styled mini-lesson that acts as a high-density, topic-focused summary solely for this specific sub-topic (just like the chapter summary, but strictly limited to this sub-topic). It must include:
-   - "💡 Core Concepts & Definitions" (detailed bullets of this sub-topic, with formulas in KaTeX $)
-   - "🥇 Topper Tricks & Sign Conventions"
-   - "⚠️ Common Mistakes to Avoid in Exams"
-   - Why the selected correct option is correct and why other options are incorrect.
+3. Explanation: Provide an absolute topper explanation.
 
 Your output MUST be a valid JSON object with the following keys. Do not include any conversational text or markdown code blocks (no \`\`\`json). Output raw JSON only.
 
 JSON Structure:
 {
   "topic": "Specific Sub-Topic Name (e.g. Balancing Chemical Equations, not the broad chapter name)",
-  "topicSummary": "A concise 4-5 bullet point Markdown summary of ONLY this sub-topic's key concepts, definitions, and formulas. Each bullet must be a complete, exam-ready fact. Use bold for key terms and KaTeX $ for all formulas. This is shown to the student BEFORE the MCQ question to prime their understanding.",
+  "topicSummary": "A concise 3 bullet point Markdown summary of ONLY this sub-topic. Max 40 words. Use KaTeX $ for all formulas. Shown to the student BEFORE the MCQ question to prime their understanding.",
   "questionText": "Highly detailed, conceptual, and concept-introducing question text focusing strictly on this single sub-topic. Wrap all math/equations in $ delimiters.",
   "options": [
     { "key": "A", "desc": "Option A explanation. Wrap any math/formulas in $." },
@@ -1898,7 +1999,7 @@ JSON Structure:
     { "key": "D", "desc": "Option D explanation." }
   ],
   "correctKey": "A, B, C, or D",
-  "explanation": "Markdown-styled comprehensive mini-lesson masterclass teaching ONLY the selected sub-topic. Use markdown headers (###), bold, list bullets, and KaTeX $ for all math/scientific expressions to make it gorgeous and extremely premium."
+  "explanation": "Markdown-styled short mini-lesson teaching ONLY the selected sub-topic. Max 120 words. Include: 💡 Core Concept, 🥇 Topper Trick, and ⚠️ Common Mistake. Use KaTeX $ for all math/scientific expressions."
 }`;
 
     try {
@@ -1923,6 +2024,59 @@ JSON Structure:
     }
   };
 
+  const fetchChapterTopics = async (subject, chapter, grade, board) => {
+    setTopicsLoading(true);
+    setTopicsError('');
+    setTopicsToSelect([]);
+    setSelectedTopics([]);
+    try {
+      const prompt = `You are a CBSE and RBSE board syllabus expert. 
+Generate a list of exactly 4 to 6 core chronological sub-topics or key concepts for Class ${grade}, ${board} Board, Subject: ${subject}, Chapter: "${chapter}".
+Return ONLY a valid JSON array of strings, where each string represents a specific chronological sub-topic or key concept.
+Do not include any markdown, code blocks, or conversational text. Output raw JSON only. E.g.:
+["Topic 1", "Topic 2", "Topic 3", "Topic 4"]`;
+
+      const response = await generateAIContent(prompt);
+      if (response.error || !response.text) {
+        throw new Error(response.message || 'Failed to fetch topics');
+      }
+
+      let cleanText = response.text.trim();
+      const firstBracket = cleanText.indexOf('[');
+      const lastBracket = cleanText.lastIndexOf(']');
+      if (firstBracket !== -1 && lastBracket !== -1 && lastBracket > firstBracket) {
+        cleanText = cleanText.substring(firstBracket, lastBracket + 1);
+      } else if (cleanText.startsWith('```')) {
+        cleanText = cleanText.replace(/^```json\s*/i, '').replace(/```$/, '').trim();
+      }
+
+      const parsed = JSON.parse(cleanText);
+      if (Array.isArray(parsed)) {
+        setTopicsToSelect(parsed);
+        const stored = localStorage.getItem(getUserKey('tanios_completed_topics'));
+        const completedMap = stored ? JSON.parse(stored) : {};
+        const completedList = completedMap[subject]?.[chapter] || [];
+        const remaining = parsed.filter(t => !completedList.includes(t));
+        setSelectedTopics(remaining.length > 0 ? remaining : parsed);
+      } else {
+        throw new Error('Response is not a JSON array');
+      }
+    } catch (err) {
+      console.error(err);
+      setTopicsError('Failed to load sub-topics list. You can proceed with standard targets.');
+      const fallbackList = [
+        'Foundational Concepts & Definitions',
+        'Core Mechanisms & Theories',
+        'Advanced Applications & Practice',
+        'Board Exam Repeated Questions'
+      ];
+      setTopicsToSelect(fallbackList);
+      setSelectedTopics([fallbackList[0]]);
+    } finally {
+      setTopicsLoading(false);
+    }
+  };
+
   const startStudyMission = (mission) => {
     setMissionAnswer(null);
     setMissionSubmitted(false);
@@ -1931,8 +2085,23 @@ JSON Structure:
     setQuizAnswers({});
     setActiveMission(mission);
     
-    // Asynchronously fetch dynamic AI content for this mission
-    fetchDynamicMission(mission);
+    // Reset topic customizer states
+    setTopicsToSelect([]);
+    setSelectedTopics([]);
+    setTopicsError('');
+    setTopicsLoading(false);
+    setDynamicMissionContent(null);
+
+    if (mission.type !== 'login') {
+      fetchChapterTopics(
+        mission.subject,
+        mission.chapter,
+        profileClass || '10',
+        profileBoard || 'CBSE'
+      );
+    } else {
+      fetchDynamicMission(mission);
+    }
 
     logActivity(
       currentUser?.uid || 'guest',
@@ -2080,20 +2249,28 @@ JSON Structure:
           max-width: 700px;
           margin-bottom: 1.25rem;
         }
+        @keyframes xpNotificationAnim {
+          0% { opacity: 0; transform: translateX(30px); }
+          8% { opacity: 1; transform: translateX(0); }
+          90% { opacity: 1; transform: translateX(0); }
+          100% { opacity: 0; transform: translateX(10px); }
+        }
         .xp-alert {
           position: fixed;
           top: 80px;
           right: 20px;
-          z-index: 9999;
+          z-index: 99999;
           background: linear-gradient(135deg, #10b981, #059669);
           color: white;
-          padding: 0.75rem 1.25rem;
+          padding: 0.75rem 1.5rem;
           border-radius: var(--radius-sm);
           font-weight: 700;
           font-size: 0.9rem;
           box-shadow: 0 10px 25px rgba(16, 185, 129, 0.3);
           border: 1px solid rgba(255, 255, 255, 0.1);
-          animation: slideInRight 0.3s cubic-bezier(.4,0,.2,1) both;
+          animation: xpNotificationAnim 3.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+          pointer-events: none;
+          white-space: nowrap;
         }
         .pulse-streak {
           animation: float 3s ease-in-out infinite;
@@ -2502,6 +2679,145 @@ JSON Structure:
           {xpAwardedMsg}
         </div>
       )}
+
+      {/* ── Styled Timeline Modal — rendered via createPortal to escape parent stacking context ── */}
+      {showTimelineModal && timelineData && createPortal(
+        <div
+          onClick={() => setShowTimelineModal(false)}
+          style={{
+            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+            background: 'rgba(6, 6, 10, 0.85)',
+            backdropFilter: 'blur(12px)',
+            WebkitBackdropFilter: 'blur(12px)',
+            zIndex: 99999,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: '1.5rem',
+          }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              background: 'rgba(18, 18, 24, 0.98)',
+              border: '1px solid rgba(139, 92, 246, 0.3)',
+              borderRadius: '20px',
+              padding: '2rem',
+              maxWidth: '480px',
+              width: '100%',
+              boxShadow: '0 24px 60px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.05)',
+              animation: 'fadeUp 0.3s cubic-bezier(0.16,1,0.3,1)'
+            }}
+          >
+            {/* Header */}
+            <div style={{
+              background: 'linear-gradient(135deg, rgba(99,102,241,0.15), rgba(139,92,246,0.2))',
+              border: '1px solid rgba(139,92,246,0.2)',
+              borderRadius: '12px',
+              padding: '1rem 1.25rem',
+              marginBottom: '1.5rem',
+              display: 'flex', alignItems: 'center', gap: '0.75rem'
+            }}>
+              <div style={{
+                width: '40px', height: '40px', borderRadius: '10px', flexShrink: 0,
+                background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: '1.25rem'
+              }}>✅</div>
+              <div>
+                <div style={{ fontWeight: 800, fontSize: '1.05rem', color: '#fff' }}>
+                  Study Dashboard Created!
+                </div>
+                <div style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.55)', marginTop: '0.15rem' }}>
+                  TaniOS will automatically pace your syllabus
+                </div>
+              </div>
+            </div>
+
+            {/* Stats row */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1.25rem' }}>
+              <div style={{
+                background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.15)',
+                borderRadius: '10px', padding: '0.75rem', textAlign: 'center'
+              }}>
+                <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#6366f1', lineHeight: 1 }}>
+                  {timelineData.totalDays}
+                </div>
+                <div style={{ fontSize: '0.7rem', color: '#9ca3af', marginTop: '0.25rem' }}>Days to Exam</div>
+              </div>
+              <div style={{
+                background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.15)',
+                borderRadius: '10px', padding: '0.75rem', textAlign: 'center'
+              }}>
+                <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#10b981', lineHeight: 1 }}>
+                  {timelineData.subjects.length}
+                </div>
+                <div style={{ fontSize: '0.7rem', color: '#9ca3af', marginTop: '0.25rem' }}>Subjects Loaded</div>
+              </div>
+            </div>
+
+            {/* Subject breakdown */}
+            <div style={{ marginBottom: '1.5rem' }}>
+              <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '0.6rem' }}>
+                📅 Timeline Breakdown
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem', maxHeight: '220px', overflowY: 'auto' }}>
+                {timelineData.subjects.map((s, i) => (
+                  <div key={i} style={{
+                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                    background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)',
+                    borderRadius: '8px', padding: '0.55rem 0.85rem'
+                  }}>
+                    <span style={{ fontSize: '0.83rem', fontWeight: 600, color: '#fff' }}>
+                      {s.name}
+                    </span>
+                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                      <span style={{ fontSize: '0.7rem', color: '#9ca3af' }}>
+                        {s.chapters} chapters
+                      </span>
+                      <span style={{
+                        fontSize: '0.68rem', fontWeight: 700,
+                        background: 'rgba(139,92,246,0.15)', color: '#a78bfa',
+                        border: '1px solid rgba(139,92,246,0.25)',
+                        padding: '0.15rem 0.45rem', borderRadius: '4px'
+                      }}>
+                        ~{s.daysPerCh}d/ch
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Info note */}
+            <div style={{
+              background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.18)',
+              borderRadius: '8px', padding: '0.65rem 0.85rem',
+              fontSize: '0.75rem', color: '#d1d5db',
+              marginBottom: '1.25rem', lineHeight: 1.5
+            }}>
+              💡 <strong style={{ color: '#fbbf24' }}>Auto Pacing ON:</strong> TaniOS will advance you to the next chapter automatically when each one is completed on schedule.
+            </div>
+
+            {/* CTA Button */}
+            <button
+              onClick={() => setShowTimelineModal(false)}
+              style={{
+                width: '100%', padding: '0.85rem',
+                background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                color: 'white', border: 'none', borderRadius: '10px',
+                fontSize: '0.95rem', fontWeight: 700, cursor: 'pointer',
+                boxShadow: '0 6px 20px rgba(99,102,241,0.4)',
+                transition: 'all 0.2s',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem'
+              }}
+            >
+              <Sparkles size={16} /> Let's Start Studying!
+            </button>
+          </div>
+        </div>,
+        document.body
+      )}
+
+
 
       {/* ── ALIVE GREETINGS & HERO SECTION ── */}
       <div className="gamified-header-card">
@@ -3433,218 +3749,405 @@ JSON Structure:
             </div>
 
             {/* Content Area */}
+            {/* Content Area */}
             <div style={{ marginBottom: '1.75rem', flex: 1, overflowY: 'auto', maxHeight: '70vh', paddingRight: '0.25rem' }}>
-              {missionLoading ? (
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '300px', gap: '1.5rem', textAlign: 'center' }}>
-                  <Loader2 size={40} style={{ color: 'var(--primary)', animation: 'spin 1.5s linear infinite' }} />
-                  <div>
-                    <h4 style={{ margin: '0 0 0.5rem 0', color: 'var(--text)', fontSize: '1.1rem', fontWeight: 800 }}>TaniOS AI Study Engine</h4>
-                    <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-                      Engineering a high-yield concept-teaching MCQ masterclass for <strong>{activeMission.subject}</strong>...
-                    </p>
+              {activeMission.type !== 'login' && !dynamicMissionContent ? (
+                missionLoading ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '300px', gap: '1.5rem', textAlign: 'center' }}>
+                    <Loader2 size={40} style={{ color: 'var(--primary)', animation: 'spin 1.5s linear infinite' }} />
+                    <div>
+                      <h4 style={{ margin: '0 0 0.5rem 0', color: 'var(--text)', fontSize: '1.1rem', fontWeight: 800 }}>TaniOS AI Study Engine</h4>
+                      <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                        Engineering a high-yield concept-teaching MCQ masterclass for <strong>{activeMission.subject}</strong>...
+                      </p>
+                    </div>
                   </div>
-                </div>
-              ) : (() => {
-                const data = dynamicMissionContent || fallback;
-                const options = data.options || fallback.options;
-                return (
+                ) : topicsLoading ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '300px', gap: '1.5rem', textAlign: 'center' }}>
+                    <Loader2 size={40} style={{ color: 'var(--primary)', animation: 'spin 1.5s linear infinite' }} />
+                    <div>
+                      <h4 style={{ margin: '0 0 0.5rem 0', color: 'var(--text)', fontSize: '1.1rem', fontWeight: 800 }}>TaniOS AI Study Engine</h4>
+                      <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                        Analyzing syllabus and retrieving sub-topics for <strong>{activeMission.chapter}</strong>...
+                      </p>
+                    </div>
+                  </div>
+                ) : (
                   <div>
-                    {/* Topic Badge */}
-                    <div style={{
-                      display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
-                      background: 'rgba(99, 102, 241, 0.1)',
-                      border: '1px solid rgba(99, 102, 241, 0.2)',
-                      borderRadius: '20px', padding: '0.35rem 0.85rem',
-                      fontSize: '0.78rem', color: '#a78bfa', fontWeight: 700,
-                      marginBottom: '1rem'
-                    }}>
-                      🎯 Today's Topic: {data.topic || "Syllabus Core Concept"}
-                    </div>
-
-                    {/* Topic Summary Card — shown BEFORE the MCQ question */}
-                    {/* Topic Summary Card — shown BEFORE the MCQ question */}
-                    {(() => {
-                      let summaryToShow = data.topicSummary;
-                      if (!summaryToShow) {
-                        const subj = (activeMission?.subject || '').toLowerCase();
-                        if (subj.includes('science')) {
-                          summaryToShow = `* **Chemical Reactions** involve the breaking and making of bonds between atoms to produce new substances.
-* **Combination Reactions** occur when two or more reactants combine to form a single product ($A + B \\rightarrow AB$).
-* **Decomposition Reactions** involve a single reactant breaking down into two or more simpler products ($AB \\rightarrow A + B$). These reactions require energy input (heat, light, or electricity).
-* **Displacement Reactions** occur when a more reactive element displaces a less reactive element from its salt solution ($A + BC \\rightarrow AC + B$).`;
-                        } else if (subj.includes('economic') || subj.includes('commerce') || subj.includes('business') || subj.includes('accountancy') || subj.includes('social')) {
-                          summaryToShow = `* **Factors of Production** are the inputs required to produce goods and services: Land, Labour, Physical Capital, and Human Capital.
-* **Physical Capital** is divided into Fixed Capital and Working Capital.
-* **Fixed Capital** includes tools, machines, and buildings that can be used in production over many years.
-* **Working Capital** includes raw materials and cash in hand that are used up or consumed in a single production cycle.`;
-                        } else if (subj.includes('math')) {
-                          summaryToShow = `* **Real Numbers** ($\\mathbb{R}$) consist of all Rational and Irrational numbers.
-* **Rational Numbers** can be expressed in the form $\\frac{p}{q}$ where $p$ and $q$ are integers and $q \\neq 0$. Their decimal representation is terminating or repeating.
-* **Irrational Numbers** cannot be written as $\\frac{p}{q}$. Their decimal expansion is non-terminating and non-repeating (e.g., $\\sqrt{2}$, $\\pi$).
-* **Perfect Squares**: The square root of a positive integer is rational only if the integer is a perfect square; otherwise, it is irrational.`;
-                        } else if (subj.includes('english')) {
-                          summaryToShow = `* **Active Voice** emphasizes the performer of the action (Subject + Verb + Object).
-* **Passive Voice** shifts the focus to the receiver or the action itself (Object + auxiliary verb + V3 + by + Subject).
-* **Present Continuous Tense**: The active form \`is/am/are + V-ing\` transforms into the passive form \`is/am/are + being + V3\`.
-* **Important Rule**: Always preserve the original tense of the active sentence during passive voice conversion.`;
-                        } else if (subj.includes('hindi') || subj.includes('sanskrit')) {
-                          summaryToShow = `* **क्रिया (Verb)**: जिन शब्दों से किसी कार्य के करने या होने का पता चले, उन्हें क्रिया कहते हैं।
-* **सकर्मक क्रिया (Transitive Verb)**: जिस क्रिया के कार्य का फल सीधे कर्म (Object) पर पड़ता है। इसमें कर्म की आवश्यकता होती है।
-* **अकर्मक क्रिया (Intransitive Verb)**: जिस क्रिया के कार्य का फल सीधे कर्ता (Subject) पर पड़ता है। इसमें कर्म नहीं होता।
-* **पहचान ट्रिक**: क्रिया से पहले 'क्या' या 'किसको' लगाने पर यदि उत्तर मिले तो वह सकर्मक है, अन्यथा अकर्मक है।`;
-                        } else {
-                          summaryToShow = `* **Subject**: ${activeMission?.subject || 'Syllabus'}
-* **Chapter**: ${activeMission?.chapter || 'Core Concepts'}
-* **Active Target**: ${data.topic || 'Syllabus Core Concept'}
-* **Pacing Guide**: Chronological sub-topic study session for Class ${profileClass || '10'} ${profileBoard || 'CBSE'} board exam.
-* **Learning Goal**: Study this concept, then answer the MCQ challenge below to unlock the detailed explanation masterclass!`;
-                        }
-                      }
-                      
-                      return (
-                        <div style={{
-                          background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.06) 0%, rgba(16, 185, 129, 0.04) 100%)',
-                          border: '1px solid rgba(99, 102, 241, 0.18)',
-                          borderRadius: '12px', padding: '1rem 1.25rem',
-                          marginBottom: '1.25rem',
-                        }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.65rem' }}>
-                            <span style={{ fontSize: '1rem' }}>📖</span>
-                            <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#a78bfa', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Topic Quick Summary</span>
-                          </div>
-                          <div className="generated-content" style={{
-                            fontSize: '0.83rem',
-                            lineHeight: 1.65,
-                            color: 'var(--text)',
-                            background: 'transparent',
-                            border: 'none',
-                            padding: 0,
-                            marginTop: 0,
-                            boxShadow: 'none'
-                          }}>
-                            <ReactMarkdown
-                              remarkPlugins={[remarkGfm, remarkMath]}
-                              rehypePlugins={[rehypeKatex]}
-                              components={markdownComponents}
-                              children={String(summaryToShow || '')}
-                            />
-                          </div>
-                        </div>
-                      );
-                    })()}
-
-                    {/* Question Card */}
-                    <div className="generated-content" style={{
-                      background: 'var(--bg-tertiary)',
-                      border: '1px solid var(--border)',
-                      borderRadius: '12px', padding: '1.25rem',
-                      marginBottom: '1.25rem', fontSize: '0.95rem',
-                      fontWeight: 700, color: 'var(--text)', lineHeight: 1.5,
-                      marginTop: 0,
-                      boxShadow: 'none'
-                    }}>
-                      <div style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>❓ MCQ Challenge</div>
-                      <ReactMarkdown
-                        remarkPlugins={[remarkGfm, remarkMath]}
-                        rehypePlugins={[rehypeKatex]}
-                        components={markdownComponents}
-                        children={String(data?.questionText || '')}
-                      />
-                    </div>
-
-                    {/* Options Grid */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1.5rem' }}>
-                      {options.map(opt => {
-                        const isSelected = missionAnswer === opt.key;
+                    <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '1.25rem', lineHeight: 1.5 }}>
+                      Customize your target for today. Choose the sub-topics you want to cover from <strong>{activeMission.chapter}</strong>:
+                    </p>
+                    
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1.75rem' }}>
+                      {topicsToSelect.map(topic => {
+                        const isCompleted = (JSON.parse(localStorage.getItem(getUserKey('tanios_completed_topics')) || '{}')[activeMission.subject]?.[activeMission.chapter] || []).includes(topic);
+                        const isSelected = selectedTopics.includes(topic);
+                        
                         return (
-                          <button
-                            key={opt.key}
-                            onClick={() => !missionSubmitted && setMissionAnswer(opt.key)}
-                            disabled={missionSubmitted}
+                          <label
+                            key={topic}
                             style={{
-                              display: 'flex', alignItems: 'center', gap: '1rem',
-                              width: '100%', padding: '0.85rem 1.25rem',
-                              background: isSelected ? 'var(--primary-light)' : 'var(--bg-secondary)',
-                              border: isSelected ? '1px solid var(--primary)' : '1px solid var(--border)',
-                              borderRadius: '10px', color: 'var(--text)', textAlign: 'left',
-                              cursor: missionSubmitted ? 'default' : 'pointer',
-                              transition: 'all 0.2s'
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.75rem',
+                              padding: '0.85rem 1rem',
+                              background: isCompleted ? 'rgba(16, 185, 129, 0.03)' : isSelected ? 'rgba(99, 102, 241, 0.05)' : 'var(--bg-secondary)',
+                              border: isCompleted 
+                                ? '1px solid rgba(16, 185, 129, 0.15)' 
+                                : isSelected 
+                                  ? '1px solid var(--primary)' 
+                                  : '1px solid var(--border)',
+                              borderRadius: '8px',
+                              cursor: isCompleted ? 'default' : 'pointer',
+                              opacity: isCompleted ? 0.7 : 1,
+                              transition: 'all 0.2s',
+                              userSelect: 'none'
                             }}
                           >
-                            <div style={{
-                              width: '24px', height: '24px', borderRadius: '50%',
-                              background: isSelected ? 'var(--primary)' : 'var(--bg-tertiary)',
-                              display: 'flex', alignItems: 'center', justifyContent: 'center',
-                              fontSize: '0.75rem', fontWeight: 800, color: isSelected ? '#fff' : 'var(--text-secondary)',
-                              flexShrink: 0
-                            }}>
-                              {opt.key}
+                            <input
+                              type="checkbox"
+                              checked={isSelected || isCompleted}
+                              disabled={isCompleted}
+                              onChange={() => {
+                                if (isCompleted) return;
+                                if (isSelected) {
+                                  setSelectedTopics(selectedTopics.filter(t => t !== topic));
+                                } else {
+                                  setSelectedTopics([...selectedTopics, topic]);
+                                }
+                              }}
+                              style={{
+                                width: '16px',
+                                height: '16px',
+                                accentColor: isCompleted ? 'var(--success)' : 'var(--primary)',
+                                cursor: 'pointer'
+                              }}
+                            />
+                            <div style={{ flex: 1 }}>
+                              <span style={{ 
+                                fontSize: '0.85rem', 
+                                fontWeight: 600, 
+                                color: isCompleted ? 'var(--text-secondary)' : 'var(--text)',
+                                textDecoration: isCompleted ? 'line-through' : 'none'
+                              }}>
+                                {topic}
+                              </span>
+                              {isCompleted && (
+                                <span style={{ fontSize: '0.68rem', color: 'var(--success)', fontWeight: 700, marginLeft: '0.5rem' }}>
+                                  ✓ Completed
+                                </span>
+                              )}
                             </div>
-                            <span style={{ fontSize: '0.82rem', fontWeight: 600, lineHeight: 1.4 }}>
-                              <ReactMarkdown
-                                remarkPlugins={[remarkGfm, remarkMath]}
-                                rehypePlugins={[rehypeKatex]}
-                                components={{
-                                  ...markdownComponents,
-                                  p: ({ children }) => <span style={{ margin: 0, display: 'inline' }}>{children}</span>
-                                }}
-                                children={String(opt?.desc || opt?.text || '')}
-                              />
-                            </span>
-                          </button>
+                          </label>
                         );
                       })}
                     </div>
 
-                    {/* Explanation / Masterclass Feedback */}
-                    {missionSubmitted && (
+                    {/* Add Custom Sub-Topic Input Row */}
+                    <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', marginTop: '0.5rem' }}>
+                      <input
+                        type="text"
+                        placeholder="Add custom topic (e.g. Raoult's Law, Numericals)..."
+                        value={customTopicInput}
+                        onChange={(e) => setCustomTopicInput(e.target.value)}
+                        style={{
+                          flex: 1,
+                          fontSize: '0.82rem',
+                          background: 'var(--bg-tertiary)',
+                          border: '1px solid var(--border)',
+                          borderRadius: '6px',
+                          color: 'var(--text)',
+                          padding: '0.5rem 0.75rem',
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            const cleaned = customTopicInput.trim();
+                            if (!cleaned) return;
+                            if (topicsToSelect.some(t => t.toLowerCase() === cleaned.toLowerCase())) {
+                              alert("This sub-topic is already in the list!");
+                              return;
+                            }
+                            setTopicsToSelect([...topicsToSelect, cleaned]);
+                            setSelectedTopics([...selectedTopics, cleaned]);
+                            setCustomTopicInput('');
+                          }
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const cleaned = customTopicInput.trim();
+                          if (!cleaned) return;
+                          if (topicsToSelect.some(t => t.toLowerCase() === cleaned.toLowerCase())) {
+                            alert("This sub-topic is already in the list!");
+                            return;
+                          }
+                          setTopicsToSelect([...topicsToSelect, cleaned]);
+                          setSelectedTopics([...selectedTopics, cleaned]);
+                          setCustomTopicInput('');
+                        }}
+                        style={{
+                          background: 'var(--bg-secondary)',
+                          border: '1px solid var(--border)',
+                          borderRadius: '6px',
+                          color: 'var(--text)',
+                          fontSize: '0.8rem',
+                          fontWeight: 700,
+                          padding: '0.5rem 0.85rem',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        + Add
+                      </button>
+                    </div>
+
+                    {topicsError && (
+                      <div style={{ fontSize: '0.78rem', color: '#f87171', marginBottom: '1rem' }}>
+                        ⚠️ {topicsError}
+                      </div>
+                    )}
+
+                    <button
+                      onClick={() => {
+                        if (selectedTopics.length === 0) {
+                          alert('Please select at least one topic to study today.');
+                          return;
+                        }
+                        fetchDynamicMission(activeMission, selectedTopics);
+                      }}
+                      className="btn btn-primary"
+                      style={{
+                        width: '100%',
+                        padding: '0.85rem',
+                        fontSize: '0.88rem',
+                        fontWeight: 800,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '0.5rem',
+                        background: 'linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%)',
+                        border: 'none',
+                        borderRadius: '8px',
+                        boxShadow: '0 4px 15px rgba(99, 102, 241, 0.3)'
+                      }}
+                    >
+                      <Sparkles size={16} /> Generate Personalized Practice MCQ ➔
+                    </button>
+                  </div>
+                )
+              ) : (
+                missionLoading ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '300px', gap: '1.5rem', textAlign: 'center' }}>
+                    <Loader2 size={40} style={{ color: 'var(--primary)', animation: 'spin 1.5s linear infinite' }} />
+                    <div>
+                      <h4 style={{ margin: '0 0 0.5rem 0', color: 'var(--text)', fontSize: '1.1rem', fontWeight: 800 }}>TaniOS AI Study Engine</h4>
+                      <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                        Engineering a high-yield concept-teaching MCQ masterclass for <strong>{activeMission.subject}</strong>...
+                      </p>
+                    </div>
+                  </div>
+                ) : (() => {
+                  const data = dynamicMissionContent || fallback;
+                  const options = data.options || fallback.options;
+                  return (
+                    <div>
+                      {/* Topic Badge */}
                       <div style={{
-                        marginTop: '1.25rem', padding: '1.25rem',
-                        background: missionAnswer === data.correctKey ? 'rgba(16, 185, 129, 0.04)' : 'rgba(239, 68, 68, 0.04)',
-                        border: missionAnswer === data.correctKey ? '1px solid rgba(16, 185, 129, 0.15)' : '1px solid rgba(239, 68, 68, 0.15)',
-                        borderRadius: '12px', fontSize: '0.85rem', lineHeight: 1.6, color: 'var(--text-secondary)'
+                        display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
+                        background: 'rgba(99, 102, 241, 0.1)',
+                        border: '1px solid rgba(99, 102, 241, 0.2)',
+                        borderRadius: '20px', padding: '0.35rem 0.85rem',
+                        fontSize: '0.78rem', color: '#a78bfa', fontWeight: 700,
+                        marginBottom: '1rem'
                       }}>
-                        {missionAnswer === data.correctKey ? (
-                          <div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem', color: '#10b981', fontWeight: 800, fontSize: '0.95rem' }}>
-                              🎉 <span>Correct Answer! Topic Masterclass Unlocked</span>
+                        🎯 Today's Topic: {data.topic || "Syllabus Core Concept"}
+                      </div>
+
+                      {/* Topic Summary Card — shown BEFORE the MCQ question */}
+                      {(() => {
+                        let summaryToShow = data.topicSummary;
+                        if (!summaryToShow) {
+                          const subj = (activeMission?.subject || '').toLowerCase();
+                          if (subj.includes('science')) {
+                            summaryToShow = `* **Chemical Reactions** involve the breaking and making of bonds between atoms to produce new substances.
+* **Combination Reactions** occur when two or more reactants combine to form a single product ($A + B \\rightarrow AB$).
+* **Decomposition Reactions** involve a single reactant breaking down into two or more simpler products ($AB \\rightarrow A + B$). These reactions require energy input (heat, light, or electricity).
+* **Displacement Reactions** occur when a more reactive element displaces a less reactive element from its salt solution ($A + BC \\rightarrow AC + B$).`;
+                          } else if (subj.includes('economic') || subj.includes('commerce') || subj.includes('business') || subj.includes('accountancy') || subj.includes('social')) {
+                            summaryToShow = `* **Factors of Production** are the inputs required to produce goods and services: Land, Labour, Physical Capital, and Human Capital.
+* **Physical Capital** is divided into Fixed Capital and Working Capital.
+* **Fixed Capital** includes tools, machines, and buildings that can be used in production over many years.
+* **Working Capital** includes raw materials and cash in hand that are used up or consumed in a single production cycle.`;
+                          } else if (subj.includes('math')) {
+                            summaryToShow = `* **Real Numbers** ($\\mathbb{R}$) consist of all Rational and Irrational numbers.
+* **Rational Numbers** can be expressed in the form $\\frac{p}{q}$ where $p$ and $q$ are integers and $q \\neq 0$. Their decimal representation is terminating or repeating.
+* **Irrational Numbers** cannot be written as $\\frac{p}{q}$. Their decimal expansion is non-terminating and non-repeating (e.g., $\\sqrt{2}$, $\\pi$).
+* **Perfect Squares**: The square root of a positive integer is rational only if the integer is a perfect square; otherwise, it is irrational.`;
+                          } else if (subj.includes('english')) {
+                            summaryToShow = `* **Active Voice** emphasizes the performer of the action (Subject + Verb + Object).
+* **Passive Voice** shifts the focus to the receiver or the action itself (Object + auxiliary verb + V3 + by + Subject).
+* **Present Continuous Tense**: The active form \`is/am/are + V-ing\` transforms into the passive form \`is/am/are + being + V3\`.
+* **Important Rule**: Always preserve the original tense of the active sentence during passive voice conversion.`;
+                          } else if (subj.includes('hindi') || subj.includes('sanskrit')) {
+                            summaryToShow = `* **क्रिया (Verb)**: जिन शब्दों से किसी कार्य के करने या होने का पता चले, उन्हें क्रिया कहते हैं।
+* **सकर्मक क्रिया (Transitive Verb)**: जिस क्रिया के कार्य का फल सीधे कर्म (Object) पर पड़ता है। इसमें कर्म की आवश्यकता होती है।
+* **अकर्मक क्रिया (Intransitive Verb)**: जिस क्रिया के कार्य का फल सीधे कर्ता (Subject) पर पड़ता है। इसमें कर्म नहीं होता।
+* **पहचान ट्रिक**: क्रिया से पहले 'क्या' या 'किसको' लगाने पर यदि उत्तर मिले तो वह सकर्मक है, अन्यथा अकर्मक है।`;
+                          } else {
+                            summaryToShow = `* **Subject**: ${activeMission?.subject || 'Syllabus'}
+* **Chapter**: ${activeMission?.chapter || 'Core Concepts'}
+* **Active Target**: ${data.topic || 'Syllabus Core Concept'}
+* **Pacing Guide**: Chronological sub-topic study session for Class ${profileClass || '10'} ${profileBoard || 'CBSE'} board exam.
+* **Learning Goal**: Study this concept, then answer the MCQ challenge below to unlock the detailed explanation masterclass!`;
+                          }
+                        }
+                        
+                        return (
+                          <div style={{
+                            background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.06) 0%, rgba(16, 185, 129, 0.04) 100%)',
+                            border: '1px solid rgba(99, 102, 241, 0.18)',
+                            borderRadius: '12px', padding: '1rem 1.25rem',
+                            marginBottom: '1.25rem',
+                          }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.65rem' }}>
+                              <span style={{ fontSize: '1rem' }}>📖</span>
+                              <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#a78bfa', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Topic Quick Summary</span>
                             </div>
                             <div className="generated-content" style={{
+                              fontSize: '0.83rem',
+                              lineHeight: 1.65,
                               color: 'var(--text)',
                               background: 'transparent',
-                              padding: 0,
                               border: 'none',
-                              marginTop: '0.5rem',
-                              fontSize: '0.85rem',
+                              padding: 0,
+                              marginTop: 0,
                               boxShadow: 'none'
                             }}>
                               <ReactMarkdown
                                 remarkPlugins={[remarkGfm, remarkMath]}
                                 rehypePlugins={[rehypeKatex]}
                                 components={markdownComponents}
-                                children={String(data?.explanation || '')}
+                                children={String(summaryToShow || '')}
                               />
                             </div>
                           </div>
-                        ) : (
-                          <div>
-                            <div style={{ color: '#f87171', fontWeight: 800, marginBottom: '0.25rem', fontSize: '0.9rem' }}>
-                              ❌ Incorrect Option selected
-                            </div>
-                            <span>
-                              That option does not teach this topic correctly. Click the button below to clear your choice, review the options, and select the correct teaching statement!
-                            </span>
-                          </div>
-                        )}
+                        );
+                      })()}
+
+                      {/* Question Card */}
+                      <div className="generated-content" style={{
+                        background: 'var(--bg-tertiary)',
+                        border: '1px solid var(--border)',
+                        borderRadius: '12px', padding: '1.25rem',
+                        marginBottom: '1.25rem', fontSize: '0.95rem',
+                        fontWeight: 700, color: 'var(--text)', lineHeight: 1.5,
+                        marginTop: 0,
+                        boxShadow: 'none'
+                      }}>
+                        <div style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>❓ MCQ Challenge</div>
+                        <ReactMarkdown
+                          remarkPlugins={[remarkGfm, remarkMath]}
+                          rehypePlugins={[rehypeKatex]}
+                          components={markdownComponents}
+                          children={String(data?.questionText || '')}
+                        />
                       </div>
-                    )}
-                  </div>
-                );
-              })()}
+
+                      {/* Options Grid */}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1.5rem' }}>
+                        {options.map(opt => {
+                          const isSelected = missionAnswer === opt.key;
+                          return (
+                            <button
+                              key={opt.key}
+                              onClick={() => !missionSubmitted && setMissionAnswer(opt.key)}
+                              disabled={missionSubmitted}
+                              style={{
+                                display: 'flex', alignItems: 'center', gap: '1rem',
+                                width: '100%', padding: '0.85rem 1.25rem',
+                                background: isSelected ? 'var(--primary-light)' : 'var(--bg-secondary)',
+                                border: isSelected ? '1px solid var(--primary)' : '1px solid var(--border)',
+                                borderRadius: '10px', color: 'var(--text)', textAlign: 'left',
+                                cursor: missionSubmitted ? 'default' : 'pointer',
+                                transition: 'all 0.2s'
+                              }}
+                            >
+                              <div style={{
+                                width: '24px', height: '24px', borderRadius: '50%',
+                                background: isSelected ? 'var(--primary)' : 'var(--bg-tertiary)',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                fontSize: '0.75rem', fontWeight: 800, color: isSelected ? '#fff' : 'var(--text-secondary)',
+                                flexShrink: 0
+                              }}>
+                                {opt.key}
+                              </div>
+                              <span style={{ fontSize: '0.82rem', fontWeight: 600, lineHeight: 1.4 }}>
+                                <ReactMarkdown
+                                  remarkPlugins={[remarkGfm, remarkMath]}
+                                  rehypePlugins={[rehypeKatex]}
+                                  components={{
+                                    ...markdownComponents,
+                                    p: ({ children }) => <span style={{ margin: 0, display: 'inline' }}>{children}</span>
+                                  }}
+                                  children={String(opt?.desc || opt?.text || '')}
+                                />
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      {/* Explanation / Masterclass Feedback */}
+                      {missionSubmitted && (
+                        <div style={{
+                          marginTop: '1.25rem', padding: '1.25rem',
+                          background: missionAnswer === data.correctKey ? 'rgba(16, 185, 129, 0.04)' : 'rgba(239, 68, 68, 0.04)',
+                          border: missionAnswer === data.correctKey ? '1px solid rgba(16, 185, 129, 0.15)' : '1px solid rgba(239, 68, 68, 0.15)',
+                          borderRadius: '12px', fontSize: '0.85rem', lineHeight: 1.6, color: 'var(--text-secondary)'
+                        }}>
+                          {missionAnswer === data.correctKey ? (
+                            <div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem', color: '#10b981', fontWeight: 800, fontSize: '0.95rem' }}>
+                                🎉 <span>Correct Answer! Topic Masterclass Unlocked</span>
+                              </div>
+                              <div className="generated-content" style={{
+                                color: 'var(--text)',
+                                background: 'transparent',
+                                padding: 0,
+                                border: 'none',
+                                marginTop: '0.5rem',
+                                fontSize: '0.85rem',
+                                boxShadow: 'none'
+                              }}>
+                                <ReactMarkdown
+                                  remarkPlugins={[remarkGfm, remarkMath]}
+                                  rehypePlugins={[rehypeKatex]}
+                                  components={markdownComponents}
+                                  children={String(data?.explanation || '')}
+                                />
+                              </div>
+                            </div>
+                          ) : (
+                            <div>
+                              <div style={{ color: '#f87171', fontWeight: 800, marginBottom: '0.25rem', fontSize: '0.9rem' }}>
+                                ❌ Incorrect Option selected
+                              </div>
+                              <span>
+                                That option does not teach this topic correctly. Click the button below to clear your choice, review the options, and select the correct teaching statement!
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()
+              )}
             </div>
 
             {/* Modal Bottom Actions */}
-            {!missionLoading && (
+            {!missionLoading && dynamicMissionContent && (
               <div style={{ display: 'flex', gap: '0.75rem', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '1.25rem', justifyContent: 'flex-end' }}>
                 {!missionSubmitted ? (
                   <button
