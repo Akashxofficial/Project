@@ -1273,12 +1273,12 @@ const AttemptItem = ({ att }) => {
 
 
 export default function Home() {
-  const { currentUser, subscription } = useAuth();
+  const { currentUser, subscription, setShowLoginModal } = useAuth();
   const [showUpgradePopup, setShowUpgradePopup] = useState(false);
   const navigate = useNavigate();
 
   const firstName = currentUser?.displayName?.split(' ')[0] || 'Student';
-  const isGuest = currentUser?.isGuest;
+  const isGuest = !currentUser || currentUser.isGuest || currentUser.email === 'guest@tanios.ai';
 
   // ── USER-SPECIFIC LOCAL STORAGE SANDBOX ──
   const userId = currentUser?.uid || currentUser?.email || 'guest';
@@ -1493,6 +1493,11 @@ export default function Home() {
   const handleSaveProfile = (e) => {
     e.preventDefault();
     
+    if (isGuest) {
+      setShowLoginModal(true);
+      return;
+    }
+    
     const quickSubjectsList = [...selectedSubjects];
     const customList = setupSubjects.split(',')
       .map(s => s.trim())
@@ -1502,6 +1507,12 @@ export default function Home() {
     
     if (subjectsArray.length === 0) {
       alert("Please select or enter at least one subject to customize your missions.");
+      return;
+    }
+
+    if (!isPro && subjectsArray.length > 2) {
+      alert("Free members can only choose up to 2 subjects. Please upgrade to TaniOS Pro to select 3 or more subjects!");
+      setShowUpgradePopup(true);
       return;
     }
 
@@ -1562,7 +1573,7 @@ export default function Home() {
       return { name: subj, chapters: chList.length, daysPerCh };
     });
     setTimelineData({ totalDays: totalDaysLeft, subjects: summaryItems });
-    setShowTimelineModal(true);
+    // setShowTimelineModal(true);
   };
 
   // Sync to local storage
@@ -1591,6 +1602,7 @@ export default function Home() {
       const storedProfile     = localStorage.getItem(getUserKey('tanios_profile'));
       const storedAttempts    = localStorage.getItem(getUserKey('tanios_mcq_attempts'));
       const storedNetScore    = localStorage.getItem(getUserKey('tanios_net_score'));
+      const storedInline      = localStorage.getItem(getUserKey('tanios_inline_subtopics'));
 
       // ── Numeric counters ── default to 0 for fresh sessions
       setXp(storedXp ? parseInt(storedXp, 10) : 0);
@@ -1598,6 +1610,7 @@ export default function Home() {
       setConsistency(storedConsistency ? parseInt(storedConsistency, 10) : 0);
       setMcqAttempts(storedAttempts ? JSON.parse(storedAttempts) : []);
       setNetScore(storedNetScore ? parseInt(storedNetScore, 10) : 0);
+      setInlineSubTopics(storedInline ? JSON.parse(storedInline) : {});
 
       // ── Badges ── empty for fresh sessions
       setBadges(storedBadges ? JSON.parse(storedBadges) : []);
@@ -1905,9 +1918,8 @@ export default function Home() {
       const chaptersRemaining = Math.max(1, totalChapters - (chapterIdx !== -1 ? chapterIdx + 1 : 1) + 1);
       const daysPerChapter = Math.max(5, Math.round(diffDays / chaptersRemaining));
 
-      // Check if the chapter is complete (either all sub-topics are done, or fallback days pacing reached)
-      let isChapterComplete = false;
-      const chapterTopics = inlineSubTopics[subject]?.topics || [];
+      const savedInline = JSON.parse(localStorage.getItem(getUserKey('tanios_inline_subtopics')) || '{}');
+      const chapterTopics = savedInline[subject]?.[currentChapter]?.topics || [];
       if (chapterTopics.length > 0) {
         isChapterComplete = chapterTopics.every(t => newCompleted.includes(t));
       } else {
@@ -1973,6 +1985,47 @@ export default function Home() {
   };
 
   const safeJsonParse = (str) => {
+    // Helper to escape raw control characters inside JSON string literals
+    const escapeControlCharsInStrings = (s) => {
+      let result = '';
+      let insideString = false;
+      let i = 0;
+      while (i < s.length) {
+        const char = s[i];
+        if (char === '"') {
+          let backslashes = 0;
+          let j = i - 1;
+          while (j >= 0 && s[j] === '\\') {
+            backslashes++;
+            j--;
+          }
+          if (backslashes % 2 === 0) {
+            insideString = !insideString;
+          }
+          result += char;
+          i++;
+        } else if (insideString) {
+          if (char === '\n') {
+            result += '\\n';
+            i++;
+          } else if (char === '\r') {
+            result += '\\r';
+            i++;
+          } else if (char === '\t') {
+            result += '\\t';
+            i++;
+          } else {
+            result += char;
+            i++;
+          }
+        } else {
+          result += char;
+          i++;
+        }
+      }
+      return result;
+    };
+
     let cleaned = str.trim();
     const firstBrace = cleaned.indexOf('{');
     const lastBrace = cleaned.lastIndexOf('}');
@@ -1986,6 +2039,8 @@ export default function Home() {
     } else {
       cleaned = cleaned.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
     }
+
+    cleaned = escapeControlCharsInStrings(cleaned);
 
     // Replace invalid single quote escapes
     cleaned = cleaned.replace(/\\'/g, "'");
@@ -2114,6 +2169,13 @@ export default function Home() {
 
     const numQuestions = Math.min(5, Math.max(1, chosenTopics.length || 1));
 
+    const savedInline = JSON.parse(localStorage.getItem(getUserKey('tanios_inline_subtopics')) || '{}');
+    const allTopicsForChapter = savedInline[subject]?.[currentChapter]?.topics || [];
+    const excludedTopics = allTopicsForChapter.filter(t => !chosenTopics.includes(t));
+    const excludeInstruction = excludedTopics.length > 0
+      ? `\n* EXTREMELY IMPORTANT DIRECTIVE: Do NOT generate questions for any of these excluded sub-topics: ${excludedTopics.map(t => `"${t}"`).join(', ')}. Focus ONLY on the selected ones.`
+      : '';
+
     let prompt = `You are an elite syllabus-expert personal AI teacher built specifically for Class ${grade} students of the ${board} board, with extreme expertise in curricula, past exam papers, and question patterns.
  
 SYSTEMATIC TOPIC-TEACHING MCQ LAW:
@@ -2121,6 +2183,7 @@ Your goal is to teach a student the specific sub-topic(s): ${topicsStr} from the
 Instead of combining all sub-topics into a single broad question, you must generate a separate, highly educational Multiple Choice Question (MCQ) for each of the selected sub-topics individually.
 You MUST generate exactly ${numQuestions} highly educational Multiple Choice Questions (MCQs) in the "questions" array, where each question corresponds to one of the selected sub-topics in chronological order:
 ${chosenTopics.length > 0 ? chosenTopics.map((topic, i) => `${i + 1}. "${topic}"`).join('\n') : `1. "${currentChapter} Core Concepts"`}
+* ABSOLUTE RESTRICTION: Do NOT include, test, or reference any other concepts or sub-topics from the chapter. Generate MCQs ONLY for the specific list of selected sub-topics listed above.
 Each question, options, and explanation MUST be designed with 100% precision for CBSE and RBSE board standards, focusing heavily on high-yield, exam-repeated concepts.
 
 SYLLABUS PACING SUMMARY:
@@ -2132,7 +2195,7 @@ SYLLABUS PACING SUMMARY:
 * Chapter Study Day Progress: Today is Day ${currentTopicDay} out of ${daysPerChapter} allocated days for "${currentChapter}".
 
 Systematic Topic-Focused Pacing Directive:
-Please design the MCQs, the topic summaries, and the explanations strictly to explain and test the selected topics: ${topicsStr}.
+Please design the MCQs, the topic summaries, and the explanations strictly to explain and test the selected topics: ${topicsStr}.${excludeInstruction}
 
 SPEED & CONCISENESS RULE (MANDATORY):
 To ensure ultra-fast generation and instant response times (< 2 seconds), be extremely crisp, high-density, and direct. Keep each topicSummary to exactly 3 short bullet points (max 40 words total). Keep each explanation to a short, high-yield topper guide of max 120 words total containing a 1-bullet concept explanation, a 1-sentence topper trick, and a 1-sentence mistake warning.
@@ -2176,68 +2239,93 @@ JSON Structure:
     }
   };
 
-  const fetchInlineSubTopics = async (subject, chapter) => {
-    if (!subject || !chapter) return;
+  const ensureInlineSubTopics = async (subject, chapter) => {
+    const savedInline = JSON.parse(localStorage.getItem(getUserKey('tanios_inline_subtopics')) || '{}');
+    if (savedInline[subject]?.[chapter]?.topics?.length > 0) {
+      return savedInline[subject][chapter].topics;
+    }
 
-    setInlineSubTopics(prev => ({
-      ...prev,
-      [subject]: { ...(prev[subject] || {}), loading: true, error: '' }
-    }));
-
-    try {
-      const cleanProfileClass = (profileClass || '10').toString().replace(/\D/g, '') || '10';
-      const prompt = `You are a CBSE and RBSE board syllabus expert. 
+    const cleanProfileClass = (profileClass || '10').toString().replace(/\D/g, '') || '10';
+    const prompt = `You are a CBSE and RBSE board syllabus expert. 
 Generate a list of exactly 4 to 6 core chronological sub-topics or key concepts for Class ${cleanProfileClass}, ${profileBoard || 'CBSE'} Board, Subject: ${subject}, Chapter: "${chapter}".
 Return ONLY a valid JSON array of strings, where each string represents a specific chronological sub-topic or key concept.
 Do not include any markdown, code blocks, or conversational text. Output raw JSON only. E.g.:
 ["Topic 1", "Topic 2", "Topic 3", "Topic 4"]`;
 
-      const response = await generateAIContent(prompt);
-      if (response.error || (typeof response.text !== 'string' && !Array.isArray(response.text))) {
-        throw new Error(response.message || 'Failed to fetch topics');
-      }
+    const response = await generateAIContent(prompt);
+    if (response.error || (typeof response.text !== 'string' && !Array.isArray(response.text))) {
+      throw new Error(response.message || 'Failed to fetch topics');
+    }
 
-      let parsed = [];
-      if (Array.isArray(response.text)) {
-        parsed = response.text;
-      } else {
-        parsed = safeJsonParse(response.text);
-      }
+    let parsed = [];
+    if (Array.isArray(response.text)) {
+      parsed = response.text;
+    } else {
+      parsed = safeJsonParse(response.text);
+    }
 
-      if (Array.isArray(parsed)) {
-        setInlineSubTopics(prev => ({
+    if (Array.isArray(parsed) && parsed.length > 0) {
+      return parsed;
+    } else {
+      throw new Error('Invalid sub-topics array returned');
+    }
+  };
+
+  const fetchInlineSubTopics = async (subject, chapter) => {
+    if (!subject || !chapter) return;
+
+    setInlineSubTopics(prev => ({
+      ...prev,
+      [subject]: {
+        ...(prev[subject] || {}),
+        [chapter]: {
+          ...(prev[subject]?.[chapter] || {}),
+          loading: true,
+          error: ''
+        }
+      }
+    }));
+
+    try {
+      const parsed = await ensureInlineSubTopics(subject, chapter);
+
+      setInlineSubTopics(prev => {
+        const updated = {
           ...prev,
-          [subject]: { topics: parsed, loading: false, error: '' }
-        }));
-
-        // Sync initial selection in state and localStorage
-        setSelectedSubTopicsMap(prev => {
-          const currentSelection = prev[subject]?.[chapter];
-          if (!currentSelection || currentSelection.length === 0) {
-            let completedList = [];
-            try {
-              const stored = localStorage.getItem(getUserKey('tanios_completed_topics'));
-              const completedMap = stored ? JSON.parse(stored) : {};
-              completedList = completedMap[subject]?.[chapter] || [];
-            } catch (e) {}
-            const remaining = parsed.filter(t => !completedList.includes(t));
-            const initialSelection = remaining.length > 0 ? remaining : parsed;
-
-            const updated = {
-              ...prev,
-              [subject]: {
-                ...(prev[subject] || {}),
-                [chapter]: initialSelection
-              }
-            };
-            localStorage.setItem(getUserKey('tanios_selected_subtopics'), JSON.stringify(updated));
-            return updated;
+          [subject]: {
+            ...(prev[subject] || {}),
+            [chapter]: { topics: parsed, loading: false, error: '' }
           }
-          return prev;
-        });
-      } else {
-        throw new Error('Response is not a JSON array');
-      }
+        };
+        localStorage.setItem(getUserKey('tanios_inline_subtopics'), JSON.stringify(updated));
+        return updated;
+      });
+
+      // Sync initial selection in state and localStorage
+      setSelectedSubTopicsMap(prev => {
+        const currentSelection = prev[subject]?.[chapter];
+        if (currentSelection === undefined) {
+          let completedList = [];
+          try {
+            const stored = localStorage.getItem(getUserKey('tanios_completed_topics'));
+            const completedMap = stored ? JSON.parse(stored) : {};
+            completedList = completedMap[subject]?.[chapter] || [];
+          } catch (e) {}
+          const remaining = parsed.filter(t => !completedList.includes(t));
+          const initialSelection = remaining.length > 0 ? remaining : parsed;
+
+          const updated = {
+            ...prev,
+            [subject]: {
+              ...(prev[subject] || {}),
+              [chapter]: initialSelection
+            }
+          };
+          localStorage.setItem(getUserKey('tanios_selected_subtopics'), JSON.stringify(updated));
+          return updated;
+        }
+        return prev;
+      });
     } catch (err) {
       console.error(`Error loading inline topics for ${subject}:`, err);
       const fallbackList = [
@@ -2248,7 +2336,14 @@ Do not include any markdown, code blocks, or conversational text. Output raw JSO
       ];
       setInlineSubTopics(prev => ({
         ...prev,
-        [subject]: { topics: fallbackList, loading: false, error: err.message || 'Failed to load sub-topics' }
+        [subject]: {
+          ...(prev[subject] || {}),
+          [chapter]: {
+            topics: fallbackList,
+            loading: false,
+            error: err.message || 'Failed to load sub-topics'
+          }
+        }
       }));
     }
   };
@@ -2266,53 +2361,84 @@ Do not include any markdown, code blocks, or conversational text. Output raw JSO
     setMissionLoading(true);
     setMissionError('');
 
+    // First read from the React state which represents the active checkbox selections in the UI
+    let chosenTopics = selectedSubTopicsMap[mission.subject]?.[mission.chapter];
+
     const savedSelected = JSON.parse(localStorage.getItem(getUserKey('tanios_selected_subtopics')) || '{}');
-    let chosenTopics = savedSelected[mission.subject]?.[mission.chapter];
+    if (chosenTopics === undefined) {
+      chosenTopics = savedSelected[mission.subject]?.[mission.chapter];
+    }
+
+    // If the mission is not done yet (active study), filter out already completed topics
+    if (chosenTopics && !mission.done) {
+      let completedList = [];
+      try {
+        const stored = localStorage.getItem(getUserKey('tanios_completed_topics'));
+        const completedMap = stored ? JSON.parse(stored) : {};
+        completedList = completedMap[mission.subject]?.[mission.chapter] || [];
+      } catch (e) {}
+      chosenTopics = chosenTopics.filter(t => !completedList.includes(t));
+    }
 
     if (mission.type === 'teaching_mcq' || mission.type === 'study' || mission.type === 'revision') {
       try {
-        if (!chosenTopics || chosenTopics.length === 0) {
-          const cleanProfileClass = (profileClass || '10').toString().replace(/\D/g, '') || '10';
-          const prompt = `You are a CBSE and RBSE board syllabus expert. 
-Generate a list of exactly 4 to 6 core chronological sub-topics or key concepts for Class ${cleanProfileClass}, ${profileBoard || 'CBSE'} Board, Subject: ${mission.subject}, Chapter: "${mission.chapter}".
-Return ONLY a valid JSON array of strings, where each string represents a specific chronological sub-topic or key concept.
-Do not include any markdown, code blocks, or conversational text. Output raw JSON only. E.g.:
-["Topic 1", "Topic 2", "Topic 3", "Topic 4"]`;
-
-          const response = await generateAIContent(prompt);
-          if (response.error || (typeof response.text !== 'string' && !Array.isArray(response.text))) {
-            throw new Error(response.message || 'Failed to fetch topics');
-          }
-
-          let parsed = [];
-          if (Array.isArray(response.text)) {
-            parsed = response.text;
-          } else {
-            parsed = safeJsonParse(response.text);
-          }
-
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            let completedList = [];
-            try {
-              const stored = localStorage.getItem(getUserKey('tanios_completed_topics'));
-              const completedMap = stored ? JSON.parse(stored) : {};
-              completedList = completedMap[mission.subject]?.[mission.chapter] || [];
-            } catch (e) {}
-            const remaining = parsed.filter(t => !completedList.includes(t));
-            chosenTopics = remaining.length > 0 ? remaining : parsed;
-
-            if (!savedSelected[mission.subject]) savedSelected[mission.subject] = {};
-            savedSelected[mission.subject][mission.chapter] = chosenTopics;
-            localStorage.setItem(getUserKey('tanios_selected_subtopics'), JSON.stringify(savedSelected));
-
-            setInlineSubTopics(prev => ({
-              ...prev,
-              [mission.subject]: { topics: parsed, loading: false, error: '' }
-            }));
-          } else {
-            throw new Error('Invalid sub-topics array returned');
-          }
+        if (chosenTopics && chosenTopics.length === 0) {
+          alert("Please select at least one target concept to study from the Edit Chapters panel.");
+          setMissionLoading(false);
+          setActiveMission(null);
+          return;
         }
+
+        let parsed = [];
+        try {
+          parsed = await ensureInlineSubTopics(mission.subject, mission.chapter);
+        } catch (e) {
+          console.warn("Failed to ensure inline subtopics, using fallback:", e.message);
+          parsed = [
+            'Foundational Concepts & Definitions',
+            'Core Mechanisms & Theories',
+            'Advanced Applications & Practice',
+            'Board Exam Repeated Questions'
+          ];
+        }
+
+        // Save inline subtopics to state & localstorage (nested format)
+        setInlineSubTopics(prev => {
+          const updated = {
+            ...prev,
+            [mission.subject]: {
+              ...(prev[mission.subject] || {}),
+              [mission.chapter]: { topics: parsed, loading: false, error: '' }
+            }
+          };
+          localStorage.setItem(getUserKey('tanios_inline_subtopics'), JSON.stringify(updated));
+          return updated;
+        });
+
+        if (chosenTopics === undefined) {
+          let completedList = [];
+          try {
+            const stored = localStorage.getItem(getUserKey('tanios_completed_topics'));
+            const completedMap = stored ? JSON.parse(stored) : {};
+            completedList = completedMap[mission.subject]?.[mission.chapter] || [];
+          } catch (e) {}
+          const remaining = parsed.filter(t => !completedList.includes(t));
+          chosenTopics = remaining.length > 0 ? remaining : parsed;
+        }
+
+        // Always save chosenTopics to localStorage & selectedSubTopicsMap state when starting the mission
+        // so state and localStorage are in sync (the Confirm button will hide, and MCQ gets the latest selection)
+        if (!savedSelected[mission.subject]) savedSelected[mission.subject] = {};
+        savedSelected[mission.subject][mission.chapter] = chosenTopics;
+        localStorage.setItem(getUserKey('tanios_selected_subtopics'), JSON.stringify(savedSelected));
+        
+        setSelectedSubTopicsMap(prev => ({
+          ...prev,
+          [mission.subject]: {
+            ...(prev[mission.subject] || {}),
+            [mission.chapter]: chosenTopics
+          }
+        }));
 
         await fetchDynamicMission(mission, chosenTopics);
       } catch (err) {
@@ -3228,6 +3354,11 @@ Do not include any markdown, code blocks, or conversational text. Output raw JSO
                               if (isSelected) {
                                 setSelectedSubjects(selectedSubjects.filter(s => s !== sub.name));
                               } else {
+                                if (!isPro && selectedSubjects.length >= 2) {
+                                  alert("Free members can only choose up to 2 subjects. Please upgrade to TaniOS Pro to select more subjects!");
+                                  setShowUpgradePopup(true);
+                                  return;
+                                }
                                 setSelectedSubjects([...selectedSubjects, sub.name]);
                               }
                             }}
@@ -3469,7 +3600,7 @@ Do not include any markdown, code blocks, or conversational text. Output raw JSO
 
                                 {/* Inline Sub-topics selector */}
                                 {currentCh && (() => {
-                                  const state = inlineSubTopics[subj] || {};
+                                  const state = inlineSubTopics[subj]?.[currentCh] || {};
                                   if (state.loading) {
                                     return (
                                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.25rem 0', fontSize: '0.68rem', color: 'var(--text-secondary)' }}>
@@ -3540,8 +3671,20 @@ Do not include any markdown, code blocks, or conversational text. Output raw JSO
                                                     }
                                                   };
                                                   setSelectedSubTopicsMap(newMap);
-                                                  localStorage.setItem(getUserKey('tanios_selected_subtopics'), JSON.stringify(newMap));
-                                                }}
+
+                                                  // Compute if this chapter should be marked done based on updatedList and completed list
+                                                  const isChapterDone = updatedList.length === 0 || updatedList.every(t => completed.includes(t));
+
+                                                  setMissions(prevMissions => {
+                                                    const updated = prevMissions.map(m => {
+                                                      if (m.subject === subj && m.chapter === currentCh && m.type !== 'login') {
+                                                        return { ...m, done: isChapterDone };
+                                                      }
+                                                      return m;
+                                                    });
+                                                    return updated;
+                                                  });
+                                                 }}
                                                 style={{ marginTop: '0.08rem', width: '12px', height: '12px', accentColor: 'var(--primary)' }}
                                               />
                                               <span style={{ 
@@ -3555,6 +3698,64 @@ Do not include any markdown, code blocks, or conversational text. Output raw JSO
                                           );
                                         })}
                                       </div>
+
+                                      {(() => {
+                                        const savedMap = JSON.parse(localStorage.getItem(getUserKey('tanios_selected_subtopics')) || '{}');
+                                        const savedSel = savedMap[subj]?.[currentCh] || [];
+                                        const isDirty = selected.length !== savedSel.length || selected.some(t => !savedSel.includes(t));
+
+                                        if (!isDirty) return null;
+
+                                        return (
+                                          <button
+                                            type="button"
+                                            onClick={() => {
+                                              // Save selection to localStorage
+                                              const newMap = {
+                                                ...selectedSubTopicsMap,
+                                                [subj]: {
+                                                  ...(selectedSubTopicsMap[subj] || {}),
+                                                  [currentCh]: selected
+                                                }
+                                              };
+                                              localStorage.setItem(getUserKey('tanios_selected_subtopics'), JSON.stringify(newMap));
+                                              
+                                              // Reactivate daily study mission for this subject/chapter if done
+                                              setMissions(prevMissions => {
+                                                const updated = prevMissions.map(m => {
+                                                  if (m.subject === subj && m.chapter === currentCh && m.done) {
+                                                    return { ...m, done: false };
+                                                  }
+                                                  return m;
+                                                });
+                                                localStorage.setItem(getUserKey('tanios_missions'), JSON.stringify(updated));
+                                                return updated;
+                                              });
+
+                                              // Force UI update
+                                              setSelectedSubTopicsMap(newMap);
+                                            }}
+                                            className="btn btn-primary"
+                                            style={{
+                                              width: '100%',
+                                              fontSize: '0.7rem',
+                                              padding: '0.25rem 0.5rem',
+                                              marginTop: '0.35rem',
+                                              background: 'linear-gradient(135deg, var(--primary), #4f46e5)',
+                                              border: 'none',
+                                              color: 'white',
+                                              fontWeight: 700,
+                                              display: 'flex',
+                                              alignItems: 'center',
+                                              justifyContent: 'center',
+                                              gap: '0.2rem',
+                                              boxShadow: '0 4px 6px -1px rgba(99,102,241,0.2)'
+                                            }}
+                                          >
+                                            Confirm Topics Selection ✓
+                                          </button>
+                                        );
+                                      })()}
 
                                       {/* Inline Add Custom Topic Input */}
                                       <div style={{ display: 'flex', gap: '0.25rem', marginTop: '0.35rem' }}>
@@ -3578,10 +3779,20 @@ Do not include any markdown, code blocks, or conversational text. Output raw JSO
                                               if (topics.some(t => t.toLowerCase() === cleaned.toLowerCase())) return;
                                               
                                               const updatedTopics = [...topics, cleaned];
-                                              setInlineSubTopics(prev => ({
-                                                ...prev,
-                                                [subj]: { ...prev[subj], topics: updatedTopics }
-                                              }));
+                                              setInlineSubTopics(prev => {
+                                                const updated = {
+                                                  ...prev,
+                                                  [subj]: {
+                                                    ...(prev[subj] || {}),
+                                                    [currentCh]: {
+                                                      ...(prev[subj]?.[currentCh] || {}),
+                                                      topics: updatedTopics
+                                                    }
+                                                  }
+                                                };
+                                                localStorage.setItem(getUserKey('tanios_inline_subtopics'), JSON.stringify(updated));
+                                                return updated;
+                                              });
 
                                               const newMap = {
                                                 ...selectedSubTopicsMap,
@@ -3591,8 +3802,18 @@ Do not include any markdown, code blocks, or conversational text. Output raw JSO
                                                 }
                                               };
                                               setSelectedSubTopicsMap(newMap);
-                                              localStorage.setItem(getUserKey('tanios_selected_subtopics'), JSON.stringify(newMap));
-                                              e.target.value = '';
+
+                                              // Adding a new uncompleted custom topic reactivates the study mission immediately
+                                              setMissions(prevMissions => {
+                                                const updated = prevMissions.map(m => {
+                                                  if (m.subject === subj && m.chapter === currentCh && m.type !== 'login') {
+                                                    return { ...m, done: false };
+                                                  }
+                                                  return m;
+                                                });
+                                                return updated;
+                                              });
+                                               e.target.value = '';
                                             }
                                           }}
                                         />
@@ -3662,7 +3883,7 @@ Do not include any markdown, code blocks, or conversational text. Output raw JSO
                         <strong style={{ fontSize: '0.88rem', color: '#ff6b6b' }}>1-Day Free Trial Expired!</strong>
                       </div>
                       <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: '0 0 1rem 0', lineHeight: 1.45 }}>
-                        You have completed your **1-day free trial** of study targets. Upgrade to **TaniOS Pro** to get daily study targets for all subjects, unlimited doubt solver, and CBSE/RBSE board repeated question banks.
+                        You have completed your **1-day free trial** of study targets. Upgrade to **TaniOS Pro** to get daily study targets for all subjects, 20 daily AI doubt solves, and CBSE/RBSE board repeated question banks.
                       </p>
                       <Link to="/subscribe" className="btn btn-primary" style={{ padding: '0.45rem 1rem', fontSize: '0.78rem', display: 'inline-flex', alignItems: 'center', gap: '0.35rem', background: 'linear-gradient(135deg, #ef4444 0%, #ec4899 100%)', border: 'none', color: '#fff', fontWeight: 700, borderRadius: '6px', boxShadow: '0 4px 10px rgba(239, 68, 68, 0.3)' }}>
                         Unlock Pro Premium (₹199/month) ➔
@@ -3810,7 +4031,28 @@ Do not include any markdown, code blocks, or conversational text. Output raw JSO
                           )}
 
                           {mission.done && mission.type !== 'login' && (
-                            <span style={{ fontSize: '0.72rem', color: 'var(--success)', fontWeight: 700 }}>✓ Done</span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                              <span style={{ fontSize: '0.72rem', color: 'var(--success)', fontWeight: 700 }}>✓ Done</span>
+                              <button 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  startStudyMission(mission);
+                                }}
+                                className="btn btn-secondary" 
+                                style={{ 
+                                  padding: '0.2rem 0.4rem', 
+                                  fontSize: '0.68rem', 
+                                  display: 'flex', 
+                                  alignItems: 'center', 
+                                  gap: '0.25rem', 
+                                  whiteSpace: 'nowrap',
+                                  borderColor: 'var(--border)',
+                                  color: 'var(--text)'
+                                }}
+                              >
+                                Review <Play size={8} />
+                              </button>
+                            </div>
                           )}
                         </div>
                       </div>
@@ -4583,7 +4825,7 @@ Do not include any markdown, code blocks, or conversational text. Output raw JSO
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <span style={{ color: '#10b981', marginRight: '0.25rem' }}>✓</span>
-                <span><strong>Infinite AI Doubt Solving:</strong> No daily question limits.</span>
+                <span><strong>20 Daily AI Doubt Solves:</strong> High-speed detailed solutions.</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <span style={{ color: '#10b981', marginRight: '0.25rem' }}>✓</span>

@@ -145,7 +145,7 @@ const saveGuestSessions = (sessions) => {
 // ── Component ────────────────────────────────────────────────────────────────
 export default function Chat() {
   const navigate = useNavigate();
-  const { currentUser, incrementGuestUsage, getRemainingQuota, QUOTA, FEATURE_TRIALS, subscription } = useAuth();
+  const { currentUser, incrementGuestUsage, getRemainingQuota, QUOTA, FEATURE_TRIALS, subscription, setShowLoginModal } = useAuth();
   const isGuest = !currentUser || currentUser.isGuest || currentUser.email === 'guest@tanios.ai';
   const userId = currentUser?.uid || currentUser?.email || 'guest';
   
@@ -236,6 +236,13 @@ export default function Chat() {
     };
     reader.readAsDataURL(file);
   };
+
+  // ── Show Login modal for guest users on mount ──
+  useEffect(() => {
+    if (isGuest) {
+      setShowLoginModal(true);
+    }
+  }, [isGuest, setShowLoginModal]);
 
   // ── Load sessions on mount ──────────────────────────────────────────────
   useEffect(() => {
@@ -381,6 +388,10 @@ export default function Chat() {
   // ── Send message ─────────────────────────────────────────────────────────
   const handleSend = useCallback(async (e, customText) => {
     e?.preventDefault();
+    if (isGuest) {
+      setShowLoginModal(true);
+      return;
+    }
     const textToSend = (customText || input).trim();
     if (!textToSend && !selectedImage) return;
     if (isLoading || isCompacting) return;
@@ -551,7 +562,13 @@ export default function Chat() {
         </div>
 
         <div className="chat-history-sidebar-header">
-          <button className="new-chat-btn" onClick={startNewChat} id="new-chat-btn">
+          <button className="new-chat-btn" onClick={() => {
+            if (isGuest) {
+              setShowLoginModal(true);
+              return;
+            }
+            startNewChat();
+          }} id="new-chat-btn">
             <Plus size={16} />
             New Chat Session
           </button>
@@ -568,14 +585,27 @@ export default function Chat() {
               <div
                 key={sess.id}
                 className={`chat-session-item ${activeId === sess.id ? 'active' : ''}`}
-                onClick={() => switchSession(sess)}
+                onClick={() => {
+                  if (isGuest) {
+                    setShowLoginModal(true);
+                    return;
+                  }
+                  switchSession(sess);
+                }}
                 title={sess.title}
               >
                 <MessageSquare size={13} style={{ flexShrink: 0, opacity: 0.6 }} />
                 <span className="chat-session-title">{sess.title || 'New Chat'}</span>
                 <button
                   className="chat-session-delete"
-                  onClick={(e) => removeSession(e, sess.id)}
+                  onClick={(e) => {
+                    if (isGuest) {
+                      e.stopPropagation();
+                      setShowLoginModal(true);
+                      return;
+                    }
+                    removeSession(e, sess.id);
+                  }}
                   title="Delete session"
                 >
                   <Trash2 size={13} />
@@ -719,6 +749,10 @@ export default function Chat() {
                                 <div
                                   key={subj}
                                   onClick={() => {
+                                    if (isGuest) {
+                                      setShowLoginModal(true);
+                                      return;
+                                    }
                                     setInput(askPrompt);
                                     setTimeout(() => inputRef.current?.focus(), 50);
                                   }}
@@ -780,6 +814,10 @@ export default function Chat() {
                           <div
                             key={doubt.title}
                             onClick={() => {
+                              if (isGuest) {
+                                setShowLoginModal(true);
+                                return;
+                              }
                               setInput(doubt.prompt);
                               setTimeout(() => inputRef.current?.focus(), 50);
                             }}
@@ -947,8 +985,14 @@ export default function Chat() {
                 {/* Gallery button */}
                 <button
                   type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={isLoading || isCompacting}
+                  onClick={() => {
+                    if (isGuest) {
+                      setShowLoginModal(true);
+                      return;
+                    }
+                    fileInputRef.current?.click();
+                  }}
+                  disabled={!isGuest && (isLoading || isCompacting)}
                   style={{
                     width: '2rem',
                     height: '2rem',
@@ -974,8 +1018,14 @@ export default function Chat() {
                 {/* Camera button */}
                 <button
                   type="button"
-                  onClick={() => cameraInputRef.current?.click()}
-                  disabled={isLoading || isCompacting}
+                  onClick={() => {
+                    if (isGuest) {
+                      setShowLoginModal(true);
+                      return;
+                    }
+                    cameraInputRef.current?.click();
+                  }}
+                  disabled={!isGuest && (isLoading || isCompacting)}
                   style={{
                     width: '2rem',
                     height: '2rem',
@@ -1000,18 +1050,30 @@ export default function Chat() {
                 ref={inputRef}
                 type="text"
                 className="chat-input"
-                style={{ background: 'transparent', border: 'none', outline: 'none' }}
-                placeholder={isLoading ? 'Please wait...' : 'Ask your doubt here or upload image...'}
-                value={input}
-                onChange={e => setInput(e.target.value)}
-                onKeyDown={handleKeyDown}
-                disabled={isLoading || isCompacting}
-                autoFocus
+                style={{ background: 'transparent', border: 'none', outline: 'none', cursor: isGuest ? 'pointer' : 'text' }}
+                placeholder={isGuest ? 'Please sign in to ask doubts...' : (isLoading ? 'Please wait...' : 'Ask your doubt here or upload image...')}
+                value={isGuest ? '' : input}
+                onChange={e => !isGuest && setInput(e.target.value)}
+                onKeyDown={isGuest ? undefined : handleKeyDown}
+                onClick={() => {
+                  if (isGuest) {
+                    setShowLoginModal(true);
+                  }
+                }}
+                readOnly={isGuest}
+                disabled={!isGuest && (isLoading || isCompacting)}
+                autoFocus={!isGuest}
               />
               <button
                 type="submit"
                 className="chat-submit"
-                disabled={(!input.trim() && !selectedImage) || isLoading || isCompacting}
+                disabled={!isGuest && ((!input.trim() && !selectedImage) || isLoading || isCompacting)}
+                onClick={(e) => {
+                  if (isGuest) {
+                    e.preventDefault();
+                    setShowLoginModal(true);
+                  }
+                }}
                 title={isLoading ? 'Processing...' : 'Send message'}
               >
                 {isLoading ? <Loader2 size={15} style={{ animation: 'spin 1s linear infinite' }} /> : <Send size={15} />}

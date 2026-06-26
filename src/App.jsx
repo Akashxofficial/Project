@@ -279,8 +279,8 @@ function MainApp() {
             </div>
             <p style={{ fontSize: '0.68rem', color: 'var(--text-secondary)', margin: 0 }}>
               {subscription?.active
-                ? 'Enjoy unlimited premium doubt solver & smart notes!'
-                : 'Instant textbook upload & infinite doubt solver. Learn more!'}
+                ? 'Enjoy 20 daily AI doubt solves & smart notes!'
+                : 'Instant textbook upload & 20 daily AI doubt solves. Learn more!'}
             </p>
           </div>
         )}
