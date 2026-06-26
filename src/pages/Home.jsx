@@ -1378,6 +1378,12 @@ export default function Home() {
   // Subject-aware dynamic fallback MCQ based on active mission
   const fallback = getFallbackMCQ(activeMission?.subject || '');
 
+  const isMultiQuestion = !!(dynamicMissionContent && Array.isArray(dynamicMissionContent.questions) && dynamicMissionContent.questions.length > 0);
+  const quizQuestions = isMultiQuestion
+    ? dynamicMissionContent.questions
+    : [dynamicMissionContent || fallback];
+  const currentQuestionIdx = Math.min(quizStep, quizQuestions.length - 1);
+
   // ── 3. WEAKNESSES STATE (starts EMPTY — student adds their own) ──
   const [weaknesses, setWeaknesses] = useState([]);
   const [newWeakSubject, setNewWeakSubject] = useState('');
@@ -2106,10 +2112,16 @@ export default function Home() {
       ? chosenTopics.map(t => `"${t}"`).join(', ') 
       : `fractional progress Day ${currentTopicDay} topics of the chapter`;
 
+    const numQuestions = Math.min(5, Math.max(1, chosenTopics.length || 1));
+
     let prompt = `You are an elite syllabus-expert personal AI teacher built specifically for Class ${grade} students of the ${board} board, with extreme expertise in curricula, past exam papers, and question patterns.
  
 SYSTEMATIC TOPIC-TEACHING MCQ LAW:
-Your goal is to teach a student the specific sub-topic(s): ${topicsStr} from the subject ${subject}, chapter: "${currentChapter}" using EXACTLY ONE highly educational Multiple Choice Question (MCQ). The question, options, and explanation MUST be designed with 100% precision for CBSE and RBSE board standards, focusing heavily on high-yield, exam-repeated concepts.
+Your goal is to teach a student the specific sub-topic(s): ${topicsStr} from the subject ${subject}, chapter: "${currentChapter}".
+Instead of combining all sub-topics into a single broad question, you must generate a separate, highly educational Multiple Choice Question (MCQ) for each of the selected sub-topics individually.
+You MUST generate exactly ${numQuestions} highly educational Multiple Choice Questions (MCQs) in the "questions" array, where each question corresponds to one of the selected sub-topics in chronological order:
+${chosenTopics.length > 0 ? chosenTopics.map((topic, i) => `${i + 1}. "${topic}"`).join('\n') : `1. "${currentChapter} Core Concepts"`}
+Each question, options, and explanation MUST be designed with 100% precision for CBSE and RBSE board standards, focusing heavily on high-yield, exam-repeated concepts.
 
 SYLLABUS PACING SUMMARY:
 * Subject: ${subject}
@@ -2120,32 +2132,31 @@ SYLLABUS PACING SUMMARY:
 * Chapter Study Day Progress: Today is Day ${currentTopicDay} out of ${daysPerChapter} allocated days for "${currentChapter}".
 
 Systematic Topic-Focused Pacing Directive:
-Please design the MCQ, the topic summary, and the explanation strictly to explain and test the selected topics: ${topicsStr}.
-- IMPORTANT: Do NOT ask a broad question about the entire chapter, and do NOT summarize the whole chapter. You must focus ONLY on the specified sub-topics.
+Please design the MCQs, the topic summaries, and the explanations strictly to explain and test the selected topics: ${topicsStr}.
 
 SPEED & CONCISENESS RULE (MANDATORY):
-To ensure ultra-fast generation and instant response times (< 2 seconds), be extremely crisp, high-density, and direct. Keep the topicSummary to exactly 3 short bullet points (max 40 words total). Keep the explanation to a short, high-yield topper guide of max 120 words total containing a 1-bullet concept explanation, a 1-sentence topper trick, and a 1-sentence mistake warning.
-
-Your output must be a single master Multiple Choice Question (MCQ) that:
-1. Question: Renders a highly detailed, clear, concept-introducing scenario or problem. Wrap any math formulas, variables, or chemical equations in LaTeX $ delimiters (e.g. $A + B \\rightarrow AB$).
-2. Options: The options (A, B, C, D) should represent distinct sub-topics or conceptual states, clearly teaching the key distinctions.
-3. Explanation: Provide an absolute topper explanation.
+To ensure ultra-fast generation and instant response times (< 2 seconds), be extremely crisp, high-density, and direct. Keep each topicSummary to exactly 3 short bullet points (max 40 words total). Keep each explanation to a short, high-yield topper guide of max 120 words total containing a 1-bullet concept explanation, a 1-sentence topper trick, and a 1-sentence mistake warning.
 
 Your output MUST be a valid JSON object with the following keys. Do not include any conversational text or markdown code blocks (no \`\`\`json). Output raw JSON only.
 
 JSON Structure:
 {
-  "topic": "Specific Sub-Topic Name (e.g. Balancing Chemical Equations, not the broad chapter name)",
-  "topicSummary": "A concise 3 bullet point Markdown summary of ONLY this sub-topic. Max 40 words. Use KaTeX $ for all formulas. Shown to the student BEFORE the MCQ question to prime their understanding.",
-  "questionText": "Highly detailed, conceptual, and concept-introducing question text focusing strictly on this single sub-topic. Wrap all math/equations in $ delimiters.",
-  "options": [
-    { "key": "A", "desc": "Option A explanation. Wrap any math/formulas in $." },
-    { "key": "B", "desc": "Option B explanation." },
-    { "key": "C", "desc": "Option C explanation." },
-    { "key": "D", "desc": "Option D explanation." }
-  ],
-  "correctKey": "A, B, C, or D",
-  "explanation": "Markdown-styled short mini-lesson teaching ONLY the selected sub-topic. Max 120 words. Include: 💡 Core Concept, 🥇 Topper Trick, and ⚠️ Common Mistake. Use KaTeX $ for all math/scientific expressions."
+  "topic": "${currentChapter} — Concept Quiz",
+  "questions": [
+    {
+      "topic": "Specific Sub-Topic Name corresponding to the sub-topic being tested",
+      "topicSummary": "A concise 3 bullet point Markdown summary of ONLY this sub-topic. Max 40 words. Use KaTeX $ for all formulas. Shown to the student BEFORE the MCQ question to prime their understanding.",
+      "questionText": "Highly detailed, conceptual, and concept-introducing question text focusing strictly on this single sub-topic. Wrap all math/equations in $ delimiters.",
+      "options": [
+        { "key": "A", "desc": "Option A description. Wrap any math/formulas in $." },
+        { "key": "B", "desc": "Option B description." },
+        { "key": "C", "desc": "Option C description." },
+        { "key": "D", "desc": "Option D description." }
+      ],
+      "correctKey": "A, B, C, or D",
+      "explanation": "Markdown-styled short mini-lesson teaching ONLY the selected sub-topic. Max 120 words. Include: 💡 Core Concept, 🥇 Topper Trick, and ⚠️ Common Mistake. Use KaTeX $ for all math/scientific expressions."
+    }
+  ]
 }`;
 
     try {
@@ -4081,7 +4092,7 @@ Do not include any markdown, code blocks, or conversational text. Output raw JSO
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.75rem' }}>
               <div>
                 <span style={{ fontSize: '0.68rem', fontWeight: 800, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '1px', display: 'block', marginBottom: '0.2rem' }}>
-                  🧠 CONCEPT TEACHING MASTERCLASS
+                  🧠 CONCEPT TEACHING MASTERCLASS {isMultiQuestion && `— Question ${currentQuestionIdx + 1} of ${quizQuestions.length}`}
                 </span>
                 <h4 style={{ margin: 0, color: 'var(--text)', fontSize: '1.1rem', fontWeight: 800 }}>
                   {activeMission.subject || 'General Study'} : {activeMission.chapter || 'Chapter'}
@@ -4091,6 +4102,7 @@ Do not include any markdown, code blocks, or conversational text. Output raw JSO
                 onClick={() => {
                   setActiveMission(null);
                   setDynamicMissionContent(null);
+                  setQuizStep(0);
                 }}
                 style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', opacity: 0.7 }}
               >
@@ -4130,8 +4142,13 @@ Do not include any markdown, code blocks, or conversational text. Output raw JSO
                     </div>
                   </div>
                 ) : (() => {
-                  const data = dynamicMissionContent || fallback;
-                  const options = data.options || fallback.options;
+                  const isMultiQuestion = !!(dynamicMissionContent && Array.isArray(dynamicMissionContent.questions) && dynamicMissionContent.questions.length > 0);
+                  const quizQuestions = isMultiQuestion
+                    ? dynamicMissionContent.questions
+                    : [dynamicMissionContent || fallback];
+                  const currentQuestionIdx = Math.min(quizStep, quizQuestions.length - 1);
+                  const data = quizQuestions[currentQuestionIdx];
+                  const options = data?.options || fallback.options;
                   return (
                     <div>
                       {/* Topic Badge */}
@@ -4143,12 +4160,12 @@ Do not include any markdown, code blocks, or conversational text. Output raw JSO
                         fontSize: '0.78rem', color: '#a78bfa', fontWeight: 700,
                         marginBottom: '1rem'
                       }}>
-                        🎯 Today's Topic: {data.topic || "Syllabus Core Concept"}
+                        🎯 Topic: {data?.topic || "Syllabus Core Concept"} {isMultiQuestion && `(${currentQuestionIdx + 1}/${quizQuestions.length})`}
                       </div>
 
                       {/* Topic Summary Card — shown BEFORE the MCQ question */}
                       {(() => {
-                        let summaryToShow = data.topicSummary;
+                        let summaryToShow = data?.topicSummary;
                         if (!summaryToShow) {
                           const subj = (activeMission?.subject || '').toLowerCase();
                           if (subj.includes('science')) {
@@ -4179,7 +4196,7 @@ Do not include any markdown, code blocks, or conversational text. Output raw JSO
                           } else {
                             summaryToShow = `* **Subject**: ${activeMission?.subject || 'Syllabus'}
 * **Chapter**: ${activeMission?.chapter || 'Core Concepts'}
-* **Active Target**: ${data.topic || 'Syllabus Core Concept'}
+* **Active Target**: ${data?.topic || 'Syllabus Core Concept'}
 * **Pacing Guide**: Chronological sub-topic study session for Class ${profileClass || '10'} ${profileBoard || 'CBSE'} board exam.
 * **Learning Goal**: Study this concept, then answer the MCQ challenge below to unlock the detailed explanation masterclass!`;
                           }
@@ -4284,11 +4301,11 @@ Do not include any markdown, code blocks, or conversational text. Output raw JSO
                       {missionSubmitted && (
                         <div style={{
                           marginTop: '1.25rem', padding: '1.25rem',
-                          background: missionAnswer === data.correctKey ? 'rgba(16, 185, 129, 0.04)' : 'rgba(239, 68, 68, 0.04)',
-                          border: missionAnswer === data.correctKey ? '1px solid rgba(16, 185, 129, 0.15)' : '1px solid rgba(239, 68, 68, 0.15)',
+                          background: missionAnswer === data?.correctKey ? 'rgba(16, 185, 129, 0.04)' : 'rgba(239, 68, 68, 0.04)',
+                          border: missionAnswer === data?.correctKey ? '1px solid rgba(16, 185, 129, 0.15)' : '1px solid rgba(239, 68, 68, 0.15)',
                           borderRadius: '12px', fontSize: '0.85rem', lineHeight: 1.6, color: 'var(--text-secondary)'
                         }}>
-                          {missionAnswer === data.correctKey ? (
+                          {missionAnswer === data?.correctKey ? (
                             <div>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem', color: '#10b981', fontWeight: 800, fontSize: '0.95rem' }}>
                                 🎉 <span>Correct Answer! Topic Masterclass Unlocked</span>
@@ -4329,160 +4346,173 @@ Do not include any markdown, code blocks, or conversational text. Output raw JSO
             </div>
 
             {/* Modal Bottom Actions */}
-            {!missionLoading && dynamicMissionContent && (
-              <div style={{ display: 'flex', gap: '0.75rem', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '1.25rem', justifyContent: 'flex-end' }}>
-                {!missionSubmitted ? (
-                  <button
-                    onClick={() => {
-                      if (missionAnswer) {
-                        setMissionSubmitted(true);
+            {!missionLoading && dynamicMissionContent && (() => {
+              const data = quizQuestions[currentQuestionIdx];
+              return (
+                <div style={{ display: 'flex', gap: '0.75rem', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '1.25rem', justifyContent: 'flex-end' }}>
+                  {!missionSubmitted ? (
+                    <button
+                      onClick={() => {
+                        if (missionAnswer) {
+                          setMissionSubmitted(true);
 
-                        // ── Log MCQ attempt in dynamic user mistakes locker ──
-                        const data = dynamicMissionContent || fallback;
-                        const isCorrect = missionAnswer === data.correctKey;
-                        const selectedOptDesc = data.options.find(o => o.key === missionAnswer)?.desc || '';
-                        const correctOptDesc = data.options.find(o => o.key === data.correctKey)?.desc || '';
+                          // ── Log MCQ attempt in dynamic user mistakes locker ──
+                          const isCorrect = missionAnswer === data.correctKey;
+                          const selectedOptDesc = data.options.find(o => o.key === missionAnswer)?.desc || '';
+                          const correctOptDesc = data.options.find(o => o.key === data.correctKey)?.desc || '';
 
-                        try {
-                          const stored = localStorage.getItem(getUserKey('tanios_mcq_attempts'));
-                          const attempts = stored ? JSON.parse(stored) : [];
+                          try {
+                            const stored = localStorage.getItem(getUserKey('tanios_mcq_attempts'));
+                            const attempts = stored ? JSON.parse(stored) : [];
 
-                          const existing = attempts.find(a => a.subject === activeMission.subject && a.topic === (data.topic || "Core Concept"));
+                            const existing = attempts.find(a => a.subject === activeMission.subject && a.topic === (data.topic || "Core Concept"));
 
-                          let firstIncorrectKey = null;
-                          let firstIncorrectDesc = null;
+                            let firstIncorrectKey = null;
+                            let firstIncorrectDesc = null;
 
-                          if (existing) {
-                            if (existing.firstIncorrectKey) {
-                              firstIncorrectKey = existing.firstIncorrectKey;
-                              firstIncorrectDesc = existing.firstIncorrectDesc;
-                            } else if (!existing.isCorrect) {
-                              firstIncorrectKey = existing.selectedKey;
-                              firstIncorrectDesc = existing.selectedDesc;
+                            if (existing) {
+                              if (existing.firstIncorrectKey) {
+                                firstIncorrectKey = existing.firstIncorrectKey;
+                                firstIncorrectDesc = existing.firstIncorrectDesc;
+                              } else if (!existing.isCorrect) {
+                                firstIncorrectKey = existing.selectedKey;
+                                firstIncorrectDesc = existing.selectedDesc;
+                              }
+                            } else if (!isCorrect) {
+                              firstIncorrectKey = missionAnswer;
+                              firstIncorrectDesc = selectedOptDesc;
                             }
-                          } else if (!isCorrect) {
-                            firstIncorrectKey = missionAnswer;
-                            firstIncorrectDesc = selectedOptDesc;
-                          }
 
-                          const newAttempt = {
-                            id: `attempt_${Date.now()}`,
-                            missionId: activeMission.id,
-                            dateKey: activeMission.dateKey || new Date().toISOString().slice(0, 10),
-                            subject: activeMission.subject,
-                            chapter: activeMission.chapter,
-                            topic: data.topic || "Core Concept",
-                            questionText: data.questionText,
-                            selectedKey: missionAnswer,
-                            selectedDesc: selectedOptDesc,
-                            correctKey: data.correctKey,
-                            correctDesc: correctOptDesc,
-                            isCorrect,
-                            firstIncorrectKey,
-                            firstIncorrectDesc,
-                            timestamp: Date.now(),
-                            explanation: data.explanation
-                          };
+                            const newAttempt = {
+                              id: `attempt_${Date.now()}`,
+                              missionId: activeMission.id,
+                              dateKey: activeMission.dateKey || new Date().toISOString().slice(0, 10),
+                              subject: activeMission.subject,
+                              chapter: activeMission.chapter,
+                              topic: data.topic || "Core Concept",
+                              questionText: data.questionText,
+                              selectedKey: missionAnswer,
+                              selectedDesc: selectedOptDesc,
+                              correctKey: data.correctKey,
+                              correctDesc: correctOptDesc,
+                              isCorrect,
+                              firstIncorrectKey,
+                              firstIncorrectDesc,
+                              timestamp: Date.now(),
+                              explanation: data.explanation
+                            };
 
-                          const filtered = attempts.filter(a => !(a.subject === newAttempt.subject && a.topic === newAttempt.topic));
-                          filtered.unshift(newAttempt);
-                          
-                          localStorage.setItem(getUserKey('tanios_mcq_attempts'), JSON.stringify(filtered));
-                          setMcqAttempts(filtered);
+                            const filtered = attempts.filter(a => !(a.subject === newAttempt.subject && a.topic === newAttempt.topic));
+                            filtered.unshift(newAttempt);
+                            
+                            localStorage.setItem(getUserKey('tanios_mcq_attempts'), JSON.stringify(filtered));
+                            setMcqAttempts(filtered);
 
-                          // ── Target Scoring Update ──
-                          const storedNetScore = localStorage.getItem(getUserKey('tanios_net_score'));
-                          const currentNetScore = storedNetScore ? parseInt(storedNetScore, 10) : 0;
-                          
-                          const hasPreviousWrong = existing && !existing.isCorrect;
-                          let scoreDelta = 0;
-                          
-                          if (isCorrect) {
-                            scoreDelta = hasPreviousWrong ? 0 : 10;
-                          } else {
-                            // Only penalize on the first wrong attempt
-                            scoreDelta = existing ? 0 : -5;
-                          }
-                          
-                          const nextNetScore = currentNetScore + scoreDelta;
-                          localStorage.setItem(getUserKey('tanios_net_score'), nextNetScore.toString());
-                          setNetScore(nextNetScore);
-                          
-                          if (isCorrect) {
-                            if (!hasPreviousWrong) {
-                              awardXp(10, 'Correct MCQ Answer');
-                              setXpAwardedMsg(`+10 Marks Earned! 🎯`);
+                            // ── Target Scoring Update ──
+                            const storedNetScore = localStorage.getItem(getUserKey('tanios_net_score'));
+                            const currentNetScore = storedNetScore ? parseInt(storedNetScore, 10) : 0;
+                            
+                            const hasPreviousWrong = existing && !existing.isCorrect;
+                            let scoreDelta = 0;
+                            
+                            if (isCorrect) {
+                              scoreDelta = hasPreviousWrong ? 0 : 10;
                             } else {
-                              setXpAwardedMsg(`Corrected! (No Marks/XP for retries) 💡`);
+                              // Only penalize on the first wrong attempt
+                              scoreDelta = existing ? 0 : -5;
                             }
-                            setTimeout(() => setXpAwardedMsg(''), 3000);
-                          } else {
-                            if (!existing) {
-                              setXpAwardedMsg(`Penalty Applied: -5 Marks! ❌`);
+                            
+                            const nextNetScore = currentNetScore + scoreDelta;
+                            localStorage.setItem(getUserKey('tanios_net_score'), nextNetScore.toString());
+                            setNetScore(nextNetScore);
+                            
+                            if (isCorrect) {
+                              if (!hasPreviousWrong) {
+                                awardXp(10, 'Correct MCQ Answer');
+                                setXpAwardedMsg(`+10 Marks Earned! 🎯`);
+                              } else {
+                                setXpAwardedMsg(`Corrected! (No Marks/XP for retries) 💡`);
+                              }
+                              setTimeout(() => setXpAwardedMsg(''), 3000);
                             } else {
-                              setXpAwardedMsg(`Incorrect Option! (Try again) ❌`);
+                              if (!existing) {
+                                setXpAwardedMsg(`Penalty Applied: -5 Marks! ❌`);
+                              } else {
+                                setXpAwardedMsg(`Incorrect Option! (Try again) ❌`);
+                              }
+                              setTimeout(() => setXpAwardedMsg(''), 3000);
                             }
-                            setTimeout(() => setXpAwardedMsg(''), 3000);
+                          } catch (err) {
+                            console.warn("Could not save MCQ attempt", err);
                           }
-                        } catch (err) {
-                          console.warn("Could not save MCQ attempt", err);
                         }
-                      }
-                    }}
-                    disabled={!missionAnswer}
-                    className="btn btn-primary"
-                    style={{
-                      flex: 1, padding: '0.8rem 1rem', fontSize: '0.88rem', fontWeight: 800,
-                      cursor: missionAnswer ? 'pointer' : 'not-allowed', opacity: missionAnswer ? 1 : 0.5
-                    }}
-                  >
-                    Check & Learn Concept ➔
-                  </button>
-                ) : (
+                      }}
+                      disabled={!missionAnswer}
+                      className="btn btn-primary"
+                      style={{
+                        flex: 1, padding: '0.8rem 1rem', fontSize: '0.88rem', fontWeight: 800,
+                        cursor: missionAnswer ? 'pointer' : 'not-allowed', opacity: missionAnswer ? 1 : 0.5
+                      }}
+                    >
+                      Check & Learn Concept ➔
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => {
+                        if (missionAnswer !== data.correctKey) {
+                          // User got it wrong, let them try again
+                          setMissionSubmitted(false);
+                          setMissionAnswer(null);
+                          return;
+                        }
+                        
+                        // User got it right! Check if there are more questions
+                        if (currentQuestionIdx < quizQuestions.length - 1) {
+                          setQuizStep(prev => prev + 1);
+                          setMissionSubmitted(false);
+                          setMissionAnswer(null);
+                        } else {
+                          // Correct selection & last question: Mark completed!
+                          toggleMission(activeMission.id);
+                          setActiveMission(null);
+                          setDynamicMissionContent(null);
+                          setQuizStep(0);
+                        }
+                      }}
+                      className="btn btn-primary"
+                      style={{
+                        flex: 1, padding: '0.8rem 1rem', fontSize: '0.88rem', fontWeight: 800,
+                        background: (missionAnswer === data?.correctKey)
+                          ? 'linear-gradient(135deg, #10b981, #059669)'
+                          : 'linear-gradient(135deg, var(--primary), var(--accent))'
+                      }}
+                    >
+                      {missionAnswer !== data?.correctKey
+                        ? "Try Another Option ➔"
+                        : (currentQuestionIdx < quizQuestions.length - 1
+                          ? `Next Concept (${currentQuestionIdx + 2}/${quizQuestions.length}) ➔`
+                          : "Submit & Complete Mission")}
+                    </button>
+                  )}
                   <button
                     onClick={() => {
-                      const data = dynamicMissionContent || fallback;
-                      if (missionAnswer !== data.correctKey) {
-                        // User got it wrong, let them try again
-                        setMissionSubmitted(false);
-                        setMissionAnswer(null);
-                        return;
-                      }
-                      // Correct selection: Mark completed!
-                      toggleMission(activeMission.id);
                       setActiveMission(null);
                       setDynamicMissionContent(null);
+                      setQuizStep(0);
                     }}
-                    className="btn btn-primary"
                     style={{
-                      flex: 1, padding: '0.8rem 1rem', fontSize: '0.88rem', fontWeight: 800,
-                      background: (missionAnswer === (dynamicMissionContent || fallback)?.correctKey)
-                        ? 'linear-gradient(135deg, #10b981, #059669)'
-                        : 'linear-gradient(135deg, var(--primary), var(--accent))'
+                      background: 'rgba(255,255,255,0.03)',
+                      border: '1px solid rgba(255,255,255,0.05)',
+                      color: 'var(--text-secondary)',
+                      borderRadius: '8px', padding: '0.6rem 1rem',
+                      fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer'
                     }}
                   >
-                    {(missionAnswer === (dynamicMissionContent || fallback)?.correctKey)
-                      ? "Submit & Complete Mission"
-                      : "Try Another Option ➔"}
+                    Cancel
                   </button>
-                )}
-                <button
-                  onClick={() => {
-                    setActiveMission(null);
-                    setDynamicMissionContent(null);
-                  }}
-                  style={{
-                    background: 'rgba(255,255,255,0.03)',
-                    border: '1px solid rgba(255,255,255,0.05)',
-                    color: 'var(--text-secondary)',
-                    borderRadius: '8px', padding: '0.6rem 1rem',
-                    fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer'
-                  }}
-                >
-                  Cancel
-                </button>
-              </div>
-            )}
+                </div>
+              );
+            })()}
           </div>
         </div>,
         document.body
