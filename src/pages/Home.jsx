@@ -2098,15 +2098,91 @@ export default function Home() {
     };
 
     let cleaned = str.trim();
+    
+    // Find the first valid JSON boundary (object or array)
     const firstBrace = cleaned.indexOf('{');
-    const lastBrace = cleaned.lastIndexOf('}');
     const firstBracket = cleaned.indexOf('[');
-    const lastBracket = cleaned.lastIndexOf(']');
-
-    if (firstBrace !== -1 && lastBrace !== -1 && (firstBracket === -1 || firstBrace < firstBracket)) {
-      cleaned = cleaned.substring(firstBrace, lastBrace + 1);
-    } else if (firstBracket !== -1 && lastBracket !== -1) {
-      cleaned = cleaned.substring(firstBracket, lastBracket + 1);
+    
+    if (firstBrace !== -1 && (firstBracket === -1 || firstBrace < firstBracket)) {
+      // It starts with an object
+      let braceCount = 0;
+      let insideString = false;
+      let escaped = false;
+      let foundEnd = false;
+      
+      for (let i = firstBrace; i < cleaned.length; i++) {
+        const char = cleaned[i];
+        if (escaped) {
+          escaped = false;
+          continue;
+        }
+        if (char === '\\') {
+          escaped = true;
+          continue;
+        }
+        if (char === '"') {
+          insideString = !insideString;
+          continue;
+        }
+        if (!insideString) {
+          if (char === '{') {
+            braceCount++;
+          } else if (char === '}') {
+            braceCount--;
+            if (braceCount === 0) {
+              cleaned = cleaned.substring(firstBrace, i + 1);
+              foundEnd = true;
+              break;
+            }
+          }
+        }
+      }
+      if (!foundEnd) {
+        const lastBrace = cleaned.lastIndexOf('}');
+        if (lastBrace !== -1) {
+          cleaned = cleaned.substring(firstBrace, lastBrace + 1);
+        }
+      }
+    } else if (firstBracket !== -1) {
+      // It starts with an array
+      let bracketCount = 0;
+      let insideString = false;
+      let escaped = false;
+      let foundEnd = false;
+      
+      for (let i = firstBracket; i < cleaned.length; i++) {
+        const char = cleaned[i];
+        if (escaped) {
+          escaped = false;
+          continue;
+        }
+        if (char === '\\') {
+          escaped = true;
+          continue;
+        }
+        if (char === '"') {
+          insideString = !insideString;
+          continue;
+        }
+        if (!insideString) {
+          if (char === '[') {
+            bracketCount++;
+          } else if (char === ']') {
+            bracketCount--;
+            if (bracketCount === 0) {
+              cleaned = cleaned.substring(firstBracket, i + 1);
+              foundEnd = true;
+              break;
+            }
+          }
+        }
+      }
+      if (!foundEnd) {
+        const lastBracket = cleaned.lastIndexOf(']');
+        if (lastBracket !== -1) {
+          cleaned = cleaned.substring(firstBracket, lastBracket + 1);
+        }
+      }
     } else {
       cleaned = cleaned.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
     }
