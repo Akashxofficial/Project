@@ -297,8 +297,18 @@ export function AuthProvider({ children }) {
       'tanios_missions',
       'tanios_profile',
       'tanios_subscription',
+      'tanios_free_unlocked_subjects',
+      'tanios_active_chapters',
+      'tanios_selected_subtopics',
+      'tanios_inline_subtopics',
+      'tanios_mcq_attempts',
+      'tanios_net_score',
     ];
-    taniosKeys.forEach(key => localStorage.removeItem(key));
+    const suffix = currentUser?.uid || currentUser?.email || 'guest';
+    taniosKeys.forEach(key => {
+      localStorage.removeItem(key);
+      localStorage.removeItem(`${key}_${suffix}`);
+    });
     setSubscription({ active: false, status: 'none' });
     // ────────────────────────────────────────────────────────────────────────
 

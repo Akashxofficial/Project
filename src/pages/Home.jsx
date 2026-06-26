@@ -1516,6 +1516,21 @@ export default function Home() {
       return;
     }
 
+    if (!isPro) {
+      const unlockedFreeSubjectsKey = getUserKey('tanios_free_unlocked_subjects');
+      const storedUnlocked = localStorage.getItem(unlockedFreeSubjectsKey);
+      let unlockedSubjects = storedUnlocked ? JSON.parse(storedUnlocked) : [];
+      
+      subjectsArray.forEach(subj => {
+        if (!unlockedSubjects.some(s => s.toLowerCase() === subj.toLowerCase())) {
+          if (unlockedSubjects.length < 2) {
+            unlockedSubjects.push(subj);
+          }
+        }
+      });
+      localStorage.setItem(unlockedFreeSubjectsKey, JSON.stringify(unlockedSubjects));
+    }
+
     // ── Calculate timeline: days per chapter per subject ──
     const now = new Date();
     let examDate;
@@ -1629,6 +1644,12 @@ export default function Home() {
         setSetupBoard(profile.board);
         setSetupClass(profile.grade);
         setSetupExamDate(profile.examDate || '');
+
+        const unlockedFreeSubjectsKey = getUserKey('tanios_free_unlocked_subjects');
+        if (!isPro && !localStorage.getItem(unlockedFreeSubjectsKey) && profile.subjects) {
+          const initialUnlocked = profile.subjects.slice(0, 2);
+          localStorage.setItem(unlockedFreeSubjectsKey, JSON.stringify(initialUnlocked));
+        }
 
         // Restore subject chip selections for the edit form
         const standardList = [
@@ -2349,6 +2370,18 @@ Do not include any markdown, code blocks, or conversational text. Output raw JSO
   };
 
   const startStudyMission = async (mission) => {
+    if (!isPro && mission.type !== 'login') {
+      const storedUnlocked = localStorage.getItem(getUserKey('tanios_free_unlocked_subjects'));
+      const unlockedSubjects = storedUnlocked ? JSON.parse(storedUnlocked) : [];
+      const isSubjectLocked = !unlockedSubjects.some(
+        s => s.toLowerCase() === (mission.subject || '').toLowerCase()
+      );
+      if (isSubjectLocked) {
+        setShowUpgradePopup(true);
+        return;
+      }
+    }
+
     setMissionAnswer(null);
     setMissionSubmitted(false);
     setShowShortAnswer(false);
@@ -3921,9 +3954,15 @@ Do not include any markdown, code blocks, or conversational text. Output raw JSO
                 )}
 
                 <div>
-                  {missions.map(mission => {
-                    const isMissionLocked = !isPro && mission.type !== 'login' && !mission.done && isFreeTierLocked;
-                    return (
+                  {(() => {
+                    const storedUnlocked = localStorage.getItem(getUserKey('tanios_free_unlocked_subjects'));
+                    const unlockedSubjects = storedUnlocked ? JSON.parse(storedUnlocked) : [];
+                    return missions.map(mission => {
+                      const isSubjectLocked = !isPro && mission.type !== 'login' && !mission.done && !unlockedSubjects.some(
+                        s => s.toLowerCase() === (mission.subject || '').toLowerCase()
+                      );
+                      const isMissionLocked = (!isPro && mission.type !== 'login' && !mission.done && isFreeTierLocked) || isSubjectLocked;
+                      return (
                       <div 
                         key={mission.id} 
                         className={`mission-item ${mission.done ? 'completed' : ''} ${isMissionLocked ? 'locked' : ''}`}
@@ -4056,8 +4095,9 @@ Do not include any markdown, code blocks, or conversational text. Output raw JSO
                           )}
                         </div>
                       </div>
-                    );
-                  })}
+                      );
+                    });
+                  })()}
                 </div>
               </>
             )}
