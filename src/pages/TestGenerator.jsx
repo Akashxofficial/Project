@@ -1,3 +1,4 @@
+
 import React, { useState, useRef } from 'react';
 import { GraduationCap, Sparkles, FileCheck, Download, Loader2 } from 'lucide-react';
 import { generateAIContent, generateTestPrompt, fixMathFormatting } from '../lib/ai';
@@ -51,7 +52,7 @@ export default function TestGenerator() {
 
   const handleGenerate = async (e) => {
     e.preventDefault();
-    
+
     if (!incrementGuestUsage('mcq')) {
       return;
     }
@@ -60,7 +61,7 @@ export default function TestGenerator() {
     setError(null);
     setResult(null);
     setStatusMsg('thinking');
-    
+
     const prompt = generateTestPrompt(subject, topic, type, count, difficulty);
     const onStatus = (msg) => setStatusMsg(msg || '');
     const response = await generateAIContent(prompt, onStatus);
@@ -76,7 +77,7 @@ export default function TestGenerator() {
     setResult({ title: docTitle, content: fixMathFormatting(response.text) });
     setLoading(false);
     setStatusMsg('');
-    
+
     if (currentUser) {
       saveDocument(currentUser.uid || currentUser.email, 'test', docTitle, response.text)
         .catch(err => console.warn('Save failed (non-blocking):', err));
@@ -85,22 +86,22 @@ export default function TestGenerator() {
 
   const handleDownloadPDF = async () => {
     if (!contentRef.current) return;
-    
+
     const canvas = await html2canvas(contentRef.current, { scale: 2 });
     const imgData = canvas.toDataURL('image/png');
-    
+
     const pdf = new jsPDF('p', 'mm', 'a4');
     const pdfWidth = pdf.internal.pageSize.getWidth();
     const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-    
+
     const pageHeight = pdf.internal.pageSize.getHeight();
     let heightLeft = pdfHeight;
     let position = 0;
-    
+
     // Add first page
     pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
     heightLeft -= pageHeight;
-    
+
     // Split into multiple pages if content exceeds standard height
     while (heightLeft > 0) {
       position = heightLeft - pdfHeight;
@@ -108,7 +109,7 @@ export default function TestGenerator() {
       pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
       heightLeft -= pageHeight;
     }
-    
+
     pdf.save(`Mock_Test_${topic.replace(/\s+/g, '_')}.pdf`);
   };
 
@@ -185,11 +186,11 @@ export default function TestGenerator() {
                 <Download size={18} />
               </button>
             </div>
-            
+
             <div ref={contentRef} className="generated-content" style={{ marginTop: 0, backgroundColor: 'var(--bg-secondary)' }}>
               <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]} components={markdownComponents} children={String(result?.content || '')} />
             </div>
-            
+
             <div style={{ marginTop: '1rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'flex-end' }}>
               <button className="btn btn-primary" style={{ backgroundColor: '#f43f5e' }}>
                 <FileCheck size={18} /> Done

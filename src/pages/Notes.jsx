@@ -38,9 +38,9 @@ const markdownComponents = {
 
 const SUBJECTS = {
   CBSE: {
-    '8th':  ['Mathematics', 'Science', 'Social Science (History)', 'Social Science (Geography)', 'Social Science (Civics)', 'English (Honeydew)', 'English (It So Happened)', 'Hindi (Vasant)', 'Hindi (Durva)', 'Sanskrit (Ruchira)'],
-    '9th':  ['Mathematics', 'Science (Physics)', 'Science (Chemistry)', 'Science (Biology)', 'Social Science (History)', 'Social Science (Geography)', 'Social Science (Civics)', 'Social Science (Economics)', 'English (Beehive)', 'English (Moments)', 'Hindi (Kshitij)', 'Hindi (Sparsh)', 'Sanskrit (Shemushi)'],
-    '10th': ['Mathematics (Standard)', 'Mathematics (Basic)', 'Science (Physics)', 'Science (Chemistry)', 'Science (Biology)', 'Social Science (History)', 'Social Science (Geography)', 'Social Science (Civics)', 'Social Science (Economics)', 'English (First Flight)', 'English (Footprints Without Feet)', 'Hindi (Kshitij II)', 'Hindi (Sparsh II)', 'Sanskrit (Shemushi II)'],
+    '8th':  ['Mathematics', 'Science', 'History', 'Geography', 'Civics', 'English (Honeydew)', 'English (It So Happened)', 'Hindi (Vasant)', 'Hindi (Durva)', 'Sanskrit (Ruchira)'],
+    '9th':  ['Mathematics', 'Science (Physics)', 'Science (Chemistry)', 'Science (Biology)', 'History', 'Geography', 'Civics', 'Economics', 'English (Beehive)', 'English (Moments)', 'Hindi (Kshitij)', 'Hindi (Sparsh)', 'Sanskrit (Shemushi)'],
+    '10th': ['Mathematics (Standard)', 'Mathematics (Basic)', 'Science (Physics)', 'Science (Chemistry)', 'Science (Biology)', 'History', 'Geography', 'Civics', 'Economics', 'English (First Flight)', 'English (Footprints Without Feet)', 'Hindi (Kshitij II)', 'Hindi (Sparsh II)', 'Sanskrit (Shemushi II)'],
     '11th': {
       Science:  ['Physics', 'Chemistry', 'Biology', 'Mathematics', 'Computer Science', 'Physical Education', 'English (Hornbill)', 'Hindi'],
       Commerce: ['Accountancy', 'Business Studies', 'Economics', 'Mathematics', 'English (Hornbill)', 'Hindi', 'Physical Education'],
@@ -53,7 +53,7 @@ const SUBJECTS = {
     },
   },
   RBSE: {
-    '8th':  ['Ganit (Mathematics)', 'Vigyan (Science)', 'Samajik Vigyan (Social Science)', 'Hindi', 'English', 'Sanskrit', 'Naitik Shiksha'],
+    '8th':  ['Ganit (Mathematics)', 'Vigyan (Science)', 'Itihas (History)', 'Bhugol (Geography)', 'Rajniti Vigyan (Civics)', 'Arthshastra (Economics)', 'Hindi', 'English', 'Sanskrit', 'Naitik Shiksha'],
     '9th':  ['Ganit (Mathematics)', 'Bhautiki (Physics)', 'Rasayan (Chemistry)', 'Jeev Vigyan (Biology)', 'Itihas (History)', 'Bhugol (Geography)', 'Rajniti Vigyan (Civics)', 'Arthshastra (Economics)', 'Hindi', 'English', 'Sanskrit'],
     '10th': ['Ganit (Mathematics)', 'Bhautiki (Physics)', 'Rasayan (Chemistry)', 'Jeev Vigyan (Biology)', 'Itihas (History)', 'Bhugol (Geography)', 'Rajniti Vigyan (Civics)', 'Arthshastra (Economics)', 'Hindi', 'English', 'Sanskrit', 'Information Technology (IT)'],
     '11th': {

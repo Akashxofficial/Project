@@ -739,7 +739,8 @@ export default function Chat() {
                               const col = colors[idx % colors.length];
                               const subjectIcons = {
                                 'Physics': '⚛️', 'Chemistry': '🧪', 'Mathematics': '📐', 'Biology': '🧬',
-                                'Social Science': '🌍', 'English': '📝', 'Hindi': '✍️', 'Computer Science': '💻',
+                                'Social Science': '🌍', 'History': '📜', 'Civics': '🏛️', 'Geography': '🗺️',
+                                'Sanskrit': '🕉️', 'English': '📝', 'Hindi': '✍️', 'Computer Science': '💻',
                                 'Accountancy': '📂', 'Business Studies': '💼', 'Economics': '📊',
                                 'Informatics Practices': '🖥️', 'Science': '🔬'
                               };

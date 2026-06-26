@@ -54,13 +54,16 @@ const standardSubjects = [
   { name: 'Chemistry', icon: '🧪', color: '#10b981' },
   { name: 'Mathematics', icon: '📐', color: '#3b82f6' },
   { name: 'Biology', icon: '🧬', color: '#ec4899' },
-  { name: 'Social Science', icon: '🌍', color: '#f59e0b' },
+  { name: 'History', icon: '📜', color: '#a855f7' },
+  { name: 'Civics', icon: '🏛️', color: '#3b82f6' },
+  { name: 'Geography', icon: '🗺️', color: '#10b981' },
+  { name: 'Economics', icon: '📈', color: '#f59e0b' },
+  { name: 'Sanskrit', icon: '🕉️', color: '#f97316' },
   { name: 'English', icon: '📖', color: '#a855f7' },
   { name: 'Hindi', icon: '🇮🇳', color: '#ef4444' },
   { name: 'Computer Science', icon: '💻', color: '#06b6d4' },
   { name: 'Accountancy', icon: '📊', color: '#f43f5e' },
   { name: 'Business Studies', icon: '🏢', color: '#a855f7' },
-  { name: 'Economics', icon: '📈', color: '#f59e0b' },
   { name: 'Informatics Practices', icon: '🖥️', color: '#06b6d4' }
 ];
 
@@ -101,8 +104,7 @@ const CLASS_SYLLABUS = {
       'Chapter 16: Stars and the Solar System',
       'Chapter 17: Pollution of Air and Water'
     ],
-    'Social Science': [
-      // History: Our Pasts III
+    'History': [
       'Chapter 1: How, When and Where',
       'Chapter 2: From Trade to Territory: The Company Establishes Power',
       'Chapter 3: Ruling the Countryside',
@@ -112,24 +114,42 @@ const CLASS_SYLLABUS = {
       'Chapter 7: Civilising the Native, Educating the Nation',
       'Chapter 8: Women, Caste and Reform',
       'Chapter 9: The Making of the National Movement: 1870s-1947',
-      'Chapter 10: India After Independence',
-      // Geography: Resources and Development
-      'Chapter 11: Resources',
-      'Chapter 12: Land, Soil, Water, Natural Vegetation and Wildlife Resources',
-      'Chapter 13: Mineral and Power Resources',
-      'Chapter 14: Agriculture',
-      'Chapter 15: Industries',
-      'Chapter 16: Human Resources',
-      // Civics: Social and Political Life III
-      'Chapter 17: The Indian Constitution',
-      'Chapter 18: Understanding Secularism',
-      'Chapter 19: Why Do We Need a Parliament?',
-      'Chapter 20: Understanding Laws',
-      'Chapter 21: Judiciary',
-      'Chapter 22: Understanding Our Criminal Justice System',
-      'Chapter 23: Confronting Marginalisation',
-      'Chapter 24: Public Facilities',
-      'Chapter 25: Law and Social Justice'
+      'Chapter 10: India After Independence'
+    ],
+    'Geography': [
+      'Chapter 1: Resources',
+      'Chapter 2: Land, Soil, Water, Natural Vegetation and Wildlife Resources',
+      'Chapter 3: Mineral and Power Resources',
+      'Chapter 4: Agriculture',
+      'Chapter 5: Industries',
+      'Chapter 6: Human Resources'
+    ],
+    'Civics': [
+      'Chapter 1: The Indian Constitution',
+      'Chapter 2: Understanding Secularism',
+      'Chapter 3: Why Do We Need a Parliament?',
+      'Chapter 4: Understanding Laws',
+      'Chapter 5: Judiciary',
+      'Chapter 6: Understanding Our Criminal Justice System',
+      'Chapter 7: Confronting Marginalisation',
+      'Chapter 8: Public Facilities',
+      'Chapter 9: Law and Social Justice'
+    ],
+    'Sanskrit': [
+      'Chapter 1: Subhashitani',
+      'Chapter 2: Billasya Vani Na Kadapi Me Shruta',
+      'Chapter 3: Digibharatam',
+      'Chapter 4: Sadaiv Purato Nidhehi Charnam',
+      'Chapter 5: Kantakneva Kantakam',
+      'Chapter 6: Griham Shunyam Sutam Vina',
+      'Chapter 7: Bharatjantaham',
+      'Chapter 8: Sansar Sagar Asya Nayakah',
+      'Chapter 9: Saptabhaginya',
+      'Chapter 10: Nitinavneetamp',
+      'Chapter 11: Savitribai Phule',
+      'Chapter 12: Kah Rakshati Kah Rakshitah',
+      'Chapter 13: Kshitau Rajate Bharatswarnabhumi',
+      'Chapter 14: Aryabhata'
     ],
     'English': [
       // Honeydew (Main Reader)
@@ -278,31 +298,47 @@ const CLASS_SYLLABUS = {
       'Chapter 4: Natural Resources',
       'Chapter 5: Improvement in Food Resources'
     ],
-    'Social Science': [
-      // History: India and the Contemporary World - I
+    'History': [
       'Chapter 1: The French Revolution',
       'Chapter 2: Socialism in Europe and the Russian Revolution',
       'Chapter 3: Nazism and the Rise of Hitler',
       'Chapter 4: Forest Society and Colonialism',
-      'Chapter 5: Pastoralists in the Modern World',
-      // Geography: Contemporary India - I
-      'Chapter 6: India - Size and Location',
-      'Chapter 7: Physical Features of India',
-      'Chapter 8: Drainage',
-      'Chapter 9: Climate',
-      'Chapter 10: Natural Vegetation and Wild Life',
-      'Chapter 11: Population',
-      // Civics: Democratic Politics - I
-      'Chapter 12: What is Democracy? Why Democracy?',
-      'Chapter 13: Constitutional Design',
-      'Chapter 14: Electoral Politics',
-      'Chapter 15: Working of Institutions',
-      'Chapter 16: Democratic Rights',
-      // Economics: Understanding Economic Development - I
-      'Chapter 17: The Story of Village Palampur',
-      'Chapter 18: People as Resource',
-      'Chapter 19: Poverty as a Challenge',
-      'Chapter 20: Food Security in India'
+      'Chapter 5: Pastoralists in the Modern World'
+    ],
+    'Geography': [
+      'Chapter 1: India - Size and Location',
+      'Chapter 2: Physical Features of India',
+      'Chapter 3: Drainage',
+      'Chapter 4: Climate',
+      'Chapter 5: Natural Vegetation and Wild Life',
+      'Chapter 6: Population'
+    ],
+    'Civics': [
+      'Chapter 1: What is Democracy? Why Democracy?',
+      'Chapter 2: Constitutional Design',
+      'Chapter 3: Electoral Politics',
+      'Chapter 4: Working of Institutions',
+      'Chapter 5: Democratic Rights'
+    ],
+    'Economics': [
+      'Chapter 1: The Story of Village Palampur',
+      'Chapter 2: People as Resource',
+      'Chapter 3: Poverty as a Challenge',
+      'Chapter 4: Food Security in India'
+    ],
+    'Sanskrit': [
+      'Chapter 1: Bharatiyavasantgiti',
+      'Chapter 2: Swarnakakah',
+      'Chapter 3: Godohanam',
+      'Chapter 4: Kalpataruh',
+      'Chapter 5: Suktimauktikam',
+      'Chapter 6: Bhranto Balah',
+      'Chapter 7: Pratyabhigyanam',
+      'Chapter 8: Lauhatula',
+      'Chapter 9: Siktasetuh',
+      'Chapter 10: Jatayoh Shauryam',
+      'Chapter 11: Paryavaranam',
+      'Chapter 12: Vangmanahpranaswarupam'
     ],
     'English': [
       // Beehive (Main Textbook)
@@ -453,33 +489,47 @@ const CLASS_SYLLABUS = {
       'Chapter 4: Heredity',
       'Chapter 5: Our Environment'
     ],
-    'Social Science': [
-      // History: India and the Contemporary World - II
+    'History': [
       'Chapter 1: The Rise of Nationalism in Europe',
       'Chapter 2: Nationalism in India',
       'Chapter 3: The Making of a Global World',
       'Chapter 4: The Age of Industrialisation',
-      'Chapter 5: Print Culture and the Modern World',
-      // Geography: Contemporary India - II
-      'Chapter 6: Resources and Development',
-      'Chapter 7: Forest and Wildlife Resources',
-      'Chapter 8: Water Resources',
-      'Chapter 9: Agriculture',
-      'Chapter 10: Minerals and Energy Resources',
-      'Chapter 11: Manufacturing Industries',
-      'Chapter 12: Lifelines of National Economy',
-      // Civics: Democratic Politics - II
-      'Chapter 13: Power Sharing',
-      'Chapter 14: Federalism',
-      'Chapter 15: Gender, Religion and Caste',
-      'Chapter 16: Political Parties',
-      'Chapter 17: Outcomes of Democracy',
-      // Economics: Understanding Economic Development - II
-      'Chapter 18: Development',
-      'Chapter 19: Sectors of the Indian Economy',
-      'Chapter 20: Money and Credit',
-      'Chapter 21: Globalisation and the Indian Economy',
-      'Chapter 22: Consumer Rights'
+      'Chapter 5: Print Culture and the Modern World'
+    ],
+    'Geography': [
+      'Chapter 1: Resources and Development',
+      'Chapter 2: Forest and Wildlife Resources',
+      'Chapter 3: Water Resources',
+      'Chapter 4: Agriculture',
+      'Chapter 5: Minerals and Energy Resources',
+      'Chapter 6: Manufacturing Industries',
+      'Chapter 7: Lifelines of National Economy'
+    ],
+    'Civics': [
+      'Chapter 1: Power Sharing',
+      'Chapter 2: Federalism',
+      'Chapter 3: Gender, Religion and Caste',
+      'Chapter 4: Political Parties',
+      'Chapter 5: Outcomes of Democracy'
+    ],
+    'Economics': [
+      'Chapter 1: Development',
+      'Chapter 2: Sectors of the Indian Economy',
+      'Chapter 3: Money and Credit',
+      'Chapter 4: Globalisation and the Indian Economy',
+      'Chapter 5: Consumer Rights'
+    ],
+    'Sanskrit': [
+      'Chapter 1: Shuchiparyavaranam',
+      'Chapter 2: Buddhirbalvati Sada',
+      'Chapter 3: Shishulalanam',
+      'Chapter 4: Janani Tulyavatsala',
+      'Chapter 5: Subhashitani',
+      'Chapter 6: Sauhardam Prakriteh Shobha',
+      'Chapter 7: Vichitrah Sakshi',
+      'Chapter 8: Suktayah',
+      'Chapter 9: Pranaebhyopi Priyah Suhrid',
+      'Chapter 10: Kautukah'
     ],
     'English': [
       // First Flight (Main Textbook)
@@ -1654,7 +1704,7 @@ export default function Home() {
         // Restore subject chip selections for the edit form
         const standardList = [
           'Physics', 'Chemistry', 'Mathematics', 'Biology',
-          'Social Science', 'English', 'Hindi', 'Computer Science',
+          'History', 'Civics', 'Geography', 'Sanskrit', 'English', 'Hindi', 'Computer Science',
           'Economics', 'Accountancy', 'Business Studies', 'Informatics Practices',
         ];
         setSelectedSubjects(
