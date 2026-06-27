@@ -80,52 +80,21 @@ const targetDoubts = [
 ];
 
 // Load student's active target chapters from localStorage to highlight in the solver
-const getStudentTargets = () => {
+const getStudentTargets = (userId) => {
   try {
-    const profileRaw = localStorage.getItem('tanios_profile');
+    const profileRaw = localStorage.getItem(`tanios_profile_${userId}`) || localStorage.getItem('tanios_profile');
     if (!profileRaw) return null;
     const profile = JSON.parse(profileRaw);
-    const userId = profile?.uid || '';
-    // Try user-specific keys first, then global
-    const tryKeys = (base) => {
-      const keys = [
-        `${base}_${localStorage.getItem('tanios_uid') || ''}`,
-        base
-      ];
-      for (const k of keys) {
-        const v = localStorage.getItem(k);
-        if (v) return v;
-      }
-      return null;
-    };
     
-    // Find active chapters from any available key format
-    let activeChaptersRaw = null;
-    for (const key of Object.keys(localStorage)) {
-      if (key.includes('tanios_active_chapters')) {
-        activeChaptersRaw = localStorage.getItem(key);
-        if (activeChaptersRaw) break;
-      }
-    }
-    
-    let profileRaw2 = null;
-    for (const key of Object.keys(localStorage)) {
-      if (key.includes('tanios_profile')) {
-        profileRaw2 = localStorage.getItem(key);
-        if (profileRaw2) break;
-      }
-    }
-    
-    if (!profileRaw2) return null;
-    const prof = JSON.parse(profileRaw2);
+    const activeChaptersRaw = localStorage.getItem(`tanios_active_chapters_${userId}`) || localStorage.getItem('tanios_active_chapters');
     const activeChapters = activeChaptersRaw ? JSON.parse(activeChaptersRaw) : {};
     
-    if (!prof.subjects || prof.subjects.length === 0) return null;
+    if (!profile.subjects || profile.subjects.length === 0) return null;
     
     return {
-      board: prof.board || 'CBSE',
-      grade: prof.grade || '10',
-      subjects: prof.subjects,
+      board: profile.board || 'CBSE',
+      grade: profile.grade || '10',
+      subjects: profile.subjects,
       activeChapters
     };
   } catch {
@@ -168,7 +137,11 @@ export default function Chat() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
   // Student target subjects/chapters for highlighted pads
-  const [studentTargets] = useState(() => getStudentTargets());
+  const [studentTargets, setStudentTargets] = useState(null);
+
+  useEffect(() => {
+    setStudentTargets(getStudentTargets(userId));
+  }, [userId]);
 
   // Multimodal Image States
   const [selectedImage, setSelectedImage] = useState(null); // { data: string, mimeType: string, url: string, name: string }
@@ -432,8 +405,8 @@ export default function Chat() {
     const prompt = generateDoubtPrompt(finalUserText, historyCtx);
 
     // Retrieve active textbook RAG reference context
-    const ragContext = localStorage.getItem('tanios_rag_context');
-    const ragFilename = localStorage.getItem('tanios_rag_filename') || 'Textbook';
+    const ragContext = localStorage.getItem(`tanios_rag_context_${userId}`);
+    const ragFilename = localStorage.getItem(`tanios_rag_filename_${userId}`) || 'Textbook';
     
     let promptWithContext = prompt;
     if (ragContext) {

@@ -303,6 +303,8 @@ export function AuthProvider({ children }) {
       'tanios_inline_subtopics',
       'tanios_mcq_attempts',
       'tanios_net_score',
+      'tanios_rag_context',
+      'tanios_rag_filename',
     ];
     const suffix = currentUser?.uid || currentUser?.email || 'guest';
     taniosKeys.forEach(key => {

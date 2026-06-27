@@ -1334,6 +1334,17 @@ export default function Home() {
   const userId = currentUser?.uid || currentUser?.email || 'guest';
   const getUserKey = (baseKey) => `${baseKey}_${userId}`;
 
+  const getLocalDateKey = () => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  };
+
+  const getYesterdayDateKey = () => {
+    const d = new Date();
+    d.setDate(d.getDate() - 1);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  };
+
   // ── 1. DOPAMINE GAMIFICATION STATE (Persisted in localStorage) ──
   const [xp, setXp] = useState(0);
   const [streak, setStreak] = useState(0);
@@ -1422,7 +1433,7 @@ export default function Home() {
   // 1-Day Free Trial logic: allow all targets on the first day, lock on subsequent days
   const freeStudyDayKey = getUserKey('tanios_free_study_day');
   const storedFreeStudyDay = localStorage.getItem(freeStudyDayKey);
-  const todayDateString = new Date().toISOString().slice(0, 10);
+  const todayDateString = getLocalDateKey();
   const isFreeTierLocked = !isPro && storedFreeStudyDay && storedFreeStudyDay !== todayDateString;
 
   // Subject-aware dynamic fallback MCQ based on active mission
@@ -1488,7 +1499,7 @@ export default function Home() {
       return `Chapter 1: Introduction to ${subj}`;
     };
 
-    const dateKey = new Date().toISOString().slice(0, 10);
+    const dateKey = getLocalDateKey();
 
     const generated = subjects.map((subj, idx) => {
       const activeCh = getChapterForSubject(subj);
@@ -1510,7 +1521,7 @@ export default function Home() {
       type: 'login',
       label: 'Daily consistency check-in',
       xp: 15,
-      done: true,
+      done: false,
       dateKey,
     });
 
@@ -1671,7 +1682,18 @@ export default function Home() {
 
       // ── Numeric counters ── default to 0 for fresh sessions
       setXp(storedXp ? parseInt(storedXp, 10) : 0);
-      setStreak(storedStreak ? parseInt(storedStreak, 10) : 0);
+
+      // Streak validation: reset if missed yesterday
+      const todayKey = getLocalDateKey();
+      const yesterdayKey = getYesterdayDateKey();
+      const lastStreakDay = localStorage.getItem(getUserKey('tanios_streak_day')) || '';
+      let activeStreak = storedStreak ? parseInt(storedStreak, 10) : 0;
+      if (lastStreakDay && lastStreakDay !== todayKey && lastStreakDay !== yesterdayKey) {
+        activeStreak = 0;
+        localStorage.setItem(getUserKey('tanios_streak'), '0');
+      }
+      setStreak(activeStreak);
+
       setConsistency(storedConsistency ? parseInt(storedConsistency, 10) : 0);
       setMcqAttempts(storedAttempts ? JSON.parse(storedAttempts) : []);
       setNetScore(storedNetScore ? parseInt(storedNetScore, 10) : 0);
@@ -1719,7 +1741,7 @@ export default function Home() {
         );
 
         // ── DAILY MISSION RESET LOGIC ──
-        const todayKey = new Date().toISOString().slice(0, 10);
+        const todayKey = getLocalDateKey();
         let missionsToUse;
         const storedActiveChapters = localStorage.getItem(getUserKey('tanios_active_chapters'));
         const activeChaptersMap = storedActiveChapters ? JSON.parse(storedActiveChapters) : {};
@@ -1763,6 +1785,14 @@ export default function Home() {
         }
 
         setMissions(missionsToUse);
+
+        // Auto-complete check-in if not yet done today
+        const checkinMission = missionsToUse.find(m => m.id === 'm_checkin');
+        if (checkinMission && !checkinMission.done) {
+          setTimeout(() => {
+            toggleMission('m_checkin');
+          }, 100);
+        }
 
         // Sync one-click grade with profile
         setOneClickGrade(profile.grade);
@@ -1875,7 +1905,7 @@ export default function Home() {
   };
 
   // Complete mission — marks done, awards XP, handles streak
-  const toggleMission = (id) => {
+  function toggleMission(id) {
     // Find the mission being completed
     const target = missions.find(m => m.id === id);
     if (!target || target.done) return; // already done or not found
@@ -1894,7 +1924,7 @@ export default function Home() {
     if (!isPro && target.type !== 'login') {
       const freeStudyDayKey = getUserKey('tanios_free_study_day');
       if (!localStorage.getItem(freeStudyDayKey)) {
-        const todayKey = new Date().toISOString().slice(0, 10);
+        const todayKey = getLocalDateKey();
         localStorage.setItem(freeStudyDayKey, todayKey);
       }
     }
@@ -1989,6 +2019,7 @@ export default function Home() {
       const chaptersRemaining = Math.max(1, totalChapters - (chapterIdx !== -1 ? chapterIdx + 1 : 1) + 1);
       const daysPerChapter = Math.max(5, Math.round(diffDays / chaptersRemaining));
 
+      let isChapterComplete = false;
       const savedInline = JSON.parse(localStorage.getItem(getUserKey('tanios_inline_subtopics')) || '{}');
       const chapterTopics = savedInline[subject]?.[currentChapter]?.topics || [];
       if (chapterTopics.length > 0) {
@@ -2036,7 +2067,7 @@ export default function Home() {
 
     // ── STREAK LOGIC: increment streak only when ALL non-login missions are done ──
     if (isLastMission) {
-      const todayKey = new Date().toISOString().slice(0, 10);
+      const todayKey = getLocalDateKey();
       const lastStreakDay = localStorage.getItem(getUserKey('tanios_streak_day')) || '';
 
       if (lastStreakDay !== todayKey) {
@@ -2053,7 +2084,7 @@ export default function Home() {
         setTimeout(() => awardXp(10, '🔥 All Daily Missions Complete!'), 600);
       }
     }
-  };
+  }
 
   const safeJsonParse = (str) => {
     // Helper to escape raw control characters inside JSON string literals
@@ -3832,17 +3863,25 @@ Do not include any markdown, code blocks, or conversational text. Output raw JSO
                                                   setSelectedSubTopicsMap(newMap);
 
                                                   // Compute if this chapter should be marked done based on updatedList and completed list
-                                                  const isChapterDone = updatedList.length === 0 || updatedList.every(t => completed.includes(t));
+                                                   const isChapterDone = updatedList.length === 0 || updatedList.every(t => completed.includes(t));
 
-                                                  setMissions(prevMissions => {
-                                                    const updated = prevMissions.map(m => {
-                                                      if (m.subject === subj && m.chapter === currentCh && m.type !== 'login') {
-                                                        return { ...m, done: isChapterDone };
-                                                      }
-                                                      return m;
-                                                    });
-                                                    return updated;
-                                                  });
+                                                   if (isChapterDone) {
+                                                     const targetMission = missions.find(m => m.subject === subj && m.chapter === currentCh && m.type !== 'login');
+                                                     if (targetMission && !targetMission.done) {
+                                                       toggleMission(targetMission.id);
+                                                     }
+                                                   } else {
+                                                     setMissions(prevMissions => {
+                                                       const updated = prevMissions.map(m => {
+                                                         if (m.subject === subj && m.chapter === currentCh && m.type !== 'login') {
+                                                           return { ...m, done: false };
+                                                         }
+                                                         return m;
+                                                       });
+                                                       localStorage.setItem(getUserKey('tanios_missions'), JSON.stringify(updated));
+                                                       return updated;
+                                                     });
+                                                   }
                                                  }}
                                                 style={{ marginTop: '0.08rem', width: '12px', height: '12px', accentColor: 'var(--primary)' }}
                                               />
@@ -3963,15 +4002,16 @@ Do not include any markdown, code blocks, or conversational text. Output raw JSO
                                               setSelectedSubTopicsMap(newMap);
 
                                               // Adding a new uncompleted custom topic reactivates the study mission immediately
-                                              setMissions(prevMissions => {
-                                                const updated = prevMissions.map(m => {
-                                                  if (m.subject === subj && m.chapter === currentCh && m.type !== 'login') {
-                                                    return { ...m, done: false };
-                                                  }
-                                                  return m;
-                                                });
-                                                return updated;
-                                              });
+                                               setMissions(prevMissions => {
+                                                 const updated = prevMissions.map(m => {
+                                                   if (m.subject === subj && m.chapter === currentCh && m.type !== 'login') {
+                                                     return { ...m, done: false };
+                                                   }
+                                                   return m;
+                                                 });
+                                                 localStorage.setItem(getUserKey('tanios_missions'), JSON.stringify(updated));
+                                                 return updated;
+                                               });
                                                e.target.value = '';
                                             }
                                           }}
@@ -4794,7 +4834,7 @@ Do not include any markdown, code blocks, or conversational text. Output raw JSO
                             const newAttempt = {
                               id: `attempt_${Date.now()}`,
                               missionId: activeMission.id,
-                              dateKey: activeMission.dateKey || new Date().toISOString().slice(0, 10),
+                              dateKey: activeMission.dateKey || getLocalDateKey(),
                               subject: activeMission.subject,
                               chapter: activeMission.chapter,
                               topic: data.topic || "Core Concept",
@@ -4821,12 +4861,17 @@ Do not include any markdown, code blocks, or conversational text. Output raw JSO
                             const currentNetScore = storedNetScore ? parseInt(storedNetScore, 10) : 0;
                             
                             const hasPreviousWrong = existing && !existing.isCorrect;
+                            const hasPreviousCorrect = existing && existing.isCorrect;
                             let scoreDelta = 0;
                             
                             if (isCorrect) {
-                              scoreDelta = hasPreviousWrong ? 0 : 10;
+                              if (hasPreviousCorrect || hasPreviousWrong) {
+                                scoreDelta = 0;
+                              } else {
+                                scoreDelta = 10;
+                              }
                             } else {
-                              // Only penalize on the first wrong attempt
+                              // Only penalize on the first wrong attempt (if no attempts existed yet)
                               scoreDelta = existing ? 0 : -5;
                             }
                             
@@ -4835,11 +4880,13 @@ Do not include any markdown, code blocks, or conversational text. Output raw JSO
                             setNetScore(nextNetScore);
                             
                             if (isCorrect) {
-                              if (!hasPreviousWrong) {
+                              if (hasPreviousCorrect) {
+                                setXpAwardedMsg(`Reviewed! (No Marks/XP for repeats) 💡`);
+                              } else if (hasPreviousWrong) {
+                                setXpAwardedMsg(`Corrected! (No Marks/XP for retries) 💡`);
+                              } else {
                                 awardXp(10, 'Correct MCQ Answer');
                                 setXpAwardedMsg(`+10 Marks Earned! 🎯`);
-                              } else {
-                                setXpAwardedMsg(`Corrected! (No Marks/XP for retries) 💡`);
                               }
                               setTimeout(() => setXpAwardedMsg(''), 3000);
                             } else {
@@ -4849,8 +4896,7 @@ Do not include any markdown, code blocks, or conversational text. Output raw JSO
                                 setXpAwardedMsg(`Incorrect Option! (Try again) ❌`);
                               }
                               setTimeout(() => setXpAwardedMsg(''), 3000);
-                            }
-                          } catch (err) {
+                            }                          } catch (err) {
                             console.warn("Could not save MCQ attempt", err);
                           }
                         }

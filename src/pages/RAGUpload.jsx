@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Upload, Book, FileText, CheckCircle, Sparkles, Trash2, ArrowRight, ShieldCheck, HelpCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 export default function RAGUpload() {
   const navigate = useNavigate();
+  const { currentUser } = useAuth();
+  const userId = currentUser?.uid || currentUser?.email || 'guest';
 
   const [dragActive, setDragActive] = useState(false);
   const [file, setFile] = useState(null);
@@ -127,10 +130,10 @@ export default function RAGUpload() {
     localStorage.setItem('tanios_rag_filename', file.name);
     setActiveContext({ name: file.name, length: extractedText.length });
 
-    // Award +30 XP for integrating textbook context!
     try {
-      const currentXP = parseInt(localStorage.getItem('tanios_xp') || '120', 10);
-      localStorage.setItem('tanios_xp', (currentXP + 30).toString());
+      const xpKey = `tanios_xp_${userId}`;
+      const currentXP = parseInt(localStorage.getItem(xpKey) || '120', 10);
+      localStorage.setItem(xpKey, (currentXP + 30).toString());
       window.dispatchEvent(new Event('tanios_xp_update'));
     } catch (e) {
       console.warn(e);
