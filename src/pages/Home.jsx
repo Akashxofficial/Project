@@ -14,6 +14,7 @@ import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import 'katex/dist/katex.min.css';
 import { useAuth } from '../context/AuthContext';
+import { useStudy } from '../context/StudyContext';
 import { saveDocument, logActivity } from '../lib/firebase';
 import MathRenderer from '../components/MathRenderer';
 
@@ -1345,13 +1346,20 @@ export default function Home() {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   };
 
-  // ── 1. DOPAMINE GAMIFICATION STATE (Persisted in localStorage) ──
-  const [xp, setXp] = useState(0);
-  const [streak, setStreak] = useState(0);
-  const [level, setLevel] = useState(1);
-  const [consistency, setConsistency] = useState(0);
-  const [badges, setBadges] = useState([]);
-  const [xpAwardedMsg, setXpAwardedMsg] = useState('');
+  // ── 1. DOPAMINE GAMIFICATION STATE — pulled from global StudyContext ──
+  // This gives real-time sync across all pages without manual refresh.
+  const study = useStudy();
+  const xp            = study.xp;
+  const setXp         = study.setXp || (() => {});
+  const streak        = study.streak;
+  const setStreak     = study.setStreak;
+  const level         = study.level;
+  const consistency   = study.consistency;
+  const setConsistency = study.setConsistency;
+  const badges        = study.badges;
+  const setBadges     = study.setBadges;
+  const xpAwardedMsg  = study.xpAwardedMsg;
+  const setXpAwardedMsg = study.setXpAwardedMsg;
 
   // ── 1.5. STUDENT PROFILE STATE ──
   const [profileBoard, setProfileBoard] = useState('');
@@ -1425,7 +1433,8 @@ export default function Home() {
   const [missionLoading, setMissionLoading] = useState(false);
   const [missionError, setMissionError] = useState('');
   const [mcqAttempts, setMcqAttempts] = useState([]);
-  const [netScore, setNetScore] = useState(0);
+  const netScore    = study.netScore;
+  const setNetScore = study.setNetScore;
 
   const completedNonLogin = missions.filter(m => m.type !== 'login' && m.done).length;
   const isPro = subscription?.active;
@@ -1669,38 +1678,15 @@ export default function Home() {
     const userId = currentUser?.uid || currentUser?.email || null;
 
     try {
-      const storedXp          = localStorage.getItem(getUserKey('tanios_xp'));
-      const storedStreak      = localStorage.getItem(getUserKey('tanios_streak'));
-      const storedConsistency = localStorage.getItem(getUserKey('tanios_consistency'));
-      const storedBadges      = localStorage.getItem(getUserKey('tanios_badges'));
       const storedWeaknesses  = localStorage.getItem(getUserKey('tanios_weaknesses'));
       const storedMissions    = localStorage.getItem(getUserKey('tanios_missions'));
       const storedProfile     = localStorage.getItem(getUserKey('tanios_profile'));
       const storedAttempts    = localStorage.getItem(getUserKey('tanios_mcq_attempts'));
-      const storedNetScore    = localStorage.getItem(getUserKey('tanios_net_score'));
       const storedInline      = localStorage.getItem(getUserKey('tanios_inline_subtopics'));
 
-      // ── Numeric counters ── default to 0 for fresh sessions
-      setXp(storedXp ? parseInt(storedXp, 10) : 0);
-
-      // Streak validation: reset if missed yesterday
-      const todayKey = getLocalDateKey();
-      const yesterdayKey = getYesterdayDateKey();
-      const lastStreakDay = localStorage.getItem(getUserKey('tanios_streak_day')) || '';
-      let activeStreak = storedStreak ? parseInt(storedStreak, 10) : 0;
-      if (lastStreakDay && lastStreakDay !== todayKey && lastStreakDay !== yesterdayKey) {
-        activeStreak = 0;
-        localStorage.setItem(getUserKey('tanios_streak'), '0');
-      }
-      setStreak(activeStreak);
-
-      setConsistency(storedConsistency ? parseInt(storedConsistency, 10) : 0);
+      // XP / streak / consistency / badges / netScore are loaded by StudyContext — no duplicates here.
       setMcqAttempts(storedAttempts ? JSON.parse(storedAttempts) : []);
-      setNetScore(storedNetScore ? parseInt(storedNetScore, 10) : 0);
       setInlineSubTopics(storedInline ? JSON.parse(storedInline) : {});
-
-      // ── Badges ── empty for fresh sessions
-      setBadges(storedBadges ? JSON.parse(storedBadges) : []);
 
       // ── Weaknesses ──
       setWeaknesses(storedWeaknesses ? JSON.parse(storedWeaknesses) : []);
@@ -1833,13 +1819,8 @@ export default function Home() {
   }, [currentUser?.uid, currentUser?.email]);
 
 
-  // Update level whenever XP changes
+  // Auto-award badges based on milestones when XP changes
   useEffect(() => {
-    // Level calculation: Level 1 (0-199 XP), Level 2 (200-499 XP), Level 3 (500+ XP)
-    let newLevel = 1;
-    if (xp >= 500) newLevel = 3;
-    else if (xp >= 200) newLevel = 2;
-    setLevel(newLevel);
 
     // Auto-award badges based on milestones
     let updatedBadges = [...badges];
@@ -1853,18 +1834,8 @@ export default function Home() {
     }
   }, [xp, streak]);
 
-  // Listen to doubt solved event from Chat page to dynamically update XP!
-  useEffect(() => {
-    const handleXpUpdate = () => {
-      // Read from user-specific key — userId is captured from the outer scope
-      const uid = currentUser?.uid || currentUser?.email || 'guest';
-      const currentXP = parseInt(localStorage.getItem(`tanios_xp_${uid}`) || '0', 10);
-      setXp(currentXP);
-    };
-    window.addEventListener('tanios_xp_update', handleXpUpdate);
-    return () => window.removeEventListener('tanios_xp_update', handleXpUpdate);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userId]);
+  // XP updates are now handled by StudyContext (cross-tab + same-tab via storage event)
+  // The legacy tanios_xp_update listener is registered there, so no duplicate needed here.
 
   // Automatically open tools when one is activated (e.g. from mistake clinic)
   useEffect(() => {
@@ -1875,23 +1846,8 @@ export default function Home() {
 
 
 
-  // Award XP function with animation trigger — reads fresh from storage to avoid stale closure
-  const awardXp = (amount, reason) => {
-    if (amount <= 0) {
-      setXpAwardedMsg(`${reason} 💡`);
-      setTimeout(() => setXpAwardedMsg(''), 4000);
-      return;
-    }
-    setXp(prevXp => {
-      const freshXp = parseInt(localStorage.getItem(getUserKey('tanios_xp')) || '0', 10);
-      const base = Math.max(prevXp, freshXp);
-      const newXp = base + amount;
-      try { localStorage.setItem(getUserKey('tanios_xp'), newXp.toString()); } catch(e) {}
-      return newXp;
-    });
-    setXpAwardedMsg(`+${amount} XP Earned! (${reason}) ✨`);
-    setTimeout(() => setXpAwardedMsg(''), 4000);
-  };
+  // awardXp delegates to the global StudyContext so all pages share the same XP state.
+  const awardXp = study.awardXp;
 
   const triggerBadgeAward = (badgeId, nextBadges) => {
     setBadges(nextBadges);
@@ -2059,11 +2015,7 @@ export default function Home() {
     }
 
     // Update consistency score
-    setConsistency(prev => {
-      const newCons = Math.min(100, prev + 2);
-      try { localStorage.setItem(getUserKey('tanios_consistency'), newCons.toString()); } catch(e) {}
-      return newCons;
-    });
+    setConsistency(prev => Math.min(100, prev + 2));
 
     // ── STREAK LOGIC: increment streak only when ALL non-login missions are done ──
     if (isLastMission) {
@@ -2071,14 +2023,8 @@ export default function Home() {
       const lastStreakDay = localStorage.getItem(getUserKey('tanios_streak_day')) || '';
 
       if (lastStreakDay !== todayKey) {
-        // First time completing all missions today → increment streak using fresh value
-        setStreak(prevStreak => {
-          const freshStreak = parseInt(localStorage.getItem(getUserKey('tanios_streak')) || '0', 10);
-          const base = Math.max(prevStreak, freshStreak);
-          const newStreak = base + 1;
-          try { localStorage.setItem(getUserKey('tanios_streak'), newStreak.toString()); } catch(e) {}
-          return newStreak;
-        });
+        // First time completing all missions today → increment streak
+        setStreak(prev => prev + 1);
         localStorage.setItem(getUserKey('tanios_streak_day'), todayKey);
         // Extra XP bonus for completing all daily missions
         setTimeout(() => awardXp(10, '🔥 All Daily Missions Complete!'), 600);
@@ -4389,6 +4335,18 @@ Do not include any markdown, code blocks, or conversational text. Output raw JSO
                   const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
                   const today = new Date();
                   const days = [];
+                  
+                  const todayKey = getLocalDateKey();
+                  const yesterdayKey = getYesterdayDateKey();
+                  const lastStreakDay = localStorage.getItem(getUserKey('tanios_streak_day')) || '';
+                  
+                  let anchorIdx = -1;
+                  if (lastStreakDay === todayKey) {
+                    anchorIdx = 0;
+                  } else if (lastStreakDay === yesterdayKey) {
+                    anchorIdx = 1;
+                  }
+
                   for (let i = 6; i >= 0; i--) {
                     const d = new Date(today);
                     d.setDate(today.getDate() - i);
@@ -4396,9 +4354,8 @@ Do not include any markdown, code blocks, or conversational text. Output raw JSO
                       label: dayNames[d.getDay()],
                       date: d.getDate(),
                       isToday: i === 0,
-                      // A day is "active" if it falls within the current streak window
-                      // streak=3 means today + 2 previous days were active
-                      isActive: streak > 0 && i < streak,
+                      // A day is active if it falls within the streak window anchored on the last completed day
+                      isActive: streak > 0 && anchorIdx !== -1 && i >= anchorIdx && i < anchorIdx + streak,
                     });
                   }
                   return days.map((day, idx) => (
@@ -4860,19 +4817,24 @@ Do not include any markdown, code blocks, or conversational text. Output raw JSO
                             const storedNetScore = localStorage.getItem(getUserKey('tanios_net_score'));
                             const currentNetScore = storedNetScore ? parseInt(storedNetScore, 10) : 0;
                             
+                            const isReviewMode = !!activeMission.done;
                             const hasPreviousWrong = existing && !existing.isCorrect;
                             const hasPreviousCorrect = existing && existing.isCorrect;
                             let scoreDelta = 0;
                             
-                            if (isCorrect) {
-                              if (hasPreviousCorrect || hasPreviousWrong) {
-                                scoreDelta = 0;
-                              } else {
-                                scoreDelta = 10;
-                              }
+                            if (isReviewMode) {
+                              scoreDelta = 0;
                             } else {
-                              // Only penalize on the first wrong attempt (if no attempts existed yet)
-                              scoreDelta = existing ? 0 : -5;
+                              if (isCorrect) {
+                                if (hasPreviousCorrect || hasPreviousWrong) {
+                                  scoreDelta = 0;
+                                } else {
+                                  scoreDelta = 10;
+                                }
+                              } else {
+                                // Only penalize on the first wrong attempt (if no attempts existed yet)
+                                scoreDelta = existing ? 0 : -5;
+                              }
                             }
                             
                             const nextNetScore = currentNetScore + scoreDelta;
@@ -4880,7 +4842,9 @@ Do not include any markdown, code blocks, or conversational text. Output raw JSO
                             setNetScore(nextNetScore);
                             
                             if (isCorrect) {
-                              if (hasPreviousCorrect) {
+                              if (isReviewMode) {
+                                setXpAwardedMsg(`Reviewed! (No Marks/XP in Review Mode) 💡`);
+                              } else if (hasPreviousCorrect) {
                                 setXpAwardedMsg(`Reviewed! (No Marks/XP for repeats) 💡`);
                               } else if (hasPreviousWrong) {
                                 setXpAwardedMsg(`Corrected! (No Marks/XP for retries) 💡`);
@@ -4890,7 +4854,9 @@ Do not include any markdown, code blocks, or conversational text. Output raw JSO
                               }
                               setTimeout(() => setXpAwardedMsg(''), 3000);
                             } else {
-                              if (!existing) {
+                              if (isReviewMode) {
+                                setXpAwardedMsg(`Incorrect Option! (Review Mode) ❌`);
+                              } else if (!existing) {
                                 setXpAwardedMsg(`Penalty Applied: -5 Marks! ❌`);
                               } else {
                                 setXpAwardedMsg(`Incorrect Option! (Try again) ❌`);

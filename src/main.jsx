@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import App from './App.jsx';
 import { AuthProvider } from './context/AuthContext';
+import { StudyProvider } from './context/StudyContext';
 import './index.css';
 import 'katex/dist/katex.min.css';
 import * as Sentry from "@sentry/react";
@@ -27,9 +28,12 @@ if (import.meta.env.VITE_SENTRY_DSN) {
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <AuthProvider>
-      <BrowserRouter>
-        <App />
-      </BrowserRouter>
+      <StudyProvider>
+        <BrowserRouter>
+          <App />
+        </BrowserRouter>
+      </StudyProvider>
     </AuthProvider>
   </React.StrictMode>,
 );
+

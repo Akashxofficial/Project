@@ -8,6 +8,7 @@ import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import 'katex/dist/katex.min.css';
 import { useAuth } from '../context/AuthContext';
+import { useStudy } from '../context/StudyContext';
 import { saveChatSession, getUserChatSessions, deleteChatSession, logActivity } from '../lib/firebase';
 import MathRenderer from '../components/MathRenderer';
 
@@ -115,6 +116,7 @@ const saveGuestSessions = (sessions) => {
 export default function Chat() {
   const navigate = useNavigate();
   const { currentUser, incrementGuestUsage, getRemainingQuota, QUOTA, FEATURE_TRIALS, subscription, setShowLoginModal } = useAuth();
+  const { awardXp } = useStudy();
   const isGuest = !currentUser || currentUser.isGuest || currentUser.email === 'guest@tanios.ai';
   const userId = currentUser?.uid || currentUser?.email || 'guest';
   
@@ -453,12 +455,9 @@ export default function Chat() {
     setMessages(finalMessages);
     syncSession(sessionId, finalMessages, title);
 
-    // Reward +10 XP for solving doubts! (write to user-specific key)
+    // Reward +10 XP for solving doubts! (delegates to StudyContext)
     try {
-      const xpKey = `tanios_xp_${userId}`;
-      const currentXP = parseInt(localStorage.getItem(xpKey) || '0', 10);
-      localStorage.setItem(xpKey, (currentXP + 10).toString());
-      window.dispatchEvent(new Event('tanios_xp_update'));
+      awardXp(10, 'Solved a Doubt');
     } catch (e) {
       console.warn(e);
     }

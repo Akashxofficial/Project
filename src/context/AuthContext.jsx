@@ -306,10 +306,8 @@ export function AuthProvider({ children }) {
       'tanios_rag_context',
       'tanios_rag_filename',
     ];
-    const suffix = currentUser?.uid || currentUser?.email || 'guest';
     taniosKeys.forEach(key => {
       localStorage.removeItem(key);
-      localStorage.removeItem(`${key}_${suffix}`);
     });
     setSubscription({ active: false, status: 'none' });
     // ────────────────────────────────────────────────────────────────────────

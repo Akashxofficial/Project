@@ -2,10 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { Upload, Book, FileText, CheckCircle, Sparkles, Trash2, ArrowRight, ShieldCheck, HelpCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useStudy } from '../context/StudyContext';
 
 export default function RAGUpload() {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
+  const { awardXp } = useStudy();
   const userId = currentUser?.uid || currentUser?.email || 'guest';
 
   const [dragActive, setDragActive] = useState(false);
@@ -16,14 +18,16 @@ export default function RAGUpload() {
   const [stats, setStats] = useState({ size: 0, characters: 0, words: 0 });
   const [activeContext, setActiveContext] = useState(null);
 
-  // Load existing RAG context on mount
+  // Load existing RAG context on mount / when user changes
   useEffect(() => {
-    const stored = localStorage.getItem('tanios_rag_context');
-    const storedName = localStorage.getItem('tanios_rag_filename') || 'Active Textbook';
+    const stored = localStorage.getItem(`tanios_rag_context_${userId}`);
+    const storedName = localStorage.getItem(`tanios_rag_filename_${userId}`) || 'Active Textbook';
     if (stored) {
       setActiveContext({ name: storedName, length: stored.length });
+    } else {
+      setActiveContext(null);
     }
-  }, []);
+  }, [userId]);
 
   const handleDrag = (e) => {
     e.preventDefault();
@@ -126,15 +130,12 @@ export default function RAGUpload() {
   const handleLockContext = () => {
     if (!extractedText || !file) return;
 
-    localStorage.setItem('tanios_rag_context', extractedText);
-    localStorage.setItem('tanios_rag_filename', file.name);
+    localStorage.setItem(`tanios_rag_context_${userId}`, extractedText);
+    localStorage.setItem(`tanios_rag_filename_${userId}`, file.name);
     setActiveContext({ name: file.name, length: extractedText.length });
 
     try {
-      const xpKey = `tanios_xp_${userId}`;
-      const currentXP = parseInt(localStorage.getItem(xpKey) || '120', 10);
-      localStorage.setItem(xpKey, (currentXP + 30).toString());
-      window.dispatchEvent(new Event('tanios_xp_update'));
+      awardXp(30, 'Textbook Context Integrated');
     } catch (e) {
       console.warn(e);
     }
@@ -144,8 +145,8 @@ export default function RAGUpload() {
   };
 
   const handleClearContext = () => {
-    localStorage.removeItem('tanios_rag_context');
-    localStorage.removeItem('tanios_rag_filename');
+    localStorage.removeItem(`tanios_rag_context_${userId}`);
+    localStorage.removeItem(`tanios_rag_filename_${userId}`);
     setActiveContext(null);
     setFile(null);
     setExtractedText('');
