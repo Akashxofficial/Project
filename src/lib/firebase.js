@@ -227,6 +227,12 @@ export const saveChatSession = async (userId, sessionId, title, messages) => {
 
 export const getUserChatSessions = async (userId) => {
   const sessions = [];
+  if (!userId || userId === 'guest') {
+    try {
+      const fbKey = `fallback_chats_guest`;
+      return JSON.parse(localStorage.getItem(fbKey) || '[]');
+    } catch { return []; }
+  }
 
   if (import.meta.env.VITE_FIREBASE_API_KEY && import.meta.env.VITE_FIREBASE_API_KEY !== 'dummy-api-key' && userId && userId !== 'guest') {
     try {
@@ -238,47 +244,49 @@ export const getUserChatSessions = async (userId) => {
         return results;
       })();
 
-      // ✅ Fixed: was 100ms (always timed out). Now 5000ms to allow real Firestore fetch.
       const timeoutPromise = new Promise((_, reject) =>
         setTimeout(() => reject(new Error("Timeout")), 5000)
       );
 
       const fetched = await Promise.race([fetchPromise, timeoutPromise]);
       fetched.forEach(s => sessions.push(s));
-
-      // Cache Firestore results back into localStorage so subsequent loads are instant
-      if (fetched.length > 0) {
-        try {
-          const fbKey = `fallback_chats_${userId}`;
-          const existing = JSON.parse(localStorage.getItem(fbKey) || '[]');
-          fetched.forEach(fs => {
-            const idx = existing.findIndex(e => e.id === fs.id);
-            const normalized = {
-              ...fs,
-              updatedAt: fs.updatedAt?.toDate ? fs.updatedAt.toDate().getTime() : (fs.updatedAt || Date.now()),
-            };
-            if (idx >= 0) existing[idx] = normalized;
-            else existing.push(normalized);
-          });
-          localStorage.setItem(fbKey, JSON.stringify(existing));
-        } catch {}
-      }
     } catch (e) {
-      console.warn("⚠️ Firestore chat fetch failed or timed out, relying on local fallback:", e.message);
+      console.warn("⚠️ Firestore chat fetch failed or timed out:", e.message);
     }
   }
 
-  // Merge with localStorage fallback (for offline or cached data)
+  // Merge and Auto-Sync with localStorage fallback
   try {
     const fbKey = `fallback_chats_${userId}`;
     const fallbackSessions = JSON.parse(localStorage.getItem(fbKey) || '[]');
-    fallbackSessions.forEach(fs => {
-      if (!sessions.find(s => s.id === fs.id)) {
+    
+    for (const fs of fallbackSessions) {
+      const cloudMatch = sessions.find(s => s.id === fs.id);
+      if (!cloudMatch) {
+        // Local-only chat session (e.g., created on phone but failed to sync earlier): sync to Firestore
         sessions.push(fs);
+        if (import.meta.env.VITE_FIREBASE_API_KEY && import.meta.env.VITE_FIREBASE_API_KEY !== 'dummy-api-key') {
+          setDoc(doc(db, "chat_sessions", fs.id), {
+            userId,
+            title: fs.title,
+            messages: fs.messages,
+            updatedAt: serverTimestamp()
+          }, { merge: true }).catch(err => console.warn("Failed to auto-sync local chat to Firestore:", err));
+        }
       }
-    });
+    }
+
+    // Cache the updated list back into localStorage
+    const serializableSessions = sessions.map(s => ({
+      id: s.id,
+      userId: s.userId || userId,
+      title: s.title,
+      messages: s.messages,
+      updatedAt: s.updatedAt?.toDate ? s.updatedAt.toDate().getTime() : (s.updatedAt || Date.now())
+    }));
+    localStorage.setItem(fbKey, JSON.stringify(serializableSessions));
   } catch (err) {
-    console.error("Local storage fallback retrieve failed:", err);
+    console.error("Local storage fallback sync failed:", err);
   }
 
   // Sort client-side — no composite index needed
