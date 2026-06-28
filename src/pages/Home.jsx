@@ -1360,6 +1360,7 @@ export default function Home() {
   const setBadges     = study.setBadges;
   const xpAwardedMsg  = study.xpAwardedMsg;
   const setXpAwardedMsg = study.setXpAwardedMsg;
+  const triggerCloudSave = study.triggerCloudSave;
 
   // ── 1.5. STUDENT PROFILE STATE ──
   const [profileBoard, setProfileBoard] = useState('');
@@ -1645,6 +1646,8 @@ export default function Home() {
     const newMissions = generateMissionsFromProfile(setupBoard, setupClass, subjectsArray, initialActiveChapters, setupExamDate);
     setMissions(newMissions);
     saveState('tanios_missions', newMissions);
+    // Sync profile + missions to Firestore for cross-device access
+    setTimeout(() => triggerCloudSave(), 200);
 
     setOneClickGrade(setupClass);
     setOneClickBoard(setupBoard);
@@ -2030,6 +2033,8 @@ export default function Home() {
         setTimeout(() => awardXp(10, '🔥 All Daily Missions Complete!'), 600);
       }
     }
+    // Sync missions + progress to Firestore after every mission toggle
+    setTimeout(() => triggerCloudSave(), 300);
   }
 
   const safeJsonParse = (str) => {
@@ -4840,6 +4845,7 @@ Do not include any markdown, code blocks, or conversational text. Output raw JSO
                             const nextNetScore = currentNetScore + scoreDelta;
                             localStorage.setItem(getUserKey('tanios_net_score'), nextNetScore.toString());
                             setNetScore(nextNetScore);
+                            setTimeout(() => triggerCloudSave(), 400);
                             
                             if (isCorrect) {
                               if (isReviewMode) {

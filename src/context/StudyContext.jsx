@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from './AuthContext';
+import { saveUserProfile, loadAndMergeUserProfile, buildProfileSnapshot } from '../lib/firebase';
 
 const StudyContext = createContext(null);
 
@@ -28,7 +29,18 @@ export function StudyProvider({ children }) {
   const [xpAwardedMsg, setXpAwardedMsg] = useState('');
   const msgTimer = useRef(null);
 
-  // Load all gamification values from localStorage
+  // Debounced Firestore save — fires 2.5s after last state change to batch writes
+  const cloudSaveTimer = useRef(null);
+  const scheduleSaveToCloud = useCallback((uid) => {
+    if (!uid || uid === 'guest') return;
+    clearTimeout(cloudSaveTimer.current);
+    cloudSaveTimer.current = setTimeout(() => {
+      const snapshot = buildProfileSnapshot(uid);
+      saveUserProfile(uid, snapshot);
+    }, 2500);
+  }, []);
+
+  // Load all gamification values from localStorage into React state
   const loadFromStorage = useCallback(() => {
     try {
       // One-time migration/reset to clear old test values for fresh starting state
@@ -66,7 +78,17 @@ export function StudyProvider({ children }) {
     }
   }, [getUserKey]);
 
-  useEffect(() => { loadFromStorage(); }, [loadFromStorage]);
+  // ── On userId change (login/logout): fetch from Firestore → merge localStorage → load ──
+  useEffect(() => {
+    if (!userId || userId === 'guest') {
+      loadFromStorage();
+      return;
+    }
+    // Fetch cloud data first, then load into React state
+    loadAndMergeUserProfile(userId).then(() => {
+      loadFromStorage();
+    });
+  }, [userId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Cross-tab sync via browser storage event
   useEffect(() => {
@@ -131,11 +153,12 @@ export function StudyProvider({ children }) {
       setTimeout(() => {
         try { localStorage.setItem(getUserKey('tanios_xp'), next.toString()); } catch {}
         dispatch('tanios_xp', next);
+        scheduleSaveToCloud(userId);
       }, 0);
       return next;
     });
     showMsg('+' + amount + ' XP Earned! (' + reason + ') ✨');
-  }, [getUserKey, dispatch, showMsg]);
+  }, [getUserKey, dispatch, showMsg, scheduleSaveToCloud, userId]);
 
   const setStreak = useCallback((valOrFn) => {
     setStreakRaw(prev => {
@@ -143,10 +166,11 @@ export function StudyProvider({ children }) {
       setTimeout(() => {
         try { localStorage.setItem(getUserKey('tanios_streak'), v.toString()); } catch {}
         dispatch('tanios_streak', v);
+        scheduleSaveToCloud(userId);
       }, 0);
       return v;
     });
-  }, [getUserKey, dispatch]);
+  }, [getUserKey, dispatch, scheduleSaveToCloud, userId]);
 
   const setConsistency = useCallback((valOrFn) => {
     setConsistencyRaw(prev => {
@@ -154,16 +178,18 @@ export function StudyProvider({ children }) {
       setTimeout(() => {
         try { localStorage.setItem(getUserKey('tanios_consistency'), v.toString()); } catch {}
         dispatch('tanios_consistency', v);
+        scheduleSaveToCloud(userId);
       }, 0);
       return v;
     });
-  }, [getUserKey, dispatch]);
+  }, [getUserKey, dispatch, scheduleSaveToCloud, userId]);
 
   const setBadges = useCallback((val) => {
     setBadgesRaw(val);
     try { localStorage.setItem(getUserKey('tanios_badges'), JSON.stringify(val)); } catch {}
     dispatch('tanios_badges', val);
-  }, [getUserKey, dispatch]);
+    scheduleSaveToCloud(userId);
+  }, [getUserKey, dispatch, scheduleSaveToCloud, userId]);
 
   const setNetScore = useCallback((valOrFn) => {
     setNetScoreRaw(prev => {
@@ -171,14 +197,20 @@ export function StudyProvider({ children }) {
       setTimeout(() => {
         try { localStorage.setItem(getUserKey('tanios_net_score'), v.toString()); } catch {}
         dispatch('tanios_net_score', v);
+        scheduleSaveToCloud(userId);
       }, 0);
       return v;
     });
-  }, [getUserKey, dispatch]);
+  }, [getUserKey, dispatch, scheduleSaveToCloud, userId]);
 
   const resetStudyState = useCallback(() => {
     setXpRaw(0); setStreakRaw(0); setConsistencyRaw(0); setBadgesRaw([]); setNetScoreRaw(0); setXpAwardedMsg('');
   }, []);
+
+  // Expose scheduleSaveToCloud so Home.jsx can trigger cloud save after profile/mission updates
+  const triggerCloudSave = useCallback(() => {
+    scheduleSaveToCloud(userId);
+  }, [scheduleSaveToCloud, userId]);
 
   // Level derived from XP (Level 1: 0-199 XP, Level 2: 200-499 XP, Level 3: 500+ XP)
   let level = 1;
@@ -191,6 +223,7 @@ export function StudyProvider({ children }) {
     awardXp, setStreak, setConsistency, setBadges, setNetScore,
     setXpAwardedMsg: showMsg,
     resetStudyState, loadFromStorage,
+    triggerCloudSave,
   };
 
   return React.createElement(StudyContext.Provider, { value }, children);

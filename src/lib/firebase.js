@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
-import { getFirestore, collection, addDoc, query, where, getDocs, orderBy, serverTimestamp, doc, setDoc, deleteDoc } from 'firebase/firestore';
+import { getFirestore, collection, addDoc, query, where, getDocs, orderBy, serverTimestamp, doc, setDoc, deleteDoc, getDoc } from 'firebase/firestore';
 
 // Dynamic backend URL — relative for dev and production (proxied locally, hosted same-origin in prod)
 const BACKEND_URL = '';
@@ -488,3 +488,87 @@ export const syncGuestDataToUser = async (user) => {
     console.error("Failed to sync guest chats:", err);
   }
 };
+
+// ── USER PROFILE SYNC (Cross-Device Gamification + Progress) ──────────────────
+// Keys synced: xp, streak, streakDay, consistency, netScore, badges,
+//              profile, missions, activeChapters, chapterProgress,
+//              completedTopics, selectedSubtopics, inlineSubtopics, mcqAttempts
+
+const PROFILE_KEYS = [
+  'tanios_xp', 'tanios_streak', 'tanios_streak_day',
+  'tanios_consistency', 'tanios_net_score', 'tanios_badges',
+  'tanios_profile', 'tanios_missions', 'tanios_active_chapters',
+  'tanios_chapter_progress', 'tanios_completed_topics',
+  'tanios_selected_subtopics', 'tanios_inline_subtopics', 'tanios_mcq_attempts',
+  'tanios_weaknesses', 'tanios_streak_force_reset_v1',
+];
+
+/**
+ * Save user gamification + progress data to Firestore.
+ * `data` is a plain object collected via buildProfileSnapshot().
+ */
+export const saveUserProfile = async (userId, data) => {
+  if (!userId || userId === 'guest') return;
+  if (!import.meta.env.VITE_FIREBASE_API_KEY || import.meta.env.VITE_FIREBASE_API_KEY === 'dummy-api-key') return;
+  if (!auth.currentUser) return;
+  try {
+    await setDoc(doc(db, 'user_profiles', userId), {
+      ...data,
+      updatedAt: serverTimestamp(),
+    }, { merge: true });
+  } catch (e) {
+    console.warn('[saveUserProfile] Firestore write failed:', e.message);
+  }
+};
+
+/**
+ * Load user profile from Firestore and merge into localStorage.
+ * Call this right after login so new devices pick up cloud state.
+ * Returns the merged cloud data object.
+ */
+export const loadAndMergeUserProfile = async (userId) => {
+  if (!userId || userId === 'guest') return {};
+  if (!import.meta.env.VITE_FIREBASE_API_KEY || import.meta.env.VITE_FIREBASE_API_KEY === 'dummy-api-key') return {};
+  try {
+    const snap = await Promise.race([
+      getDoc(doc(db, 'user_profiles', userId)),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 5000)),
+    ]);
+    if (!snap || !snap.exists()) return {};
+    const cloudData = snap.data();
+    // Write each key back into localStorage so StudyContext/Home picks it up
+    PROFILE_KEYS.forEach(baseKey => {
+      const localKey = `${baseKey}_${userId}`;
+      if (cloudData[baseKey] !== undefined && cloudData[baseKey] !== null) {
+        const val = typeof cloudData[baseKey] === 'object'
+          ? JSON.stringify(cloudData[baseKey])
+          : cloudData[baseKey].toString();
+        try { localStorage.setItem(localKey, val); } catch {}
+      }
+    });
+    console.log('[loadAndMergeUserProfile] Cloud data merged into localStorage for', userId);
+    return cloudData;
+  } catch (e) {
+    console.warn('[loadAndMergeUserProfile] Failed (using local data):', e.message);
+    return {};
+  }
+};
+
+/**
+ * Collect current localStorage snapshot for a user and return it
+ * as a Firestore-ready plain object (keys without userId suffix).
+ */
+export const buildProfileSnapshot = (userId) => {
+  const snapshot = {};
+  PROFILE_KEYS.forEach(baseKey => {
+    const raw = localStorage.getItem(`${baseKey}_${userId}`);
+    if (raw === null) return;
+    try {
+      snapshot[baseKey] = JSON.parse(raw);
+    } catch {
+      snapshot[baseKey] = raw;
+    }
+  });
+  return snapshot;
+};
+
