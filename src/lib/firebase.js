@@ -518,7 +518,7 @@ const PROFILE_KEYS = [
   'tanios_profile', 'tanios_missions', 'tanios_active_chapters',
   'tanios_chapter_progress', 'tanios_completed_topics',
   'tanios_selected_subtopics', 'tanios_inline_subtopics', 'tanios_mcq_attempts',
-  'tanios_weaknesses', 'tanios_streak_force_reset_v1',
+  'tanios_weaknesses', 'tanios_streak_force_reset_v1', 'tanios_ai_usage',
 ];
 
 /**

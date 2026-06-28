@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { auth, db, loginWithGoogle, logout, logActivity, syncUserToMongo, syncGuestDataToUser } from '../lib/firebase';
+import { auth, db, loginWithGoogle, logout, logActivity, syncUserToMongo, syncGuestDataToUser, saveUserProfile, buildProfileSnapshot } from '../lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, onSnapshot } from 'firebase/firestore';
 
@@ -25,34 +25,63 @@ const QUOTA = {
   pro: 20,    // 20 calls/day for Pro members
 };
 
+// ── Unified AI Quota/Usage helper functions ──────────────────────────────────
+const getAiUsage = (userId) => {
+  try {
+    const raw = localStorage.getItem(`tanios_ai_usage_${userId}`);
+    const today = new Date().toDateString();
+    let data = raw ? JSON.parse(raw) : null;
+    
+    // If no data exists, or the date has changed, initialize/reset proDailyUsed
+    if (!data || data.date !== today) {
+      data = {
+        date: today,
+        proDailyUsed: 0,
+        trials: data?.trials || { doubt: 0, mcq: 0, study: 0 }
+      };
+      localStorage.setItem(`tanios_ai_usage_${userId}`, JSON.stringify(data));
+    }
+    return data;
+  } catch {
+    return { date: new Date().toDateString(), proDailyUsed: 0, trials: { doubt: 0, mcq: 0, study: 0 } };
+  }
+};
+
+const saveAiUsage = (userId, data) => {
+  try {
+    localStorage.setItem(`tanios_ai_usage_${userId}`, JSON.stringify(data));
+    // Immediately save to Firestore if user is logged in
+    if (userId && userId !== 'guest') {
+      const snapshot = buildProfileSnapshot(userId);
+      saveUserProfile(userId, snapshot);
+    }
+  } catch (e) {
+    console.warn('[saveAiUsage] Error persisting:', e);
+  }
+};
+
 // ── Per-feature trial helpers (lifetime, not daily) ──────────────────────────
-const getTrialKey  = (userId, feature) => `tanios_trial_${feature}_${userId}`;
 const getTrialUsed = (userId, feature) => {
-  try { return parseInt(localStorage.getItem(getTrialKey(userId, feature)) || '0', 10); }
-  catch { return 0; }
+  const usage = getAiUsage(userId);
+  return usage.trials[feature] || 0;
 };
 const incrementTrial = (userId, feature) => {
-  try {
-    const key   = getTrialKey(userId, feature);
-    const count = getTrialUsed(userId, feature) + 1;
-    localStorage.setItem(key, count.toString());
-    return count;
-  } catch { return 0; }
+  const usage = getAiUsage(userId);
+  usage.trials[feature] = (usage.trials[feature] || 0) + 1;
+  saveAiUsage(userId, usage);
+  return usage.trials[feature];
 };
 
 // ── Pro daily-cap helpers ────────────────────────────────────────────────────
-const getProDailyKey   = (userId) => `tanios_pro_daily_${userId}_${new Date().toDateString()}`;
 const getProDailyUsed  = (userId) => {
-  try { return parseInt(localStorage.getItem(getProDailyKey(userId)) || '0', 10); }
-  catch { return 0; }
+  const usage = getAiUsage(userId);
+  return usage.proDailyUsed || 0;
 };
 const incrementProDaily = (userId) => {
-  try {
-    const key   = getProDailyKey(userId);
-    const count = getProDailyUsed(userId) + 1;
-    localStorage.setItem(key, count.toString());
-    return count;
-  } catch { return 0; }
+  const usage = getAiUsage(userId);
+  usage.proDailyUsed = (usage.proDailyUsed || 0) + 1;
+  saveAiUsage(userId, usage);
+  return usage.proDailyUsed;
 };
 
 // ── Component ───────────────────────────────────────────────────────────────
