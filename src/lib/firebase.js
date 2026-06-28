@@ -238,19 +238,37 @@ export const getUserChatSessions = async (userId) => {
         return results;
       })();
 
+      // ✅ Fixed: was 100ms (always timed out). Now 5000ms to allow real Firestore fetch.
       const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error("Timeout")), 100)
+        setTimeout(() => reject(new Error("Timeout")), 5000)
       );
 
-      // Race Firestore query against a 1.5s timeout
       const fetched = await Promise.race([fetchPromise, timeoutPromise]);
       fetched.forEach(s => sessions.push(s));
+
+      // Cache Firestore results back into localStorage so subsequent loads are instant
+      if (fetched.length > 0) {
+        try {
+          const fbKey = `fallback_chats_${userId}`;
+          const existing = JSON.parse(localStorage.getItem(fbKey) || '[]');
+          fetched.forEach(fs => {
+            const idx = existing.findIndex(e => e.id === fs.id);
+            const normalized = {
+              ...fs,
+              updatedAt: fs.updatedAt?.toDate ? fs.updatedAt.toDate().getTime() : (fs.updatedAt || Date.now()),
+            };
+            if (idx >= 0) existing[idx] = normalized;
+            else existing.push(normalized);
+          });
+          localStorage.setItem(fbKey, JSON.stringify(existing));
+        } catch {}
+      }
     } catch (e) {
-      console.warn("⚠️ Firestore fetch failed or timed out, relying on local fallback:", e.message);
+      console.warn("⚠️ Firestore chat fetch failed or timed out, relying on local fallback:", e.message);
     }
   }
 
-  // Merge with Robust Fallback
+  // Merge with localStorage fallback (for offline or cached data)
   try {
     const fbKey = `fallback_chats_${userId}`;
     const fallbackSessions = JSON.parse(localStorage.getItem(fbKey) || '[]');
