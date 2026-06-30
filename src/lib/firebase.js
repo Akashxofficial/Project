@@ -276,10 +276,18 @@ export const getUserChatSessions = async (userId) => {
         // Local-only chat session (e.g., created on phone but failed to sync earlier): sync to Firestore
         sessions.push(fs);
         if (import.meta.env.VITE_FIREBASE_API_KEY && import.meta.env.VITE_FIREBASE_API_KEY !== 'dummy-api-key') {
+          // Strip base64 image data to stay within Firestore's 1MB document limit.
+          const sanitizedMessages = (fs.messages || []).map(m => {
+            if (m.image && (m.image.data || m.image.url)) {
+              const { data, url, ...imageMeta } = m.image;
+              return { ...m, image: imageMeta };
+            }
+            return m;
+          });
           setDoc(doc(db, "chat_sessions", fs.id), {
             userId,
             title: fs.title,
-            messages: fs.messages,
+            messages: sanitizedMessages,
             updatedAt: serverTimestamp()
           }, { merge: true }).catch(err => console.warn("Failed to auto-sync local chat to Firestore:", err));
         }
