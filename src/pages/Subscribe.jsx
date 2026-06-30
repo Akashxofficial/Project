@@ -701,7 +701,7 @@ export default function Subscribe() {
           text-align: center;
           display: flex;
           flex-direction: column;
-          height: fit-content;
+          height: 100%;
           box-sizing: border-box;
           box-shadow: var(--shadow-md);
         }
@@ -975,6 +975,47 @@ export default function Subscribe() {
                   <span>🛡️ Anti-fraud verified</span>
                 </div>
               </div>
+
+              {/* Trust & Guarantee Info Section */}
+              <div style={{
+                marginTop: '1rem',
+                padding: '1.25rem',
+                border: '1px solid rgba(255, 255, 255, 0.05)',
+                background: 'rgba(255, 255, 255, 0.02)',
+                borderRadius: '16px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '1rem'
+              }}>
+                <h4 style={{ margin: 0, fontSize: '0.82rem', fontWeight: 800, color: '#fff', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  Upgrade Benefits Summary
+                </h4>
+                
+                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
+                  <div style={{ background: 'rgba(108, 99, 255, 0.1)', color: '#a78bfa', borderRadius: '50%', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '0.85rem' }}>⚡</div>
+                  <div>
+                    <h5 style={{ margin: 0, fontSize: '0.8rem', color: '#fff', fontWeight: 700 }}>Instant Plan Upgrades</h5>
+                    <p style={{ margin: '0.15rem 0 0 0', fontSize: '0.72rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>Pro features will activate on your account immediately after payment success.</p>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
+                  <div style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#34d399', borderRadius: '50%', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '0.85rem' }}>🛡️</div>
+                  <div>
+                    <h5 style={{ margin: 0, fontSize: '0.8rem', color: '#fff', fontWeight: 700 }}>SSL Encrypted Checkout</h5>
+                    <p style={{ margin: '0.15rem 0 0 0', fontSize: '0.72rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>All transactions are processed via secure Razorpay HTTPS tunnel APIs.</p>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
+                  <div style={{ background: 'rgba(245, 158, 11, 0.1)', color: '#fbbf24', borderRadius: '50%', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '0.85rem' }}>💬</div>
+                  <div>
+                    <h5 style={{ margin: 0, fontSize: '0.8rem', color: '#fff', fontWeight: 700 }}>Premium Support Included</h5>
+                    <p style={{ margin: '0.15rem 0 0 0', fontSize: '0.72rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>Need help? Reach out to support anytime. We settle queries instantly.</p>
+                  </div>
+                </div>
+              </div>
+
             </div>
           )}
 
@@ -1310,7 +1351,7 @@ export default function Subscribe() {
 
           {/* Secure SSL Gateway footer */}
           <div style={{
-            marginTop: '1.5rem',
+            marginTop: 'auto',
             borderTop: '1px solid rgba(255,255,255,0.06)',
             paddingTop: '1rem',
             display: 'flex',
