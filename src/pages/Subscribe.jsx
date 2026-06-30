@@ -1014,6 +1014,14 @@ export default function Subscribe() {
                     <p style={{ margin: '0.15rem 0 0 0', fontSize: '0.72rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>Need help? Reach out to support anytime. We settle queries instantly.</p>
                   </div>
                 </div>
+
+                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
+                  <div style={{ background: 'rgba(59, 130, 246, 0.1)', color: '#60a5fa', borderRadius: '50%', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '0.85rem' }}>🔒</div>
+                  <div>
+                    <h5 style={{ margin: 0, fontSize: '0.8rem', color: '#fff', fontWeight: 700 }}>Data Privacy Shield</h5>
+                    <p style={{ margin: '0.15rem 0 0 0', fontSize: '0.72rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>We never store your card or bank details. All transactions are securely routed via Razorpay PCI-DSS Servers.</p>
+                  </div>
+                </div>
               </div>
 
             </div>
