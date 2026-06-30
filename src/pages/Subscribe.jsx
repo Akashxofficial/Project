@@ -701,7 +701,7 @@ export default function Subscribe() {
           text-align: center;
           display: flex;
           flex-direction: column;
-          height: 100%;
+          height: fit-content;
           box-sizing: border-box;
           box-shadow: var(--shadow-md);
         }
@@ -1310,7 +1310,7 @@ export default function Subscribe() {
 
           {/* Secure SSL Gateway footer */}
           <div style={{
-            marginTop: 'auto',
+            marginTop: '1.5rem',
             borderTop: '1px solid rgba(255,255,255,0.06)',
             paddingTop: '1rem',
             display: 'flex',
