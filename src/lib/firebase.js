@@ -259,6 +259,7 @@ export const getUserChatSessions = async (userId) => {
     } catch { return []; }
   }
 
+  let fetched = [];
   if (import.meta.env.VITE_FIREBASE_API_KEY && import.meta.env.VITE_FIREBASE_API_KEY !== 'dummy-api-key' && userId && userId !== 'guest') {
     try {
       const fetchPromise = (async () => {
@@ -273,8 +274,10 @@ export const getUserChatSessions = async (userId) => {
         setTimeout(() => reject(new Error("Timeout")), 5000)
       );
 
-      const fetched = await Promise.race([fetchPromise, timeoutPromise]);
-      fetched.forEach(s => sessions.push(s));
+      fetched = await Promise.race([fetchPromise, timeoutPromise]) || [];
+      // Filter out soft-deleted ones from the active list returned to UI
+      const activeCloud = fetched.filter(s => !s.deleted);
+      activeCloud.forEach(s => sessions.push(s));
     } catch (e) {
       console.warn("⚠️ Firestore chat fetch failed or timed out:", e.message);
     }
@@ -286,8 +289,13 @@ export const getUserChatSessions = async (userId) => {
     const fallbackSessions = JSON.parse(localStorage.getItem(fbKey) || '[]');
     
     for (const fs of fallbackSessions) {
-      const cloudMatch = sessions.find(s => s.id === fs.id);
-      if (!cloudMatch) {
+      const cloudMatch = fetched.find(s => s.id === fs.id);
+      if (cloudMatch) {
+        if (cloudMatch.deleted) {
+          // Soft-deleted on another device. Skip and do not add to sessions (so it gets removed from local storage)
+          continue;
+        }
+      } else {
         // Local-only chat session (e.g., created on phone but failed to sync earlier): sync to Firestore
         sessions.push(fs);
         if (import.meta.env.VITE_FIREBASE_API_KEY && import.meta.env.VITE_FIREBASE_API_KEY !== 'dummy-api-key') {
@@ -324,10 +332,15 @@ export const getUserChatSessions = async (userId) => {
   return sessions;
 };
 
-export const deleteChatSession = async (sessionId) => {
-  if (!import.meta.env.VITE_FIREBASE_API_KEY || import.meta.env.VITE_FIREBASE_API_KEY === 'dummy-api-key') return;
+export const deleteChatSession = async (userId, sessionId) => {
+  if (!import.meta.env.VITE_FIREBASE_API_KEY || import.meta.env.VITE_FIREBASE_API_KEY === 'dummy-api-key' || !userId || userId === 'guest') return;
   try {
-    await deleteDoc(doc(db, "chat_sessions", sessionId));
+    // Perform a soft-delete (tombstone) so other devices know not to resurrect this chat session
+    await setDoc(doc(db, "chat_sessions", sessionId), {
+      userId,
+      deleted: true,
+      updatedAt: serverTimestamp()
+    }, { merge: true });
   } catch (e) {
     console.error("❌ Error deleting chat session:", e.message);
   }

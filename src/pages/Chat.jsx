@@ -344,7 +344,7 @@ export default function Chat() {
     if (isGuest) {
       saveGuestSessions(nextSessions);
     } else {
-      deleteChatSession(sessionId);
+      deleteChatSession(userId, sessionId);
       try {
         const fbKey = `fallback_chats_${userId}`;
         localStorage.setItem(fbKey, JSON.stringify(nextSessions));
