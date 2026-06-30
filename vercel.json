@@ -51,6 +51,7 @@
     "api/track.js":                 { "maxDuration": 15 },
     "api/admin/activities.js":               { "maxDuration": 30 },
     "api/admin/students.js":                 { "maxDuration": 30 },
+    "api/admin/payments.js":                 { "maxDuration": 30 },
     "api/admin/approve-subscription.js":     { "maxDuration": 30 },
     "api/admin/reject-subscription.js":      { "maxDuration": 30 },
     "api/notify/welcome.js":              { "maxDuration": 15 },
