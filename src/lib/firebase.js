@@ -195,7 +195,30 @@ export const getUserDocuments = async (userId) => {
   return documents;
 };
 
-// ── Chat Session Helpers ────────────────────────────────────────────────────
+// Sanitizes a messages array before sending to Firestore.
+// Strips undefined fields (which Firestore rejects) and base64 image strings (to stay within the 1MB document limit).
+const sanitizeMessagesForFirestore = (messages) => {
+  if (!messages || !Array.isArray(messages)) return [];
+  return messages.map(m => {
+    const cleanMsg = {};
+    Object.keys(m).forEach(k => {
+      if (m[k] !== undefined) {
+        if (k === 'image' && m.image) {
+          const cleanImg = {};
+          Object.keys(m.image).forEach(ik => {
+            if (m.image[ik] !== undefined && ik !== 'data' && ik !== 'url') {
+              cleanImg[ik] = m.image[ik];
+            }
+          });
+          cleanMsg.image = cleanImg;
+        } else {
+          cleanMsg[k] = m[k];
+        }
+      }
+    });
+    return cleanMsg;
+  });
+};
 
 export const saveChatSession = async (userId, sessionId, title, messages) => {
   // Always save to localStorage immediately for instant UI reliability (offline-first fallback)
@@ -214,19 +237,11 @@ export const saveChatSession = async (userId, sessionId, title, messages) => {
   // Then attempt Firestore sync in background
   if (!import.meta.env.VITE_FIREBASE_API_KEY || import.meta.env.VITE_FIREBASE_API_KEY === 'dummy-api-key' || !userId || userId === 'guest') return;
   try {
-    // Strip base64 image data to stay within Firestore's 1MB document limit.
-    // Keep metadata (name, mimeType) for display context; remove heavy data/url fields.
-    const sanitizedMessages = messages.map(m => {
-      if (m.image && (m.image.data || m.image.url)) {
-        const { data, url, ...imageMeta } = m.image;
-        return { ...m, image: imageMeta };
-      }
-      return m;
-    });
+    const sanitizedMessages = sanitizeMessagesForFirestore(messages);
 
     await setDoc(doc(db, "chat_sessions", sessionId), {
       userId,
-      title,
+      title: title || 'New Chat',
       messages: sanitizedMessages,
       updatedAt: serverTimestamp()
     }, { merge: true });
@@ -276,17 +291,10 @@ export const getUserChatSessions = async (userId) => {
         // Local-only chat session (e.g., created on phone but failed to sync earlier): sync to Firestore
         sessions.push(fs);
         if (import.meta.env.VITE_FIREBASE_API_KEY && import.meta.env.VITE_FIREBASE_API_KEY !== 'dummy-api-key') {
-          // Strip base64 image data to stay within Firestore's 1MB document limit.
-          const sanitizedMessages = (fs.messages || []).map(m => {
-            if (m.image && (m.image.data || m.image.url)) {
-              const { data, url, ...imageMeta } = m.image;
-              return { ...m, image: imageMeta };
-            }
-            return m;
-          });
+          const sanitizedMessages = sanitizeMessagesForFirestore(fs.messages);
           setDoc(doc(db, "chat_sessions", fs.id), {
             userId,
-            title: fs.title,
+            title: fs.title || 'New Chat',
             messages: sanitizedMessages,
             updatedAt: serverTimestamp()
           }, { merge: true }).catch(err => console.warn("Failed to auto-sync local chat to Firestore:", err));
