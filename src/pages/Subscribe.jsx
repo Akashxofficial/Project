@@ -155,6 +155,9 @@ export default function Subscribe() {
   // State to store active mock order details during Sandbox Simulation Step 1
   const [mockOrderDetails, setMockOrderDetails] = useState(null);
 
+  // Toggle to show UPI QR section below Razorpay
+  const [showQR, setShowQR] = useState(false);
+
   // ── Razorpay Checkout Trigger ──────────────────────────────────────────────
   const handleRazorpayCheckout = async () => {
     setCheckoutLoading(true);
@@ -884,7 +887,7 @@ export default function Subscribe() {
           {/* Header Step Indicators */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
             <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontWeight: 700, textTransform: 'uppercase' }}>
-              {gatewayStep === 0 && "UPI QR Code Checkout"}
+              {gatewayStep === 0 && "Secure Checkout"}
               {gatewayStep === 1 && "Simulated Sandbox Modal"}
               {gatewayStep === 4 && "Aggregator Processing Node"}
               {gatewayStep === 5 && "Checkout Successful"}
@@ -898,8 +901,117 @@ export default function Subscribe() {
           {gatewayStep === 0 && (
             <div style={{ animation: 'fadeUp 0.3s both', textAlign: 'left', display: 'flex', flexDirection: 'column', flex: 1 }}>
 
-              {/* UPI QR Payment Panel */}
-              <div style={{ display: 'flex', flexDirection: 'column', flex: 1, animation: 'fadeUp 0.25s both' }}>
+              {/* ── PRIMARY: Razorpay 1-Click Checkout ── */}
+              <div style={{
+                background: 'linear-gradient(135deg, rgba(108,99,255,0.12), rgba(0,242,254,0.07))',
+                border: '1px solid rgba(108,99,255,0.3)',
+                borderRadius: '16px',
+                padding: '1.25rem',
+                marginBottom: '1rem',
+                boxShadow: '0 4px 24px rgba(108,99,255,0.12)',
+              }}>
+                {/* Razorpay branding row */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
+                  <div style={{
+                    background: 'linear-gradient(135deg,#072654,#2d87f0)',
+                    borderRadius: '6px',
+                    padding: '3px 8px',
+                    fontSize: '0.65rem',
+                    fontWeight: 900,
+                    color: '#fff',
+                    letterSpacing: '0.5px'
+                  }}>RAZORPAY</div>
+                  <span style={{ fontSize: '0.72rem', color: '#10b981', fontWeight: 700 }}>✓ Verified & Secured</span>
+                  <span style={{ marginLeft: 'auto', fontSize: '0.7rem', color: 'var(--text-secondary)' }}>UPI · Cards · NetBanking · Wallets</span>
+                </div>
+
+                <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '1rem', lineHeight: 1.5 }}>
+                  Pay securely via Razorpay — supports all UPI apps, debit/credit cards, net banking & wallets. Instant Pro activation on success.
+                </p>
+
+                {errorMessage && (
+                  <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '8px', padding: '0.65rem 0.85rem', fontSize: '0.75rem', color: '#f87171', marginBottom: '0.85rem' }}>
+                    ⚠️ {errorMessage}
+                  </div>
+                )}
+
+                <button
+                  onClick={handleRazorpayCheckout}
+                  disabled={checkoutLoading}
+                  type="button"
+                  style={{
+                    width: '100%',
+                    padding: '0.9rem 1rem',
+                    background: checkoutLoading
+                      ? 'rgba(108,99,255,0.4)'
+                      : 'linear-gradient(135deg, #6c63ff, #2d87f0)',
+                    border: 'none',
+                    borderRadius: '12px',
+                    color: '#fff',
+                    fontWeight: 900,
+                    fontSize: '0.95rem',
+                    cursor: checkoutLoading ? 'not-allowed' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.6rem',
+                    boxShadow: checkoutLoading ? 'none' : '0 6px 20px rgba(108,99,255,0.4)',
+                    transition: 'all 0.2s',
+                    letterSpacing: '0.3px'
+                  }}
+                >
+                  {checkoutLoading ? (
+                    <><RefreshCw size={16} style={{ animation: 'spin 1s linear infinite' }} /> Opening Razorpay...</>
+                  ) : (
+                    <><Lock size={16} /> Pay ₹199 Securely with Razorpay <ArrowRight size={15} /></>
+                  )}
+                </button>
+
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem', marginTop: '0.75rem', fontSize: '0.65rem', color: 'var(--text-secondary)' }}>
+                  <span>🔒 256-bit SSL</span>
+                  <span>•</span>
+                  <span>⚡ Instant Activation</span>
+                  <span>•</span>
+                  <span>🛡️ Anti-fraud verified</span>
+                </div>
+              </div>
+
+              {/* ── DIVIDER ── */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', margin: '0.25rem 0' }}>
+                <div style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
+                <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: 600, whiteSpace: 'nowrap' }}>or pay via UPI QR</span>
+                <div style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
+              </div>
+
+              {/* ── SECONDARY: UPI QR toggle ── */}
+              <button
+                onClick={() => setShowQR(v => !v)}
+                type="button"
+                style={{
+                  background: 'transparent',
+                  border: '1px solid var(--border)',
+                  borderRadius: '10px',
+                  padding: '0.6rem 1rem',
+                  color: 'var(--text-secondary)',
+                  fontSize: '0.8rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.5rem',
+                  width: '100%',
+                  marginTop: '0.25rem',
+                  transition: 'all 0.2s',
+                }}
+              >
+                <QrCode size={15} />
+                {showQR ? 'Hide UPI QR Code' : 'Pay via UPI QR (Manual Verification)'}
+                <span style={{ marginLeft: 'auto', transform: showQR ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', display: 'inline-block' }}>▾</span>
+              </button>
+
+              {/* UPI QR Payment Panel — collapsed by default */}
+              {showQR && <div style={{ display: 'flex', flexDirection: 'column', flex: 1, animation: 'fadeUp 0.25s both', marginTop: '1rem' }}>
                   <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '1.25rem', lineHeight: 1.45 }}>
                     Scan the secure static QR code below using Google Pay, PhonePe, Paytm, or any UPI app to complete your payment:
                   </p>
@@ -1085,7 +1197,7 @@ export default function Subscribe() {
                       Payments are processed over secure bank UPI routers. Entering a fake or claimed UTR triggers transaction guard flags and accounts may be locked out.
                     </p>
                   </div>
-                </div>
+                 </div>}
             </div>
           )}
 
