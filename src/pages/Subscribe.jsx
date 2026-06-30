@@ -870,9 +870,9 @@ export default function Subscribe() {
               <ShieldCheck color="#10b981" size={20} />
             </div>
             <div>
-              <h5 style={{ margin: 0, color: '#fff', fontSize: '0.85rem', fontWeight: 700 }}>Razorpay Secure Checkout Integrations</h5>
+              <h5 style={{ margin: 0, color: '#fff', fontSize: '0.85rem', fontWeight: 700 }}>Secure UPI Payment Verification</h5>
               <p style={{ margin: '0.15rem 0 0 0', fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
-                Your payment goes securely via Razorpay with direct, instant subscription activation.
+                Your payment goes securely via any UPI App (Google Pay, PhonePe, Paytm) with direct, instant manual verification.
               </p>
             </div>
           </div>
@@ -884,7 +884,7 @@ export default function Subscribe() {
           {/* Header Step Indicators */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
             <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontWeight: 700, textTransform: 'uppercase' }}>
-              {gatewayStep === 0 && (paymentMethod === 'upi_qr' ? "UPI QR Code Checkout" : "Secure Razorpay Checkout")}
+              {gatewayStep === 0 && "UPI QR Code Checkout"}
               {gatewayStep === 1 && "Simulated Sandbox Modal"}
               {gatewayStep === 4 && "Aggregator Processing Node"}
               {gatewayStep === 5 && "Checkout Successful"}
@@ -897,60 +897,9 @@ export default function Subscribe() {
           {/* Step 0: Checkout billing options */}
           {gatewayStep === 0 && (
             <div style={{ animation: 'fadeUp 0.3s both', textAlign: 'left', display: 'flex', flexDirection: 'column', flex: 1 }}>
-              
-              {/* Method Toggle Tabs */}
-              <div style={{ display: 'flex', background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '12px', padding: '4px', marginBottom: '1.5rem', gap: '4px' }}>
-                <button
-                  onClick={() => { setPaymentMethod('upi_qr'); setErrorMessage(''); }}
-                  style={{
-                    flex: 1,
-                    background: paymentMethod === 'upi_qr' ? 'linear-gradient(135deg, rgba(167, 139, 250, 0.15), rgba(108, 99, 255, 0.2))' : 'transparent',
-                    border: paymentMethod === 'upi_qr' ? '1px solid rgba(167, 139, 250, 0.3)' : '1px solid transparent',
-                    color: paymentMethod === 'upi_qr' ? '#fff' : 'var(--text-secondary)',
-                    borderRadius: '8px',
-                    padding: '0.6rem 0.5rem',
-                    fontSize: '0.82rem',
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    transition: 'all 0.2s',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '0.35rem'
-                  }}
-                  type="button"
-                >
-                  <QrCode size={14} />
-                  UPI QR Scan
-                </button>
-                <button
-                  onClick={() => { setPaymentMethod('razorpay'); setErrorMessage(''); }}
-                  style={{
-                    flex: 1,
-                    background: paymentMethod === 'razorpay' ? 'linear-gradient(135deg, rgba(167, 139, 250, 0.15), rgba(108, 99, 255, 0.2))' : 'transparent',
-                    border: paymentMethod === 'razorpay' ? '1px solid rgba(167, 139, 250, 0.3)' : '1px solid transparent',
-                    color: paymentMethod === 'razorpay' ? '#fff' : 'var(--text-secondary)',
-                    borderRadius: '8px',
-                    padding: '0.6rem 0.5rem',
-                    fontSize: '0.82rem',
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    transition: 'all 0.2s',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '0.35rem'
-                  }}
-                  type="button"
-                >
-                  <CreditCard size={14} />
-                  Razorpay Gateway
-                </button>
-              </div>
 
               {/* UPI QR Payment Panel */}
-              {paymentMethod === 'upi_qr' && (
-                <div style={{ display: 'flex', flexDirection: 'column', flex: 1, animation: 'fadeUp 0.25s both' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', flex: 1, animation: 'fadeUp 0.25s both' }}>
                   <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '1.25rem', lineHeight: 1.45 }}>
                     Scan the secure static QR code below using Google Pay, PhonePe, Paytm, or any UPI app to complete your payment:
                   </p>
@@ -1137,176 +1086,6 @@ export default function Subscribe() {
                     </p>
                   </div>
                 </div>
-              )}
-
-              {/* Razorpay Secure Gateway Panel */}
-              {paymentMethod === 'razorpay' && (
-                <div style={{ display: 'flex', flexDirection: 'column', flex: 1, animation: 'fadeUp 0.25s both' }}>
-                  <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '1.25rem', lineHeight: 1.45 }}>
-                    TaniOS AI partners with **Razorpay** to provide safe, direct, and instantaneous card, UPI, and netbanking billing:
-                  </p>
-
-                  {/* Secure Razorpay Card Preview Box */}
-                  <div style={{
-                    background: 'var(--bg-tertiary)',
-                    border: '1px solid var(--border)',
-                    borderRadius: '16px',
-                    padding: '1.25rem',
-                    marginBottom: '1rem',
-                    boxShadow: 'var(--shadow-sm)'
-                  }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-                      <div style={{ background: 'var(--primary-light)', padding: '6px 12px', borderRadius: '6px', fontSize: '0.7rem', fontWeight: 800, color: 'var(--primary)', border: '1px solid var(--border)' }}>
-                        RAZORPAY CHECKOUT
-                      </div>
-                      <span style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text)' }}>₹199 <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: 500 }}>one-time</span></span>
-                    </div>
-
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
-                        <span>Plan:</span>
-                        <span style={{ color: 'var(--text)', fontWeight: 700 }}>TaniOS Pro Premium Member</span>
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
-                        <span>Settlement:</span>
-                        <span style={{ color: '#10b981', fontWeight: 700 }}>Instant Credit / Activation</span>
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
-                        <span>Billing Security:</span>
-                        <span style={{ color: '#a78bfa', fontWeight: 700 }}>Razorpay PCI-DSS Compliant</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {errorMessage && (
-                    <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '8px', padding: '0.75rem 1rem', fontSize: '0.78rem', color: '#f87171', marginBottom: '1rem' }}>
-                      ⚠️ {errorMessage}
-                    </div>
-                  )}
-
-                  {/* Razorpay Proceed trigger button */}
-                  <button 
-                    onClick={handleRazorpayCheckout}
-                    className="btn btn-primary"
-                    style={{
-                      width: '100%', 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      justifyContent: 'center', 
-                      gap: '0.5rem', 
-                      padding: '0.85rem 1rem',
-                      fontSize: '0.88rem',
-                      fontWeight: 800,
-                      boxShadow: '0 4px 15px rgba(108, 99, 255, 0.25)',
-                      cursor: checkoutLoading ? 'not-allowed' : 'pointer'
-                    }}
-                    disabled={checkoutLoading}
-                    type="button"
-                  >
-                    {checkoutLoading ? (
-                      <>
-                        <RefreshCw className="spin" size={16} style={{ animation: 'spin 1s linear infinite' }} />
-                        Contacting Razorpay nodes...
-                      </>
-                    ) : (
-                      <>
-                        <CreditCard size={18} />
-                        Proceed to Secure Razorpay Payment
-                        <ArrowRight size={16} />
-                      </>
-                    )}
-                  </button>
-
-                  {/* Premium Live Gateway Status Tracker Widget */}
-                  <div style={{
-                    background: 'rgba(255, 255, 255, 0.01)',
-                    border: '1px solid rgba(255, 255, 255, 0.03)',
-                    borderRadius: '12px',
-                    padding: '0.75rem 1rem',
-                    marginTop: '1.25rem',
-                    marginBottom: '1rem',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    fontSize: '0.7rem'
-                  }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--text-secondary)' }}>
-                      <span className="blink-dot" style={{ display: 'inline-block', width: '6px', height: '6px', background: '#10b981', borderRadius: '50%' }}></span>
-                      <span>Razorpay Server: <strong style={{ color: '#10b981' }}>OPERATIONAL</strong></span>
-                    </div>
-                    <div style={{ color: 'var(--text-secondary)', fontFamily: 'monospace' }}>
-                      Ping: <span style={{ color: '#a78bfa' }}>12ms</span>
-                    </div>
-                    <div style={{ color: 'var(--text-secondary)', fontFamily: 'monospace' }}>
-                      Uptime: <span style={{ color: '#a78bfa' }}>100%</span>
-                    </div>
-                  </div>
-
-                  {/* High-Fidelity Razorpay workflow stepper */}
-                  <div style={{
-                    background: 'rgba(255, 255, 255, 0.01)',
-                    border: '1px solid rgba(255, 255, 255, 0.03)',
-                    borderRadius: '16px',
-                    padding: '1.25rem',
-                    marginTop: 'auto',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '1rem',
-                    boxSizing: 'border-box'
-                  }}>
-                    <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#a78bfa', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '0.25rem' }}>
-                      ⚡ TaniOS Instant Upgrade Flow
-                    </div>
-                    
-                    {[
-                      { step: '1', title: 'Razorpay Checkout Popup', desc: 'Securely select card, UPI, netbanking, or wallet in the responsive overlay popup.' },
-                      { step: '2', title: 'Cryptographic Signature Match', desc: 'Razorpay returns verified signatures to activate our secure HMAC backend verifier.' },
-                      { step: '3', title: 'Continuous Pro Study Access', desc: 'System registers the settled transaction in database and unlocks your personal AI tutor.' }
-                    ].map((s, idx) => (
-                      <div key={idx} style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
-                        <div style={{
-                          background: 'linear-gradient(135deg, rgba(167, 139, 250, 0.15), rgba(108, 99, 255, 0.2))',
-                          border: '1px solid rgba(167, 139, 250, 0.3)',
-                          color: '#c084fc',
-                          width: '22px',
-                          height: '22px',
-                          borderRadius: '50%',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontSize: '0.68rem',
-                          fontWeight: 800,
-                          flexShrink: 0,
-                          marginTop: '2px'
-                        }}>
-                          {s.step}
-                        </div>
-                        <div>
-                          <div style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text)' }}>{s.title}</div>
-                          <div style={{ fontSize: '0.68rem', color: 'var(--text-secondary)', marginTop: '0.15rem', lineHeight: 1.35 }}>{s.desc}</div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Secure Trust Badge Info Container */}
-                  <div style={{
-                    background: 'var(--bg-tertiary)',
-                    border: '1px solid var(--border)',
-                    borderRadius: '12px',
-                    padding: '1rem',
-                    marginTop: '1.25rem',
-                    textAlign: 'left'
-                  }}>
-                    <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text)', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                      🔒 Razorpay Secured Payment aggregations
-                    </div>
-                    <p style={{ fontSize: '0.68rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.45 }}>
-                      Billing transactions are secured using standard HMAC-SHA256 Razorpay server-side cryptography. PCI-DSS Level 1 compliance ensures credit details never bypass secure checkout nodes.
-                    </p>
-                  </div>
-                </div>
-              )}
             </div>
           )}
 
