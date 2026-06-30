@@ -214,14 +214,24 @@ export const saveChatSession = async (userId, sessionId, title, messages) => {
   // Then attempt Firestore sync in background
   if (!import.meta.env.VITE_FIREBASE_API_KEY || import.meta.env.VITE_FIREBASE_API_KEY === 'dummy-api-key' || !userId || userId === 'guest') return;
   try {
+    // Strip base64 image data to stay within Firestore's 1MB document limit.
+    // Keep metadata (name, mimeType) for display context; remove heavy data/url fields.
+    const sanitizedMessages = messages.map(m => {
+      if (m.image && (m.image.data || m.image.url)) {
+        const { data, url, ...imageMeta } = m.image;
+        return { ...m, image: imageMeta };
+      }
+      return m;
+    });
+
     await setDoc(doc(db, "chat_sessions", sessionId), {
       userId,
       title,
-      messages,
+      messages: sanitizedMessages,
       updatedAt: serverTimestamp()
     }, { merge: true });
   } catch (e) {
-    console.warn("⚠️ Firestore sync skipped (expected if rules deny):", e.message);
+    console.warn("⚠️ Firestore chat sync failed (userId:", userId, "sessionId:", sessionId, "):", e.message);
   }
 };
 

@@ -118,7 +118,7 @@ export default function Chat() {
   const { currentUser, incrementGuestUsage, getRemainingQuota, QUOTA, FEATURE_TRIALS, subscription, setShowLoginModal } = useAuth();
   const { awardXp } = useStudy();
   const isGuest = !currentUser || currentUser.isGuest || currentUser.email === 'guest@tanios.ai';
-  const userId = currentUser?.uid || currentUser?.email || 'guest';
+  const userId = currentUser?.uid || 'guest';
   
   const isPro = subscription?.active;
   const limit = isPro ? QUOTA?.pro : FEATURE_TRIALS?.doubt;
