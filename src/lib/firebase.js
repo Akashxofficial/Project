@@ -354,46 +354,65 @@ export const syncGuestDataToUser = async (user) => {
   if (!user || user.isGuest) return;
   const newUserId = user.uid;
 
-  // 1. Sync guest documents
+  // 1. Sync guest documents from all potential guest keys
   try {
-    const guestDocsKey = `fallback_documents_guest@tanios.ai`;
-    const guestDocs = JSON.parse(localStorage.getItem(guestDocsKey) || '[]');
+    const docKeys = ['fallback_documents_guest', 'fallback_documents_guest@tanios.ai'];
+    let guestDocs = [];
+    docKeys.forEach(k => {
+      try {
+        const val = JSON.parse(localStorage.getItem(k) || '[]');
+        if (Array.isArray(val)) guestDocs = guestDocs.concat(val);
+      } catch {}
+    });
+
     if (guestDocs.length > 0) {
       const userDocsKey = `fallback_documents_${newUserId}`;
       const userDocs = JSON.parse(localStorage.getItem(userDocsKey) || '[]');
+      
       for (const docObj of guestDocs) {
-        const updated = { ...docObj, userId: newUserId };
+        const resolvedId = docObj.id || docObj.docId;
+        const updated = { ...docObj, id: resolvedId, userId: newUserId };
         // Sync to backend
         fetch(`${BACKEND_URL}/api/db/documents/save`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId: newUserId, docId: updated.id, type: updated.type, title: updated.title, content: updated.content })
+          body: JSON.stringify({ userId: newUserId, docId: resolvedId, type: updated.type, title: updated.title, content: updated.content })
         }).catch(() => {});
-        if (!userDocs.find(d => d.id === updated.id)) userDocs.push(updated);
+        if (!userDocs.find(d => (d.id || d.docId) === resolvedId)) userDocs.push(updated);
       }
       localStorage.setItem(userDocsKey, JSON.stringify(userDocs));
-      localStorage.removeItem(guestDocsKey);
+      docKeys.forEach(k => localStorage.removeItem(k));
     }
   } catch (err) { console.error('Failed to sync guest documents:', err); }
 
-  // 2. Sync guest chats
+  // 2. Sync guest chats from all potential guest keys
   try {
-    const guestChatsKey = `fallback_chats_guest@tanios.ai`;
-    const guestChats = JSON.parse(localStorage.getItem(guestChatsKey) || '[]');
+    const chatKeys = ['guest_chat_sessions', 'fallback_chats_guest', 'fallback_chats_guest@tanios.ai'];
+    let guestChats = [];
+    chatKeys.forEach(k => {
+      try {
+        const val = JSON.parse(localStorage.getItem(k) || '[]');
+        if (Array.isArray(val)) guestChats = guestChats.concat(val);
+      } catch {}
+    });
+
     if (guestChats.length > 0) {
       const userChatsKey = `fallback_chats_${newUserId}`;
       const userChats = JSON.parse(localStorage.getItem(userChatsKey) || '[]');
+      
       for (const chatObj of guestChats) {
-        const updated = { ...chatObj, userId: newUserId };
+        const resolvedId = chatObj.id || chatObj.sessionId;
+        const updated = { ...chatObj, id: resolvedId, userId: newUserId };
+        // Sync to backend
         fetch(`${BACKEND_URL}/api/db/chats/save`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId: newUserId, sessionId: updated.id, title: updated.title, messages: sanitizeMessages(updated.messages) })
+          body: JSON.stringify({ userId: newUserId, sessionId: resolvedId, title: updated.title, messages: sanitizeMessages(updated.messages) })
         }).catch(() => {});
-        if (!userChats.find(c => c.id === updated.id)) userChats.push(updated);
+        if (!userChats.find(c => (c.id || c.sessionId) === resolvedId)) userChats.push(updated);
       }
       localStorage.setItem(userChatsKey, JSON.stringify(userChats));
-      localStorage.removeItem(guestChatsKey);
+      chatKeys.forEach(k => localStorage.removeItem(k));
     }
   } catch (err) { console.error('Failed to sync guest chats:', err); }
 };

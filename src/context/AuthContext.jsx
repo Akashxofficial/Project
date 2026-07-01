@@ -285,7 +285,12 @@ export function AuthProvider({ children }) {
     const isGuest = currentUser?.isGuest;
     const isPro   = subscription?.active;
 
-    // 1. Pro Member — daily cap across all features
+    // 1. Logged-in Users get UNLIMITED doubt solving / chat
+    if (feature === 'doubt' && currentUser && !currentUser.isGuest) {
+      return true;
+    }
+
+    // 2. Pro Member — daily cap across all features
     if (isPro) {
       const proUsed = getProDailyUsed(userId);
       if (proUsed >= QUOTA.pro) {
@@ -296,7 +301,7 @@ export function AuthProvider({ children }) {
       return true;
     }
 
-    // 2. Free / Guest — per-feature lifetime trial
+    // 3. Free / Guest — per-feature lifetime trial
     const limit = FEATURE_TRIALS[feature] ?? 1;
     const used  = getTrialUsed(userId, feature);
 
