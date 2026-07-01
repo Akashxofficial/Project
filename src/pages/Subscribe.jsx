@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { db, logActivity, trackPaymentInMongo, trackSubscriptionInMongo } from '../lib/firebase';
-import { setDoc, doc, serverTimestamp, getDoc, onSnapshot, query, collection, where, getDocs } from 'firebase/firestore';
+import { logActivity, trackPaymentInMongo, trackSubscriptionInMongo } from '../lib/firebase';
 import { Sparkles, Check, Copy, CheckCircle2, ShieldCheck, CreditCard, Lock, RefreshCw, ChevronLeft, ArrowRight, QrCode, AlertCircle, Clock, CheckCheck } from 'lucide-react';
 
 // Dynamic backend URL — relative for dev and production (proxied locally, hosted same-origin in prod)

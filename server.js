@@ -2,7 +2,7 @@ import express from 'express';
 import handler from './api/generate.js';
 import Razorpay from 'razorpay';
 import crypto from 'crypto';
-import { connectDB, ActivityModel, StudentModel, PaymentModel } from './api/_mongo.js';
+import { connectDB, ActivityModel, StudentModel, PaymentModel, ChatSessionModel, SavedMaterialModel, UserProfileModel } from './api/_mongo.js';
 import {
   sendWelcomeEmail,
   sendStreakReminderEmail,
@@ -579,6 +579,110 @@ app.get('/api/admin/notify/stats', async (req, res) => {
 // ── Daily Cron Reminder Endpoint ───────────────────────────────────────────────
 app.all('/api/admin/notify/cron-reminder', cronReminderHandler);
 app.all('/api/admin/notify', cronReminderHandler);
+
+// ── DB Proxy: Chat Sessions ────────────────────────────────────────────────────
+const sanitizeMessages = (messages) => {
+  if (!messages || !Array.isArray(messages)) return [];
+  return messages.map(m => {
+    const clean = {};
+    Object.keys(m).forEach(k => {
+      if (m[k] === undefined) return;
+      if (k === 'image' && m.image) {
+        const cleanImg = { ...m.image };
+        delete cleanImg.data;
+        delete cleanImg.url;
+        clean.image = cleanImg;
+      } else { clean[k] = m[k]; }
+    });
+    return clean;
+  });
+};
+
+app.post('/api/db/chats/save', async (req, res) => {
+  const { userId, sessionId, title, messages } = req.body;
+  if (!userId || userId === 'guest' || !sessionId) return res.status(400).json({ error: 'Missing fields' });
+  try {
+    await ChatSessionModel.findOneAndUpdate(
+      { sessionId },
+      { userId, sessionId, title: title || 'New Chat', messages: sanitizeMessages(messages), deleted: false, updatedAt: new Date() },
+      { upsert: true, new: true }
+    );
+    res.json({ success: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.get('/api/db/chats', async (req, res) => {
+  const { userId } = req.query;
+  if (!userId || userId === 'guest') return res.json([]);
+  try {
+    const sessions = await ChatSessionModel.find({ userId, deleted: { $ne: true } }).sort({ updatedAt: -1 }).lean();
+    res.json(sessions);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/db/chats/delete', async (req, res) => {
+  const { userId, sessionId } = req.body;
+  if (!userId || !sessionId) return res.status(400).json({ error: 'Missing fields' });
+  try {
+    await ChatSessionModel.findOneAndUpdate({ sessionId, userId }, { deleted: true, updatedAt: new Date() });
+    res.json({ success: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// ── DB Proxy: Saved Documents ──────────────────────────────────────────────────
+app.post('/api/db/documents/save', async (req, res) => {
+  const { userId, docId, type, title, content } = req.body;
+  if (!userId || userId === 'guest' || !docId) return res.status(400).json({ error: 'Missing fields' });
+  try {
+    await SavedMaterialModel.findOneAndUpdate(
+      { docId },
+      { userId, docId, type, title, content },
+      { upsert: true, new: true }
+    );
+    res.json({ success: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.get('/api/db/documents', async (req, res) => {
+  const { userId } = req.query;
+  if (!userId || userId === 'guest') return res.json([]);
+  try {
+    const docs = await SavedMaterialModel.find({ userId }).sort({ createdAt: -1 }).lean();
+    res.json(docs);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.delete('/api/db/documents', async (req, res) => {
+  const { userId, docId } = req.body;
+  if (!userId || !docId) return res.status(400).json({ error: 'Missing fields' });
+  try {
+    await SavedMaterialModel.deleteOne({ docId, userId });
+    res.json({ success: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// ── DB Proxy: User Profiles ────────────────────────────────────────────────────
+app.post('/api/db/profile/save', async (req, res) => {
+  const { userId, data } = req.body;
+  if (!userId || userId === 'guest') return res.status(400).json({ error: 'Missing userId' });
+  try {
+    await UserProfileModel.findOneAndUpdate(
+      { userId },
+      { userId, profileData: data || {}, updatedAt: new Date() },
+      { upsert: true, new: true }
+    );
+    res.json({ success: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.get('/api/db/profile', async (req, res) => {
+  const { userId } = req.query;
+  if (!userId || userId === 'guest') return res.json({});
+  try {
+    const profile = await UserProfileModel.findOne({ userId }).lean();
+    res.json(profile ? profile.profileData : {});
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
 
 const PORT = 3001;
 app.listen(PORT, () => {

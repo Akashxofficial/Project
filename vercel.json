@@ -39,6 +39,14 @@
       "source": "/api/admin/notify/cron-reminder",
       "destination": "/api/admin/notify.js?action=cron-reminder"
     },
+    { "source": "/api/db/chats/save",      "destination": "/api/db.js?action=save-chat" },
+    { "source": "/api/db/chats/delete",    "destination": "/api/db.js?action=delete-chat" },
+    { "source": "/api/db/chats",           "destination": "/api/db.js?action=get-chats" },
+    { "source": "/api/db/documents/save",  "destination": "/api/db.js?action=save-doc" },
+    { "source": "/api/db/documents/delete","destination": "/api/db.js?action=delete-doc" },
+    { "source": "/api/db/documents",       "destination": "/api/db.js?action=get-docs" },
+    { "source": "/api/db/profile/save",    "destination": "/api/db.js?action=save-profile" },
+    { "source": "/api/db/profile",         "destination": "/api/db.js?action=get-profile" },
     {
       "source": "/((?!api/).*)",
       "destination": "/index.html"
@@ -56,6 +64,7 @@
     "api/admin/reject-subscription.js":      { "maxDuration": 30 },
     "api/notify/welcome.js":              { "maxDuration": 15 },
     "api/admin/broadcast.js":             { "maxDuration": 60 },
-    "api/admin/notify.js":                 { "maxDuration": 60 }
+    "api/admin/notify.js":                 { "maxDuration": 60 },
+    "api/db.js":                           { "maxDuration": 30 }
   }
 }

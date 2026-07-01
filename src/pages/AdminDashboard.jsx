@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { LayoutDashboard, Key, ShieldAlert, Users, Settings, Activity, Sparkles, RefreshCw, CheckCircle, AlertTriangle, CreditCard, ClipboardList, Mail, Send, Bell } from 'lucide-react';
-import { db, getActivities, getStudents, trackSubscriptionInMongo } from '../lib/firebase';
-import { collection, getDocs, query, orderBy, doc, updateDoc, setDoc } from 'firebase/firestore';
+import { getActivities, getStudents, trackSubscriptionInMongo } from '../lib/firebase';
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('diagnostics');

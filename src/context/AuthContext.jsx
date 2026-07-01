@@ -1,7 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { auth, db, loginWithGoogle, logout, logActivity, syncUserToMongo, syncGuestDataToUser, saveUserProfile, buildProfileSnapshot } from '../lib/firebase';
-import { onAuthStateChanged } from 'firebase/auth';
-import { doc, onSnapshot } from 'firebase/firestore';
+import { auth, loginWithGoogle, logout, logActivity, syncUserToMongo, syncGuestDataToUser, saveUserProfile, buildProfileSnapshot } from '../lib/firebase';
 
 const AuthContext = createContext();
 
@@ -115,15 +113,15 @@ export function AuthProvider({ children }) {
   });
 
   useEffect(() => {
-    let unsubscribe = () => {};
-
-    // Load initial user state from local storage as offline-first fallback
+    // ── localStorage-only session detection (no Firebase calls on page load) ───────
+    // Firebase Auth is lazy-initialized only when user clicks Sign In.
+    // This prevents accounts:lookup and getProjectConfig calls on every page load.
     let persistedUser = null;
     try {
       const persisted = localStorage.getItem('tanios_user');
       if (persisted) {
         persistedUser = JSON.parse(persisted);
-        // Sanitize corrupted mock guest or demo email if student is actually logged in
+        // Sanitize corrupted mock guest or demo email
         if ((persistedUser.email === 'guest@tanios.ai' || persistedUser.email === 'student@demo.com') && !persistedUser.isGuest) {
           persistedUser.email = '';
           localStorage.setItem('tanios_user', JSON.stringify(persistedUser));
@@ -133,62 +131,16 @@ export function AuthProvider({ children }) {
       console.warn(e);
     }
 
-    if (import.meta.env.VITE_FIREBASE_API_KEY) {
-      unsubscribe = onAuthStateChanged(auth, (user) => {
-        if (user) {
-          const userObj = {
-            displayName: user.displayName || "Student",
-            email: user.email || user.providerData?.[0]?.email || "",
-            photoURL: user.photoURL || "",
-            uid: user.uid,
-            isGuest: false
-          };
-          setCurrentUser(userObj);
-          localStorage.setItem('tanios_user', JSON.stringify(userObj));
-          
-          // Sync guest offline-first data to the newly logged-in user profile
-          syncGuestDataToUser(userObj).catch(console.error);
-
-          // Sync user to MongoDB and send welcome email on first login
-          syncUserToMongo(userObj.uid, userObj.email, userObj.displayName, userObj.photoURL)
-            .then(async (mongoData) => {
-              // Only send welcome email on very first login (loginCount === 1)
-              if (mongoData?.user?.loginCount === 1) {
-                const BACKEND_URL = '';
-                fetch(`${BACKEND_URL}/api/notify/welcome`, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    uid: userObj.uid,
-                    email: userObj.email,
-                    name: userObj.displayName,
-                  }),
-                }).catch(() => {}); // silent fail — never block UI
-              }
-            })
-            .catch(console.warn);
-        } else {
-          // If we had a mock logged-in user, keep it persistent across refresh
-          if (persistedUser && !persistedUser.isGuest) {
-            setCurrentUser(persistedUser);
-          } else {
-            setCurrentUser(GUEST_USER);
-            localStorage.setItem('tanios_user', JSON.stringify(GUEST_USER));
-          }
-        }
-        setLoading(false);
-      });
+    if (persistedUser && !persistedUser.isGuest && persistedUser.uid) {
+      setCurrentUser(persistedUser);
+      // Background sync to MongoDB (no Firebase calls)
+      syncUserToMongo(persistedUser.uid, persistedUser.email, persistedUser.displayName, persistedUser.photoURL).catch(console.warn);
+      syncGuestDataToUser(persistedUser).catch(console.error);
     } else {
-      if (persistedUser) {
-        setCurrentUser(persistedUser);
-      } else {
-        setCurrentUser(GUEST_USER);
-        localStorage.setItem('tanios_user', JSON.stringify(GUEST_USER));
-      }
-      setLoading(false);
+      setCurrentUser(GUEST_USER);
+      localStorage.setItem('tanios_user', JSON.stringify(GUEST_USER));
     }
-
-    return () => unsubscribe();
+    setLoading(false);
   }, []);
 
   // ── Sync User Subscription Status in Real-Time ──────────────────────────────
@@ -245,43 +197,8 @@ export function AuthProvider({ children }) {
     };
     fetchMongoSubscription();
 
-    // Firestore sync
-    if (import.meta.env.VITE_FIREBASE_API_KEY && import.meta.env.VITE_FIREBASE_API_KEY !== 'dummy-api-key') {
-      const userDocRef = doc(db, "users", currentUser.uid || currentUser.email);
-      const unsubscribe = onSnapshot(userDocRef, (docSnap) => {
-        if (docSnap.exists()) {
-          const data = docSnap.data();
-          const subObj = {
-            active: data.subscriptionActive || false,
-            status: data.subscriptionStatus || 'none',
-            plan: data.subscriptionPlan || '',
-            amount: data.subscriptionAmount || 0,
-            utr: data.subscriptionUtr || '',
-            activatedAt: data.subscriptionActivatedAt || null
-          };
-          
-          setSubscription(prev => {
-            // Guard: If MongoDB/local storage has already activated the subscription,
-            // do not let the Firestore listener overwrite it back to inactive (handles cases
-            // where Firestore rules are not deployed and direct writes failed).
-            if (prev.active && !subObj.active) {
-              return prev;
-            }
-            localStorage.setItem('tanios_subscription', JSON.stringify(subObj));
-            return subObj;
-          });
-        } else {
-          setSubscription(prev => {
-            if (prev.active) return prev; // keep active from Mongo/local
-            localStorage.removeItem('tanios_subscription');
-            return { active: false, status: 'none' };
-          });
-        }
-      }, (err) => {
-        console.warn("⚠️ Firestore subscription listener bypassed:", err.message);
-      });
-      return () => unsubscribe();
-    }
+    // Firestore listener removed — subscription is synced via MongoDB above
+    // which is more reliable and doesn't expose Firebase keys in browser network tab
   }, [currentUser]);
 
   const login = async () => {
@@ -292,7 +209,7 @@ export function AuthProvider({ children }) {
           displayName: user.displayName || "Student",
           email: user.email || user.providerData?.[0]?.email || "",
           photoURL: user.photoURL || "",
-          uid: user.uid || user.email || "student_demo_id", // Support fallback uid for mock login
+          uid: user.uid || user.email || "student_demo_id",
           isGuest: false
         };
         setCurrentUser(userObj);
@@ -300,6 +217,21 @@ export function AuthProvider({ children }) {
         setShowLoginModal(false);
         setShowQuotaModal(false);
         logActivity(userObj.uid, userObj.displayName || userObj.email || 'Student', 'login', 'User authenticated via modal').catch(console.warn);
+
+        // Sync to MongoDB + welcome email on first login
+        syncUserToMongo(userObj.uid, userObj.email, userObj.displayName, userObj.photoURL)
+          .then(async (mongoData) => {
+            if (mongoData?.user?.loginCount === 1) {
+              fetch('/api/notify/welcome', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ uid: userObj.uid, email: userObj.email, name: userObj.displayName }),
+              }).catch(() => {});
+            }
+          }).catch(console.warn);
+
+        // Sync guest data to user account
+        syncGuestDataToUser(userObj).catch(console.error);
       }
     } catch (error) {
       console.error("Login failed:", error);
