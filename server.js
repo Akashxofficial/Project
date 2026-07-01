@@ -326,113 +326,91 @@ app.get('/api/admin/payments', async (req, res) => {
   }
 });
 
-// ── Admin: Approve Subscription ──────────────────────────────────────────────
-// Called by admin dashboard to approve a pending UTR payment.
-// Uses MongoDB directly — bypasses all Firestore client permission rules.
-app.post('/api/admin/approve-subscription', async (req, res) => {
+// ── Admin: Handle Subscription Action (Approve / Reject) ────────────────────────
+app.post('/api/admin/subscription-action', async (req, res) => {
   try {
+    const action = req.query.action; // 'approve' or 'reject'
     const { requestId, userId, userName, userEmail, utr, amount } = req.body;
     if (!requestId || (!userId && !userEmail)) {
       return res.status(400).json({ error: 'Missing requestId, userId, or userEmail' });
     }
 
-    // Find and update student subscription status in MongoDB (by uid or email)
     const queryCond = userId ? { uid: userId } : { email: userEmail };
-    const updated = await StudentModel.findOneAndUpdate(
-      queryCond,
-      {
-        subscriptionActive: true,
-        subscriptionPlan: 'Pro AI Member',
-        subscriptionAmount: amount || 199,
-        subscriptionUtr: utr || '',
-        subscriptionActivatedAt: new Date(),
-        updatedAt: new Date()
-      },
-      { new: true, upsert: false }
-    );
 
-    // Update corresponding PaymentModel log to approved
-    if (utr) {
-      await PaymentModel.findOneAndUpdate(
-        { utr: utr },
-        { status: 'approved' }
+    if (action === 'approve') {
+      const updated = await StudentModel.findOneAndUpdate(
+        queryCond,
+        {
+          subscriptionActive: true,
+          subscriptionPlan: 'Pro AI Member',
+          subscriptionAmount: amount || 199,
+          subscriptionUtr: utr || '',
+          subscriptionActivatedAt: new Date(),
+          updatedAt: new Date()
+        },
+        { new: true, upsert: false }
       );
-    }
 
-    // Log activity
-    const approvalActivity = new ActivityModel({
-      userId: userId || 'admin',
-      userName: userName || 'Admin',
-      action: 'subscription_approved',
-      details: `Approved Pro subscription for ${userName || userEmail || 'Student'} (UTR: ${utr})`
-    });
-    await approvalActivity.save();
+      if (utr) {
+        await PaymentModel.findOneAndUpdate({ utr: utr }, { status: 'approved' });
+      }
 
-    console.log(`✅ [Admin] Subscription approved for userId: ${userId || 'N/A'}, email: ${userEmail || 'N/A'}, UTR: ${utr}`);
+      const approvalActivity = new ActivityModel({
+        userId: userId || 'admin',
+        userName: userName || 'Admin',
+        action: 'subscription_approved',
+        details: `Approved Pro subscription for ${userName || userEmail || 'Student'} (UTR: ${utr})`
+      });
+      await approvalActivity.save();
 
-    // ── Send approval email ────────────────────────────────────────────────
-    if (userEmail) {
-      sendSubscriptionApprovedEmail(userEmail, userName).catch(e =>
-        console.error('⚠️  [Mailer] Approval email failed:', e.message)
+      console.log(`✅ [Admin] Subscription approved for userId: ${userId || 'N/A'}, email: ${userEmail || 'N/A'}, UTR: ${utr}`);
+
+      if (userEmail) {
+        sendSubscriptionApprovedEmail(userEmail, userName).catch(e =>
+          console.error('⚠️ [Mailer] Approval email failed:', e.message)
+        );
+      }
+
+      return res.status(200).json({ success: true, user: updated });
+    } else if (action === 'reject') {
+      const updated = await StudentModel.findOneAndUpdate(
+        queryCond,
+        {
+          subscriptionActive: false,
+          subscriptionPlan: 'None (Rejected)',
+          subscriptionAmount: 0,
+          updatedAt: new Date()
+        },
+        { new: true, upsert: false }
       );
-    }
 
-    res.status(200).json({ success: true, user: updated });
+      if (utr) {
+        await PaymentModel.findOneAndUpdate({ utr: utr }, { status: 'rejected' });
+      }
+
+      const rejectActivity = new ActivityModel({
+        userId: userId || 'admin',
+        userName: userName || 'Admin',
+        action: 'subscription_rejected',
+        details: `Rejected subscription claim for ${userName || userEmail || 'Student'} (UTR: ${utr})`
+      });
+      await rejectActivity.save();
+
+      console.log(`❌ [Admin] Subscription rejected for userId: ${userId || 'N/A'}, email: ${userEmail || 'N/A'}, UTR: ${utr}`);
+
+      if (userEmail) {
+        sendSubscriptionRejectedEmail(userEmail, userName).catch(e =>
+          console.error('⚠️ [Mailer] Rejection email failed:', e.message)
+        );
+      }
+
+      return res.status(200).json({ success: true, user: updated });
+    } else {
+      return res.status(400).json({ error: `Invalid action: ${action}` });
+    }
   } catch (error) {
-    console.error('❌ [Admin] Error approving subscription:', error);
-    res.status(500).json({ error: 'Failed to approve subscription: ' + error.message });
-  }
-});
-
-// ── Admin: Reject Subscription ───────────────────────────────────────────────
-app.post('/api/admin/reject-subscription', async (req, res) => {
-  try {
-    const { requestId, userId, userName, userEmail, utr } = req.body;
-    if (!requestId || (!userId && !userEmail)) {
-      return res.status(400).json({ error: 'Missing requestId, userId, or userEmail' });
-    }
-
-    const queryCond = userId ? { uid: userId } : { email: userEmail };
-    const updated = await StudentModel.findOneAndUpdate(
-      queryCond,
-      {
-        subscriptionActive: false,
-        subscriptionPlan: 'None (Rejected)',
-        subscriptionAmount: 0,
-        updatedAt: new Date()
-      },
-      { new: true, upsert: false }
-    );
-
-    // Update corresponding PaymentModel log to rejected
-    if (utr) {
-      await PaymentModel.findOneAndUpdate(
-        { utr: utr },
-        { status: 'rejected' }
-      );
-    }
-
-    const rejectActivity = new ActivityModel({
-      userId: userId || 'admin',
-      userName: userName || 'Admin',
-      action: 'subscription_rejected',
-      details: `Rejected subscription claim for ${userName || userEmail || 'Student'} (UTR: ${utr})`
-    });
-    await rejectActivity.save();
-
-    console.log(`❌ [Admin] Subscription rejected for userId: ${userId || 'N/A'}, email: ${userEmail || 'N/A'}, UTR: ${utr}`);
-
-    // ── Send rejection email ───────────────────────────────────────────────
-    if (userEmail) {
-      sendSubscriptionRejectedEmail(userEmail, userName).catch(e =>
-        console.error('⚠️  [Mailer] Rejection email failed:', e.message)
-      );
-    }
-
-    res.status(200).json({ success: true, user: updated });
-  } catch (error) {
-    console.error('❌ [Admin] Error rejecting subscription:', error);
-    res.status(500).json({ error: 'Failed to reject subscription: ' + error.message });
+    console.error('❌ [Admin] Error performing subscription action:', error);
+    res.status(500).json({ error: 'Subscription action failed: ' + error.message });
   }
 });
 

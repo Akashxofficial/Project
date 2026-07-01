@@ -47,6 +47,8 @@
     { "source": "/api/db/documents",       "destination": "/api/db.js?action=get-docs" },
     { "source": "/api/db/profile/save",    "destination": "/api/db.js?action=save-profile" },
     { "source": "/api/db/profile",         "destination": "/api/db.js?action=get-profile" },
+    { "source": "/api/admin/approve-subscription", "destination": "/api/admin/subscription-action.js?action=approve" },
+    { "source": "/api/admin/reject-subscription",  "destination": "/api/admin/subscription-action.js?action=reject" },
     {
       "source": "/((?!api/).*)",
       "destination": "/index.html"
@@ -60,8 +62,7 @@
     "api/admin/activities.js":               { "maxDuration": 30 },
     "api/admin/students.js":                 { "maxDuration": 30 },
     "api/admin/payments.js":                 { "maxDuration": 30 },
-    "api/admin/approve-subscription.js":     { "maxDuration": 30 },
-    "api/admin/reject-subscription.js":      { "maxDuration": 30 },
+    "api/admin/subscription-action.js":      { "maxDuration": 30 },
     "api/notify/welcome.js":              { "maxDuration": 15 },
     "api/admin/broadcast.js":             { "maxDuration": 60 },
     "api/admin/notify.js":                 { "maxDuration": 60 },
