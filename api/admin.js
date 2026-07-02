@@ -1,0 +1,196 @@
+// api/admin.js — Consolidated Vercel Serverless Function for Administrative Tasks
+import { connectDB, ActivityModel, StudentModel, PaymentModel } from './_mongo.js';
+import { sendSubscriptionApprovedEmail, sendSubscriptionRejectedEmail, sendBroadcastEmail } from './_mailer.js';
+
+export default async function handler(req, res) {
+  // CORS Headers
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') return res.status(200).end();
+
+  const action = req.query.action || req.body?.action || '';
+
+  if (!action) {
+    return res.status(400).json({ error: 'Missing action parameter' });
+  }
+
+  try {
+    await connectDB();
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // GET ACTIONS
+    // ──────────────────────────────────────────────────────────────────────────
+
+    // 1. Fetch Admin Log Activities
+    if (action === 'activities') {
+      if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed for activities' });
+      const limit = parseInt(req.query?.limit) || 100;
+      const activities = await ActivityModel.find({}).sort({ createdAt: -1 }).limit(limit);
+      const mapped = activities.map(a => ({
+        id: a._id.toString(),
+        userId: a.userId,
+        userName: a.userName,
+        action: a.action,
+        details: a.details,
+        createdAt: a.createdAt
+      }));
+      return res.status(200).json(mapped);
+    }
+
+    // 2. Fetch Student Registry list
+    if (action === 'students') {
+      if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed for students' });
+      const limit = parseInt(req.query?.limit) || 500;
+      const students = await StudentModel.find({}).sort({ lastLoginAt: -1, createdAt: -1 }).limit(limit);
+      return res.status(200).json(students);
+    }
+
+    // 3. Fetch Payments list
+    if (action === 'payments') {
+      if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed for payments' });
+      const limit = parseInt(req.query?.limit) || 100;
+      const payments = await PaymentModel.find({}).sort({ createdAt: -1 }).limit(limit);
+      const mapped = [];
+      for (const p of payments) {
+        const student = await StudentModel.findOne({ uid: p.userId });
+        mapped.push({
+          id: p._id.toString(),
+          userId: p.userId,
+          userEmail: p.userEmail,
+          userName: student?.displayName || p.userEmail.split('@')[0],
+          utr: p.utr,
+          amount: p.amount,
+          status: p.status,
+          createdAt: p.createdAt
+        });
+      }
+      return res.status(200).json(mapped);
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // POST ACTIONS
+    // ──────────────────────────────────────────────────────────────────────────
+
+    // 4. Handle Subscription Action (Approve / Reject)
+    if (action === 'subscription-action') {
+      if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed for subscription-action' });
+      const subAction = req.query.subAction || req.body?.subAction;
+      const { requestId, userId, userName, userEmail, utr, amount } = req.body;
+
+      if (!requestId || (!userId && !userEmail)) {
+        return res.status(400).json({ error: 'Missing requestId, userId, or userEmail' });
+      }
+
+      const queryCond = userId ? { uid: userId } : { email: userEmail };
+
+      if (subAction === 'approve') {
+        const updated = await StudentModel.findOneAndUpdate(
+          queryCond,
+          {
+            subscriptionActive: true,
+            subscriptionPlan: 'Pro AI Member',
+            subscriptionAmount: amount || 199,
+            subscriptionUtr: utr || '',
+            subscriptionActivatedAt: new Date(),
+            updatedAt: new Date()
+          },
+          { new: true, upsert: false }
+        );
+
+        if (utr) {
+          await PaymentModel.findOneAndUpdate({ utr }, { status: 'approved' });
+        }
+
+        const approvalActivity = new ActivityModel({
+          userId: userId || 'admin',
+          userName: userName || 'Admin',
+          action: 'subscription_approved',
+          details: `Approved Pro subscription for ${userName || userEmail || 'Student'} (UTR: ${utr})`
+        });
+        await approvalActivity.save();
+
+        console.log(`✅ [Admin] Subscription approved for userId: ${userId || 'N/A'}, email: ${userEmail || 'N/A'}, UTR: ${utr}`);
+
+        if (userEmail) {
+          sendSubscriptionApprovedEmail(userEmail, userName).catch(e =>
+            console.error('⚠️ [Mailer] Approval email failed:', e.message)
+          );
+        }
+
+        return res.status(200).json({ success: true, user: updated });
+      } else if (subAction === 'reject') {
+        const updated = await StudentModel.findOneAndUpdate(
+          queryCond,
+          {
+            subscriptionActive: false,
+            subscriptionPlan: 'None (Rejected)',
+            subscriptionAmount: 0,
+            updatedAt: new Date()
+          },
+          { new: true, upsert: false }
+        );
+
+        if (utr) {
+          await PaymentModel.findOneAndUpdate({ utr }, { status: 'rejected' });
+        }
+
+        const rejectActivity = new ActivityModel({
+          userId: userId || 'admin',
+          userName: userName || 'Admin',
+          action: 'subscription_rejected',
+          details: `Rejected subscription claim for ${userName || userEmail || 'Student'} (UTR: ${utr})`
+        });
+        await rejectActivity.save();
+
+        console.log(`❌ [Admin] Subscription rejected for userId: ${userId || 'N/A'}, email: ${userEmail || 'N/A'}, UTR: ${utr}`);
+
+        if (userEmail) {
+          sendSubscriptionRejectedEmail(userEmail, userName).catch(e =>
+            console.error('⚠️ [Mailer] Rejection email failed:', e.message)
+          );
+        }
+
+        return res.status(200).json({ success: true, user: updated });
+      } else {
+        return res.status(400).json({ error: `Invalid subAction: ${subAction}` });
+      }
+    }
+
+    // 5. Handle Broadcast Announcement Email
+    if (action === 'broadcast') {
+      if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed for broadcast' });
+      const { subject, message, targetGroup } = req.body;
+      if (!subject || !message) return res.status(400).json({ error: 'Missing subject or message' });
+
+      // Build recipient list
+      let query = { emailOptOut: { $ne: true } };
+      if (targetGroup === 'pro') query.subscriptionActive = true;
+      if (targetGroup === 'free') query.subscriptionActive = { $ne: true };
+
+      const students = await StudentModel.find(query).select('email displayName -_id');
+      if (!students.length) return res.status(200).json({ success: true, sent: 0, message: 'No recipients found' });
+
+      const recipients = students.map(s => s.email);
+      const messageHtml = message.replace(/\n/g, '<br/>');
+
+      const result = await sendBroadcastEmail(recipients, subject, messageHtml);
+      console.log(`📢 [Broadcast] Finished: ${result.sent} sent, ${result.failed} failed`);
+
+      return res.status(200).json({
+        success: true,
+        queued: recipients.length,
+        sent: result.sent,
+        failed: result.failed,
+        message: `Broadcast finished: ${result.sent} sent, ${result.failed} failed`
+      });
+    }
+
+    return res.status(400).json({ error: `Unsupported action: ${action}` });
+
+  } catch (error) {
+    console.error(`❌ [Admin API] Failure during action "${action}":`, error);
+    return res.status(500).json({ error: `Admin action failed: ${error.message}` });
+  }
+}

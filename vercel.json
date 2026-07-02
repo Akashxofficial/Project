@@ -47,8 +47,12 @@
     { "source": "/api/db/documents",       "destination": "/api/db.js?action=get-docs" },
     { "source": "/api/db/profile/save",    "destination": "/api/db.js?action=save-profile" },
     { "source": "/api/db/profile",         "destination": "/api/db.js?action=get-profile" },
-    { "source": "/api/admin/approve-subscription", "destination": "/api/admin/subscription-action.js?action=approve" },
-    { "source": "/api/admin/reject-subscription",  "destination": "/api/admin/subscription-action.js?action=reject" },
+    { "source": "/api/admin/activities",           "destination": "/api/admin.js?action=activities" },
+    { "source": "/api/admin/students",             "destination": "/api/admin.js?action=students" },
+    { "source": "/api/admin/payments",             "destination": "/api/admin.js?action=payments" },
+    { "source": "/api/admin/approve-subscription", "destination": "/api/admin.js?action=subscription-action&subAction=approve" },
+    { "source": "/api/admin/reject-subscription",  "destination": "/api/admin.js?action=subscription-action&subAction=reject" },
+    { "source": "/api/admin/broadcast",            "destination": "/api/admin.js?action=broadcast" },
     {
       "source": "/((?!api/).*)",
       "destination": "/index.html"
@@ -59,12 +63,8 @@
     "api/razorpay-order.js":        { "maxDuration": 30 },
     "api/razorpay-verify.js":       { "maxDuration": 30 },
     "api/track.js":                 { "maxDuration": 15 },
-    "api/admin/activities.js":               { "maxDuration": 30 },
-    "api/admin/students.js":                 { "maxDuration": 30 },
-    "api/admin/payments.js":                 { "maxDuration": 30 },
-    "api/admin/subscription-action.js":      { "maxDuration": 30 },
+    "api/admin.js":                 { "maxDuration": 60 },
     "api/notify/welcome.js":              { "maxDuration": 15 },
-    "api/admin/broadcast.js":             { "maxDuration": 60 },
     "api/admin/notify.js":                 { "maxDuration": 60 },
     "api/support.js":                      { "maxDuration": 30 },
     "api/db.js":                           { "maxDuration": 30 }
