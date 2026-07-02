@@ -2733,6 +2733,38 @@ Do not include any markdown, code blocks, or conversational text. Output raw JSO
           }
         }
         
+        @media (max-width: 768px) {
+          /* Disable heavy infinite GPU animations on mobile to prevent layout lag */
+          .gamified-header-card::before,
+          .gamified-header-card::after {
+            display: none !important;
+            animation: none !important;
+          }
+          .waving-hand {
+            animation: none !important;
+          }
+          .pulse-streak {
+            animation: none !important;
+          }
+          .pulse-streak::before {
+            animation: none !important;
+            filter: none !important;
+            opacity: 0.15;
+          }
+          .badge-item {
+            transition: none !important;
+          }
+          .badge-item:hover {
+            transform: none !important;
+          }
+          /* Promote all SVG icons to their own GPU layer to prevent WebKit/Blink repaint drops */
+          svg {
+            transform: translate3d(0, 0, 0) !important;
+            will-change: transform;
+            backface-visibility: hidden;
+          }
+        }
+        
         /* ── WELCOME & HERO BANNER REDESIGN ── */
         @keyframes border-slide {
           0% { left: -100%; }
