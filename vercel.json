@@ -66,6 +66,7 @@
     "api/notify/welcome.js":              { "maxDuration": 15 },
     "api/admin/broadcast.js":             { "maxDuration": 60 },
     "api/admin/notify.js":                 { "maxDuration": 60 },
+    "api/support.js":                      { "maxDuration": 30 },
     "api/db.js":                           { "maxDuration": 30 }
   }
 }

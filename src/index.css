@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300..900;1,14..32,300..900&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&family=JetBrains+Mono:wght@400;500&display=swap');
 
 /* ═══════════════════════════════════════════════════════════════════════════════
    🎨 TANIOS AI — PREMIUM DESIGN SYSTEM v3.0
@@ -159,36 +159,36 @@
 /* ─── DESIGN TOKENS ─────────────────────────────────────────────────────────── */
 /* ── DARK MODE ALWAYS — TaniOS is a dark-first premium app ── */
 :root {
-  --bg: #07090e;
-  --bg-secondary: rgba(15, 18, 28, 0.92);
-  --bg-tertiary: rgba(22, 27, 42, 0.7);
-  --bg-glass: rgba(15, 18, 28, 0.6);
-  --text: #f0f6fc;
-  --text-secondary: #8b949e;
+  --bg: #05060b;
+  --bg-secondary: rgba(11, 15, 27, 0.78);
+  --bg-tertiary: rgba(20, 26, 44, 0.65);
+  --bg-glass: rgba(9, 13, 23, 0.55);
+  --text: #f9fafb;
+  --text-secondary: #9ca3af;
   --primary: #6366f1;
   --primary-hover: #4f46e5;
-  --primary-light: rgba(99, 102, 241, 0.14);
-  --primary-glow: rgba(99,102,241,0.25);
+  --primary-light: rgba(99, 102, 241, 0.15);
+  --primary-glow: rgba(99, 102, 241, 0.3);
   --accent: #fbbf24;
-  --accent-light: rgba(251, 191, 36, 0.1);
+  --accent-light: rgba(251, 191, 36, 0.12);
   --success: #10b981;
   --danger: #ef4444;
-  --border: rgba(255, 255, 255, 0.08);
-  --border-hover: rgba(99,102,241,0.5);
-  --shadow-sm: 0 4px 12px rgba(0,0,0,0.4);
-  --shadow-md: 0 12px 32px rgba(0,0,0,0.5);
-  --shadow-lg: 0 24px 64px rgba(0,0,0,0.7);
-  --shadow-glow: 0 0 40px rgba(99,102,241,0.15);
-  --radius: 0.875rem;
-  --radius-sm: 0.5rem;
-  --radius-lg: 1.25rem;
-  --radius-xl: 1.5rem;
+  --border: rgba(99, 102, 241, 0.16);
+  --border-hover: rgba(99, 102, 241, 0.45);
+  --shadow-sm: 0 8px 32px 0 rgba(0, 0, 0, 0.35);
+  --shadow-md: 0 16px 48px 0 rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 24px 64px 0 rgba(0, 0, 0, 0.65);
+  --shadow-glow: 0 0 40px rgba(99, 102, 241, 0.2);
+  --radius: 1rem;
+  --radius-sm: 0.6rem;
+  --radius-lg: 1.5rem;
+  --radius-xl: 1.75rem;
   --sidebar-w: 264px;
   --header-h: 64px;
-  --font: 'Inter', system-ui, sans-serif;
+  --font: 'Outfit', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
-  --transition: 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-  --spring: 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  --transition: 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  --spring: 0.42s cubic-bezier(0.34, 1.56, 0.64, 1);
 
   /* Dynamic generated content variables */
   --gen-h2-color: #c4b5fd;
@@ -210,6 +210,16 @@
   --loader-bg-overlay: rgba(7, 9, 14, 0.8);
   --loader-bg-card: rgba(15, 18, 28, 0.9);
   --loader-bar-bg: rgba(255, 255, 255, 0.06);
+
+  /* Adaptive obsidian-sync properties */
+  --nested-card-bg: rgba(255, 255, 255, 0.02);
+  --nested-card-border: rgba(255, 255, 255, 0.05);
+  --nested-card-bg-hover: rgba(99, 102, 241, 0.04);
+  --welcome-card-bg: linear-gradient(135deg, rgba(13, 17, 28, 0.88) 0%, rgba(7, 8, 15, 0.96) 100%);
+  --welcome-card-border: rgba(255, 255, 255, 0.04);
+  --welcome-card-glow: rgba(99, 102, 241, 0.35);
+  --consistency-inactive-bg: rgba(255, 255, 255, 0.02);
+  --consistency-inactive-border: rgba(255, 255, 255, 0.06);
 }
 
 /* ── PREMIUM LIGHT THEME TOKENS ── */
@@ -253,6 +263,16 @@
   --loader-bg-overlay: rgba(248, 250, 252, 0.85);
   --loader-bg-card: rgba(255, 255, 255, 0.95);
   --loader-bar-bg: rgba(15, 23, 42, 0.06);
+
+  /* Light-theme adaptive properties */
+  --nested-card-bg: rgba(79, 70, 229, 0.04);
+  --nested-card-border: rgba(79, 70, 229, 0.12);
+  --nested-card-bg-hover: rgba(79, 70, 229, 0.08);
+  --welcome-card-bg: linear-gradient(135deg, rgba(255, 255, 255, 0.94) 0%, rgba(241, 245, 249, 0.97) 100%);
+  --welcome-card-border: rgba(79, 70, 229, 0.18);
+  --welcome-card-glow: rgba(79, 70, 229, 0.45);
+  --consistency-inactive-bg: rgba(79, 70, 229, 0.04);
+  --consistency-inactive-border: rgba(79, 70, 229, 0.1);
 }
 
 /* ── PREMIUM LAYOUT TRANSITIONS ── */
@@ -682,11 +702,12 @@ img { max-width: 100%; }
   padding: 1.5rem;
   box-shadow: var(--shadow-sm);
   border: 1px solid var(--border);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  transition: transform 0.28s cubic-bezier(0.16,1,0.3,1),
-              box-shadow 0.28s ease,
-              border-color 0.28s ease;
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  transition: transform 0.3s cubic-bezier(0.16,1,0.3,1),
+              box-shadow 0.3s ease,
+              border-color 0.3s ease,
+              background-color 0.3s ease;
   display: flex;
   flex-direction: column;
   position: relative;
@@ -705,9 +726,9 @@ img { max-width: 100%; }
 }
 
 .card:hover {
-  transform: translateY(-5px) scale(1.005);
-  box-shadow: 0 20px 40px rgba(99,102,241,0.15), var(--shadow-md);
-  border-color: rgba(99,102,241,0.3);
+  transform: translateY(-6px) translateY(-1px);
+  box-shadow: 0 20px 45px rgba(99,102,241,0.18), var(--shadow-md);
+  border-color: rgba(99,102,241,0.45);
 }
 .card:hover::before { opacity: 0.7; }
 
@@ -2392,4 +2413,8 @@ button .spin,
     transition-duration: 0.01ms !important;
   }
 }
-
+/* ─── DROPDOWN CHROME/SAFARI COMPATIBILITY — Prevent white-on-white text ───── */
+select option {
+  background-color: var(--bg-secondary) !important;
+  color: var(--text) !important;
+}

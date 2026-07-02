@@ -13,6 +13,7 @@ import {
   sendDynamicDailyEmail,
 } from './api/_mailer.js';
 import cronReminderHandler from './api/admin/notify.js';
+import supportHandler from './api/support.js';
 
 
 const app = express();
@@ -443,6 +444,9 @@ app.post('/api/notify/welcome', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
+// ── Support Ticket Submission ───────────────────────────────────────────────
+app.post('/api/support', supportHandler);
 
 // ── Admin Broadcast: send custom email to all/selected students ───────────────
 app.post('/api/admin/broadcast', async (req, res) => {

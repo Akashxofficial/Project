@@ -3,7 +3,7 @@ import { Routes, Route, NavLink, useLocation, useNavigate, Navigate } from 'reac
 import {
   BookOpen, MessageSquare, Clock, FileText,
   GraduationCap, LayoutDashboard, User, Sparkles,
-  LogOut, Bookmark, Menu, X, Sun, Moon
+  LogOut, Bookmark, Menu, X, Sun, Moon, Settings, HelpCircle
 } from 'lucide-react';
 import { useAuth } from './context/AuthContext';
 
@@ -20,6 +20,7 @@ import RAGUpload from './pages/RAGUpload';
 import AdminDashboard from './pages/AdminDashboard';
 import Subscribe from './pages/Subscribe';
 import StudyGenerator from './pages/StudyGenerator';
+import Support from './pages/Support';
 
 
 
@@ -30,8 +31,9 @@ const navItems = [
   { to: '/revision', icon: <BookOpen size={18} />, label: 'Smart Revision' },
   { to: '/timetable', icon: <Clock size={18} />, label: 'Study Planner' },
   { to: '/test', icon: <GraduationCap size={18} />, label: 'Test Generator' },
-  { to: '/notes/rag', icon: <BookOpen size={18} />, label: 'Textbook RAG 📚' },
+  { to: '/notes/rag', icon: <BookOpen size={18} />, label: 'Textbook RAG' },
   { to: '/history', icon: <Bookmark size={18} />, label: 'Saved Materials' },
+  { to: '/support', icon: <HelpCircle size={18} />, label: 'Help & Support' },
 ];
 
 // Helper: triggers login modal for guests who exhausted their trials
@@ -237,8 +239,8 @@ function MainApp() {
                 style={{ borderLeft: '3px solid #ef4444', background: 'rgba(239, 68, 68, 0.03)', marginTop: '0.5rem' }}
                 onClick={() => setSidebarOpen(false)}
               >
-                <LayoutDashboard size={18} color="#ef4444" />
-                <span style={{ color: '#ef4444', fontWeight: 'bold' }}>Admin Control ⚙️</span>
+                <Settings size={18} color="#ef4444" />
+                <span style={{ color: '#ef4444', fontWeight: 'bold' }}>Admin Control</span>
               </NavLink>
             )}
         </nav>
@@ -408,6 +410,7 @@ function MainApp() {
           <Route path="/study-generator" element={<SubscriptionRoute><StudyGenerator /></SubscriptionRoute>} />
           <Route path="/history" element={<History />} />
           <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+          <Route path="/support" element={<Support />} />
         </Routes>
       </main>
     </div>

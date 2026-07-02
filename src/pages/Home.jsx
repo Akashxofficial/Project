@@ -1193,13 +1193,25 @@ const AttemptItem = ({ att }) => {
   
   return (
     <div style={{
-      background: 'var(--bg-secondary)',
-      border: '1px solid var(--border)',
-      borderRadius: '8px',
-      padding: '0.75rem',
-      transition: 'all 0.2s',
-      cursor: 'pointer'
-    }} onClick={() => setExpanded(!expanded)}>
+      background: 'var(--nested-card-bg)',
+      border: '1px solid var(--nested-card-border)',
+      borderRadius: '10px',
+      padding: '0.85rem',
+      transition: 'all 0.22s ease-in-out',
+      cursor: 'pointer',
+      boxShadow: 'var(--shadow-sm)'
+    }} 
+    onMouseEnter={(e) => {
+      e.currentTarget.style.borderColor = 'var(--primary)';
+      e.currentTarget.style.background = 'var(--nested-card-bg-hover)';
+      e.currentTarget.style.transform = 'translateY(-1px)';
+    }}
+    onMouseLeave={(e) => {
+      e.currentTarget.style.borderColor = 'var(--nested-card-border)';
+      e.currentTarget.style.background = 'var(--nested-card-bg)';
+      e.currentTarget.style.transform = 'none';
+    }}
+    onClick={() => setExpanded(!expanded)}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem' }}>
         <div style={{ minWidth: 0, flex: 1 }}>
           <span style={{ fontSize: '0.65rem', fontWeight: 800, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
@@ -2710,167 +2722,314 @@ Do not include any markdown, code blocks, or conversational text. Output raw JSO
       <style>{`
         .home-grid {
           display: grid;
-          grid-template-columns: 1.8fr 1.2fr;
-          gap: 1.5rem;
+          grid-template-columns: 1.85fr 1.15fr;
+          gap: 1.75rem;
           margin-top: 1.5rem;
         }
         @media (max-width: 1024px) {
           .home-grid {
             grid-template-columns: 1fr;
+            gap: 1.5rem;
           }
         }
+        
+        /* ── WELCOME & HERO BANNER REDESIGN ── */
+        @keyframes border-slide {
+          0% { left: -100%; }
+          100% { left: 100%; }
+        }
+        @keyframes wave {
+          0%, 100% { transform: rotate(0deg); }
+          20% { transform: rotate(-8deg); }
+          40% { transform: rotate(12deg); }
+          60% { transform: rotate(-4deg); }
+          80% { transform: rotate(8deg); }
+        }
+
         .gamified-header-card {
-          background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
-          border: 1px solid var(--border);
-          border-radius: var(--radius);
-          padding: 1.75rem 2rem;
+          background: var(--welcome-card-bg);
+          border: 1px solid var(--welcome-card-border);
+          border-top: 1px solid var(--welcome-card-glow);
+          border-radius: var(--radius-lg);
+          padding: 2.25rem 2.5rem;
           position: relative;
           overflow: hidden;
-          margin-bottom: 1.5rem;
-          box-shadow: var(--shadow-sm);
+          margin-bottom: 1.75rem;
+          box-shadow: var(--shadow-md), inset 0 1px 0 rgba(255, 255, 255, 0.02);
+          transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease, background 0.3s ease;
+          backdrop-filter: blur(24px);
+        }
+        .gamified-header-card::after {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: -100%;
+          width: 40%;
+          height: 2px;
+          background: linear-gradient(90deg, transparent, var(--primary), #a78bfa, var(--accent), transparent);
+          animation: border-slide 5s ease-in-out infinite;
+          pointer-events: none;
+        }
+        .gamified-header-card:hover {
+          border-color: var(--primary);
+          border-top-color: var(--primary);
+          box-shadow: 0 16px 40px rgba(99, 102, 241, 0.06), var(--shadow-md);
+        }
+        .gamified-header-card:hover::after {
+          animation-duration: 2.5s;
+          filter: drop-shadow(0 0 3px var(--primary));
+        }
+        .gamified-header-card::before {
+          content: '';
+          position: absolute;
+          top: -50%; left: -50%; width: 200%; height: 200%;
+          background: radial-gradient(circle, rgba(99, 102, 241, 0.08) 0%, transparent 60%);
+          pointer-events: none;
+          animation: float-slow 20s linear infinite;
+        }
+        .waving-hand {
+          display: inline-block;
+          animation: wave 2.2s ease-in-out infinite;
+          transform-origin: 70% 70%;
         }
         .gamified-header-title {
-          font-size: 1.8rem;
-          font-weight: 800;
+          font-size: 2rem;
+          font-weight: 900;
           color: var(--text);
-          margin-bottom: 0.5rem;
+          margin-bottom: 0.6rem;
           line-height: 1.2;
+          letter-spacing: -0.02em;
         }
         .gamified-header-subtitle {
           color: var(--text-secondary);
-          font-size: 0.95rem;
-          max-width: 700px;
-          margin-bottom: 1.25rem;
+          font-size: 0.98rem;
+          max-width: 750px;
+          margin-bottom: 1.5rem;
+          line-height: 1.6;
         }
+
+        /* ── XP NOTIFICATION ALERT ── */
         @keyframes xpNotificationAnim {
-          0% { opacity: 0; transform: translateX(30px); }
-          8% { opacity: 1; transform: translateX(0); }
-          90% { opacity: 1; transform: translateX(0); }
-          100% { opacity: 0; transform: translateX(10px); }
+          0% { opacity: 0; transform: translateX(40px) scale(0.95); }
+          8% { opacity: 1; transform: translateX(0) scale(1); }
+          90% { opacity: 1; transform: translateX(0) scale(1); }
+          100% { opacity: 0; transform: translateX(15px) scale(0.95); }
         }
         .xp-alert {
           position: fixed;
-          top: 80px;
-          right: 20px;
+          top: 85px;
+          right: 25px;
           z-index: 99999;
           background: linear-gradient(135deg, #10b981, #059669);
           color: white;
-          padding: 0.75rem 1.5rem;
+          padding: 0.85rem 1.75rem;
           border-radius: var(--radius-sm);
-          font-weight: 700;
-          font-size: 0.9rem;
-          box-shadow: 0 10px 25px rgba(16, 185, 129, 0.3);
-          border: 1px solid rgba(255, 255, 255, 0.1);
+          font-weight: 800;
+          font-size: 0.92rem;
+          box-shadow: 0 12px 30px rgba(16, 185, 129, 0.35);
+          border: 1px solid rgba(255, 255, 255, 0.15);
           animation: xpNotificationAnim 3.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
           pointer-events: none;
           white-space: nowrap;
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
         }
+
+        /* ── STATS & GAMIFICATION HALO EFFECTS ── */
         .pulse-streak {
+          position: relative;
           animation: float 3s ease-in-out infinite;
         }
+        .pulse-streak::before {
+          content: '';
+          position: absolute;
+          inset: -4px;
+          border-radius: 50%;
+          background: linear-gradient(135deg, rgba(239, 68, 68, 0.4), rgba(245, 158, 11, 0.4));
+          z-index: -1;
+          filter: blur(8px);
+          animation: pulseRotate 4s ease-in-out infinite;
+        }
+
+        /* ── BADGES & ACHIEVEMENT DESIGNS ── */
         .badge-grid {
           display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-          gap: 0.75rem;
-          margin-top: 1rem;
+          grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+          gap: 0.85rem;
+          margin-top: 1.25rem;
         }
         .badge-item {
-          background: var(--bg-tertiary);
-          border: 1px solid var(--border);
+          background: rgba(255, 255, 255, 0.02);
+          border: 1px solid rgba(255, 255, 255, 0.05);
           border-radius: var(--radius-sm);
-          padding: 0.5rem;
+          padding: 0.75rem 0.5rem;
           text-align: center;
-          font-size: 0.75rem;
-          font-weight: 600;
-          opacity: 0.9;
-          transition: all 0.2s;
+          font-size: 0.78rem;
+          font-weight: 700;
+          opacity: 0.95;
+          color: var(--text);
+          box-shadow: var(--shadow-sm);
+          transition: all 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+          position: relative;
+          overflow: hidden;
+        }
+        .badge-item::after {
+          content: '';
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(135deg, transparent, rgba(255, 255, 255, 0.05), transparent);
+          transform: translateX(-100%);
+          transition: transform 0.6s ease;
         }
         .badge-item:hover {
-          transform: scale(1.05);
+          transform: scale(1.08) translateY(-2px);
           border-color: var(--primary);
+          box-shadow: 0 8px 20px rgba(99, 102, 241, 0.15);
+          opacity: 1;
+        }
+        .badge-item:hover::after {
+          transform: translateX(100%);
         }
         .badge-item.locked {
-          opacity: 0.4;
-          filter: grayscale(1);
+          opacity: 0.35;
+          filter: grayscale(1) blur(0.3px);
+          background: rgba(255, 255, 255, 0.01);
+          border-color: rgba(255, 255, 255, 0.02);
         }
+
+        /* ── STUDY MISSIONS CARD REDESIGN ── */
         .mission-item {
           display: flex;
           align-items: center;
-          gap: 0.75rem;
-          padding: 0.85rem 1rem;
-          background: var(--bg-secondary);
-          border: 1px solid var(--border);
+          gap: 0.85rem;
+          padding: 0.95rem 1.25rem;
+          background: rgba(255, 255, 255, 0.02);
+          border: 1px solid rgba(255, 255, 255, 0.04);
           border-radius: var(--radius-sm);
-          margin-bottom: 0.75rem;
-          transition: all 0.2s;
+          margin-bottom: 0.85rem;
+          box-shadow: var(--shadow-sm);
+          transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
         }
         .mission-item:hover {
+          transform: translateX(4px);
           border-color: var(--primary);
+          background: rgba(99, 102, 241, 0.03);
+          box-shadow: 0 4px 15px rgba(99, 102, 241, 0.1);
         }
         .mission-item.completed {
           background: rgba(16, 185, 129, 0.04);
-          border-color: rgba(16, 185, 129, 0.2);
-          opacity: 0.85;
+          border-color: rgba(16, 185, 129, 0.25);
+          box-shadow: 0 4px 12px rgba(16, 185, 129, 0.05);
+          opacity: 0.9;
         }
         .mission-item.locked {
-          background: rgba(255, 255, 255, 0.02) !important;
-          border-color: rgba(239, 68, 68, 0.15) !important;
-          opacity: 0.7;
+          background: rgba(239, 68, 68, 0.02) !important;
+          border-color: rgba(239, 68, 68, 0.16) !important;
+          opacity: 0.72;
           cursor: pointer;
         }
         .mission-item.locked:hover {
-          border-color: rgba(239, 68, 68, 0.4) !important;
-          background: rgba(239, 68, 68, 0.04) !important;
+          border-color: rgba(239, 68, 68, 0.45) !important;
+          background: rgba(239, 68, 68, 0.05) !important;
+          box-shadow: 0 4px 15px rgba(239, 68, 68, 0.1);
         }
+
+        /* ── ONE-CLICK HUB GRID CAPSULES ── */
         .quick-action-grid {
           display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-          gap: 0.75rem;
+          grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+          gap: 1rem;
           margin-bottom: 1.5rem;
         }
         .quick-action-btn {
-          background: var(--bg-secondary);
-          border: 1px solid var(--border);
-          padding: 1rem 0.75rem;
-          border-radius: var(--radius-sm);
+          background: rgba(255, 255, 255, 0.015);
+          border: 1px solid rgba(255, 255, 255, 0.05);
+          padding: 1.35rem 0.85rem;
+          border-radius: var(--radius);
           text-align: center;
           cursor: pointer;
-          transition: all 0.22s cubic-bezier(0.34,1.56,0.64,1);
+          transition: all 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
           display: flex;
           flex-direction: column;
           align-items: center;
+          position: relative;
+          box-shadow: var(--shadow-sm);
+        }
+        .quick-action-btn::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          border-radius: inherit;
+          background: radial-gradient(circle at top, var(--tool-color, rgba(99, 102, 241, 0.12)) 0%, transparent 60%);
+          opacity: 0;
+          transition: opacity 0.3s ease;
         }
         .quick-action-btn:hover {
-          transform: translateY(-4px);
-          border-color: var(--primary);
-          box-shadow: 0 6px 20px rgba(99, 102, 241, 0.2);
-          background: var(--bg-tertiary);
+          transform: translateY(-6px);
+          border-color: var(--tool-color, var(--primary));
+          box-shadow: 0 10px 25px var(--tool-color-glow, rgba(99, 102, 241, 0.22)), var(--shadow-sm);
+          background: rgba(255, 255, 255, 0.035);
         }
+        .quick-action-btn:hover::before {
+          opacity: 1;
+        }
+        .quick-action-btn div:first-child {
+          transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .quick-action-btn:hover div:first-child {
+          transform: scale(1.22) rotate(-3deg);
+        }
+
         .exam-banner {
           background: linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(239, 68, 68, 0.08));
           border: 1px solid rgba(245, 158, 11, 0.25);
-          border-radius: var(--radius);
-          padding: 1.5rem;
+          border-radius: var(--radius-lg);
+          padding: 1.75rem;
           margin-bottom: 1.5rem;
+          box-shadow: var(--shadow-sm);
         }
         .weakness-row {
           display: flex;
           align-items: center;
           justify-content: space-between;
-          padding: 0.75rem 1rem;
-          background: var(--bg-secondary);
-          border: 1px solid var(--border);
+          padding: 0.85rem 1.25rem;
+          background: rgba(255, 255, 255, 0.02);
+          border: 1px solid rgba(255, 255, 255, 0.05);
           border-radius: var(--radius-sm);
-          margin-bottom: 0.5rem;
+          margin-bottom: 0.6rem;
+          transition: all 0.2s ease;
+        }
+        .weakness-row:hover {
+          background: rgba(255, 255, 255, 0.04);
+          border-color: var(--primary);
         }
         .weakness-badge {
-          background: rgba(239, 68, 68, 0.1);
-          color: #ef4444;
-          padding: 0.25rem 0.5rem;
-          border-radius: 4px;
+          background: rgba(239, 68, 68, 0.15);
+          color: #f87171;
+          padding: 0.3rem 0.65rem;
+          border-radius: 6px;
           font-size: 0.75rem;
-          font-weight: 700;
+          font-weight: 800;
+          letter-spacing: 0.2px;
+          border: 1px solid rgba(239, 68, 68, 0.2);
         }
+
+        /* ─── CUSTOM SCROLLBAR INSIDE CARDS ─── */
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: rgba(255, 255, 255, 0.08);
+          border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: var(--primary);
+        }
+
 
         /* 📱 MOBILE RESPONSIVENESS & SCROLLABILITY PATCH ── */
         @media (max-width: 768px) {
@@ -3317,7 +3476,7 @@ Do not include any markdown, code blocks, or conversational text. Output raw JSO
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div className="gamified-header-title">
-              {isGuest ? 'Unlock TaniOS AI Study System' : `Welcome back, ${firstName}`}! 👋
+              {isGuest ? 'Unlock TaniOS AI Study System' : `Welcome back, ${firstName}`}! <span className="waving-hand">👋</span>
             </div>
             <p className="gamified-header-subtitle">
               TaniOS studies <strong>with</strong> you, not just answers questions. Track your weaknesses, crush daily targets, and score board topper grades!
@@ -3352,13 +3511,15 @@ Do not include any markdown, code blocks, or conversational text. Output raw JSO
                   display: 'flex',
                   alignItems: 'center',
                   gap: '0.75rem',
-                  background: 'var(--bg-secondary)',
-                  border: '1px solid var(--border)',
-                  padding: '0.75rem 1rem',
+                  background: alertColor === 'var(--success)' ? 'rgba(16, 185, 129, 0.08)' : 'rgba(251, 191, 36, 0.08)',
+                  border: `1px solid ${alertColor === 'var(--success)' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(251, 191, 36, 0.2)'}`,
+                  padding: '0.85rem 1.25rem',
                   borderRadius: 'var(--radius-sm)',
                   borderLeft: `4px solid ${alertColor}`,
-                  fontSize: '0.85rem',
-                  marginBottom: '1.25rem'
+                  fontSize: '0.88rem',
+                  marginBottom: '1.5rem',
+                  boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.05)',
+                  backdropFilter: 'blur(10px)',
                 }}>
                   <AlertCircle size={16} color={alertColor} style={{ flexShrink: 0 }} />
                   <span style={{ color: 'var(--text)' }}>{alertMsg}</span>
@@ -3366,17 +3527,45 @@ Do not include any markdown, code blocks, or conversational text. Output raw JSO
               );
             })()}
 
-            <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: '0.85rem', flexWrap: 'wrap' }}>
               <button onClick={() => {
                 const element = document.getElementById('mission-center');
                 element?.scrollIntoView({ behavior: 'smooth' });
-              }} className="btn btn-primary">
+              }} className="btn btn-primary" style={{
+                background: 'linear-gradient(135deg, var(--primary) 0%, #4f46e5 100%)',
+                boxShadow: '0 4px 15px rgba(99, 102, 241, 0.35)',
+                fontWeight: 700,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                padding: '0.65rem 1.25rem',
+                borderRadius: '8px'
+              }}>
                 <Target size={16} /> Complete Daily Mission
               </button>
-              <Link to="/chat" className="btn btn-primary ai-doubt-solver-btn">
+              <Link to="/chat" className="btn btn-primary ai-doubt-solver-btn" style={{
+                background: 'linear-gradient(135deg, #a78bfa 0%, #7c3aed 100%)',
+                boxShadow: '0 4px 15px rgba(139, 92, 246, 0.35)',
+                fontWeight: 700,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                padding: '0.65rem 1.25rem',
+                borderRadius: '8px'
+              }}>
                 <MessageSquare size={16} /> AI Doubt Solver
               </Link>
-              <Link to="/notes" className="btn btn-secondary">
+              <Link to="/notes" className="btn btn-secondary" style={{
+                background: 'var(--nested-card-bg)',
+                border: '1px solid var(--nested-card-border)',
+                fontWeight: 700,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                color: 'var(--text)',
+                padding: '0.65rem 1.25rem',
+                borderRadius: '8px'
+              }}>
                 <FileText size={16} /> Generate AI Notes
               </Link>
             </div>
@@ -3393,7 +3582,12 @@ Do not include any markdown, code blocks, or conversational text. Output raw JSO
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           
           {/* A. MISSION CONTROL WIDGET */}
-          <section className="card" id="mission-center" style={{ borderLeft: '4px solid var(--primary)' }}>
+          <section className="card" id="mission-center" style={{
+            background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.04) 0%, rgba(139, 92, 246, 0.04) 100%)',
+            border: '1px solid rgba(99, 102, 241, 0.18)',
+            borderLeft: '4px solid var(--primary)',
+            boxShadow: '0 8px 30px rgba(99, 102, 241, 0.05)'
+          }}>
             {!profileSetupDone ? (
               <div style={{ padding: '0.5rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
@@ -4221,7 +4415,11 @@ Do not include any markdown, code blocks, or conversational text. Output raw JSO
           </section>
 
           {/* B. ONE-CLICK OUTPUTS HUB (FAST SHORTCUT COMPANION GENERATOR) */}
-          <section className="card" id="oneclick-section">
+          <section className="card" id="oneclick-section" style={{
+            background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.03) 0%, rgba(99, 102, 241, 0.03) 100%)',
+            border: '1px solid rgba(245, 158, 11, 0.15)',
+            boxShadow: '0 8px 30px rgba(245, 158, 11, 0.03)'
+          }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem', flexWrap: 'wrap', gap: '0.5rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <Zap color="#f59e0b" size={20} />
@@ -4240,10 +4438,14 @@ Do not include any markdown, code blocks, or conversational text. Output raw JSO
                   key={action.label}
                   onClick={() => navigate(`/study-generator?tool=${encodeURIComponent(action.label)}`)}
                   className="quick-action-btn"
+                  style={{
+                    '--tool-color': action.color,
+                    '--tool-color-glow': `${action.color}2e`
+                  }}
                 >
                   <div style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}>{action.icon}</div>
-                  <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text)' }}>{action.label}</div>
-                  <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>{action.desc}</div>
+                  <div style={{ fontSize: '0.82rem', fontWeight: 800, color: 'var(--text)' }}>{action.label}</div>
+                  <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: '0.2rem', lineHeight: 1.3 }}>{action.desc}</div>
                 </button>
               ))}
             </div>
@@ -4256,85 +4458,98 @@ Do not include any markdown, code blocks, or conversational text. Output raw JSO
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           
           {/* 1. DOPAMINE GAMIFICATION DASHBOARD */}
-          <section className="card" style={{ background: 'linear-gradient(180deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%)' }}>
+          <section className="card" style={{ background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, rgba(139, 92, 246, 0.05) 100%)', border: '1px solid rgba(99, 102, 241, 0.2)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.25rem' }}>
               <Trophy color="var(--accent)" size={20} />
-              <h2 style={{ fontSize: '1.1rem', margin: 0 }}>Dopamine & consistency</h2>
+              <h2 style={{ fontSize: '1.1rem', margin: 0, fontWeight: 800, color: 'var(--text)' }}>Dopamine & consistency</h2>
             </div>
 
             {/* A. Streak with Fire icon animation */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.25rem', background: 'var(--bg-secondary)', border: '1px solid var(--border)', padding: '0.75rem 1rem', borderRadius: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', marginBottom: '1.25rem', background: 'rgba(239, 68, 68, 0.03)', border: '1px solid rgba(239, 68, 68, 0.15)', padding: '0.9rem 1.15rem', borderRadius: '12px' }}>
               <div className="pulse-streak" style={{
-                width: '3rem', height: '3rem',
-                background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(245, 158, 11, 0.15))',
+                width: '3.25rem', height: '3.25rem',
+                background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.25), rgba(245, 158, 11, 0.25))',
                 borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center'
               }}>
-                <Flame size={24} color="#ef4444" fill="#ef4444" />
+                <Flame size={26} color="#ff4500" fill="#ff4500" style={{ filter: 'drop-shadow(0 2px 5px rgba(255, 69, 0, 0.5))' }} />
               </div>
               <div>
-                <div style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--text)' }}>
+                <div style={{ fontSize: '1.45rem', fontWeight: 900, color: '#f87171', letterSpacing: '-0.02em', textShadow: '0 2px 10px rgba(239, 68, 68, 0.15)' }}>
                   {streak} Day Streak!
                 </div>
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
                   Complete daily tasks to stay consistent.
                 </span>
               </div>
             </div>
 
             {/* B. Daily Target MCQ Marks Score Card */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.25rem', background: 'var(--bg-secondary)', border: '1px solid var(--border)', padding: '0.75rem 1rem', borderRadius: '10px', borderLeft: netScore >= 0 ? '4px solid #10b981' : '4px solid #ef4444' }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '1.25rem',
+              marginBottom: '1.25rem',
+              background: netScore >= 0 ? 'rgba(16, 185, 129, 0.03)' : 'rgba(239, 68, 68, 0.03)',
+              border: '1px solid var(--border)',
+              padding: '0.9rem 1.15rem',
+              borderRadius: '12px',
+              borderLeft: netScore >= 0 ? '4px solid #10b981' : '4px solid #ef4444',
+              boxShadow: netScore >= 0 ? '0 4px 15px rgba(16, 185, 129, 0.03)' : '0 4px 15px rgba(239, 68, 68, 0.03)'
+            }}>
               <div style={{
-                width: '3rem', height: '3rem',
+                width: '3.25rem', height: '3.25rem',
                 background: netScore >= 0 
-                  ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(5, 150, 105, 0.15))'
-                  : 'linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(220, 38, 38, 0.15))',
+                  ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(5, 150, 105, 0.2))'
+                  : 'linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(220, 38, 38, 0.2))',
                 borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: '1.5rem'
+                fontSize: '1.6rem',
+                boxShadow: netScore >= 0 ? '0 0 10px rgba(16, 185, 129, 0.25)' : '0 0 10px rgba(239, 68, 68, 0.25)'
               }}>
                 🎯
               </div>
               <div style={{ flex: 1 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-                  <div style={{ fontSize: '1.35rem', fontWeight: 800, color: netScore >= 0 ? '#10b981' : '#f87171' }}>
+                  <div style={{ fontSize: '1.45rem', fontWeight: 900, color: netScore >= 0 ? '#34d399' : '#f87171', letterSpacing: '-0.02em' }}>
                     {netScore >= 0 ? `+${netScore}` : netScore} Marks
                   </div>
-                  <span style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-secondary)', background: 'var(--bg-tertiary)', border: '1px solid var(--border)', padding: '0.15rem 0.45rem', borderRadius: '4px' }}>
+                  <span style={{ fontSize: '0.7rem', fontWeight: 800, color: netScore >= 0 ? '#34d399' : '#f87171', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', padding: '0.2rem 0.55rem', borderRadius: '6px' }}>
                     {netScore >= 100 ? 'Board Topper 🏆' : netScore >= 50 ? 'Excellent 🎓' : netScore >= 0 ? 'Aspirant ⚡' : 'Needs Practice 🩹'}
                   </span>
                 </div>
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'block', marginTop: '0.15rem' }}>
+                <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', display: 'block', marginTop: '0.2rem' }}>
                   Syllabus test score card (+10 correct / -5 incorrect)
                 </span>
               </div>
             </div>
 
             {/* B. XP Progress Bar */}
-            <div style={{ marginBottom: '1.25rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.35rem' }}>
+            <div style={{ marginBottom: '1.5rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', fontWeight: 800, marginBottom: '0.45rem' }}>
                 <span style={{ color: 'var(--text)' }}>Level {level}: {currentLevelInfo.name}</span>
-                <span style={{ color: 'var(--primary)' }}>{xp} / {currentLevelInfo.next} XP</span>
+                <span style={{ color: 'var(--primary)', filter: 'drop-shadow(0 0 2px var(--primary-glow))' }}>{xp} / {currentLevelInfo.next} XP</span>
               </div>
-              <div style={{ height: '8px', background: 'rgba(255,255,255,0.06)', borderRadius: '99px', overflow: 'hidden' }}>
+              <div style={{ height: '10px', background: 'rgba(255,255,255,0.04)', borderRadius: '99px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.02)' }}>
                 <div style={{
                   height: '100%',
                   width: `${progressPercent}%`,
-                  background: 'linear-gradient(90deg, var(--primary), var(--accent))',
+                  background: 'linear-gradient(90deg, var(--primary) 0%, #8b5cf6 50%, var(--accent) 100%)',
                   borderRadius: '99px',
+                  boxShadow: '0 0 10px rgba(99, 102, 241, 0.65)',
                   transition: 'width 0.4s ease'
                 }} />
               </div>
-              <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', display: 'block', marginTop: '0.25rem' }}>
+              <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', display: 'block', marginTop: '0.35rem' }}>
                 Earn XP by completing checklist tasks and solving doubts!
               </span>
             </div>
 
             {/* C. Consistency Score with real-time 7-Day Matrix */}
-            <div style={{ borderTop: '1px solid var(--border)', paddingTop: '1rem', marginBottom: '1rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                <span style={{ fontSize: '0.8rem', fontWeight: 600 }}>Consistency Score</span>
-                <strong style={{ color: 'var(--success)', fontSize: '0.88rem' }}>{consistency}%</strong>
+            <div style={{ borderTop: '1px solid var(--border)', paddingTop: '1.25rem', marginBottom: '1rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                <span style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--text)' }}>Consistency Score</span>
+                <strong style={{ color: 'var(--success)', fontSize: '0.95rem', filter: 'drop-shadow(0 0 3px rgba(16,185,129,0.25))' }}>{consistency}%</strong>
               </div>
-              <div style={{ display: 'flex', gap: '6px', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', gap: '8px', justifyContent: 'space-between' }}>
                 {(() => {
                   // Build last 7 days ending with today, using real dates
                   const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -4364,35 +4579,44 @@ Do not include any markdown, code blocks, or conversational text. Output raw JSO
                     });
                   }
                   return days.map((day, idx) => (
-                    <div key={idx} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px' }}>
+                    <div key={idx} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}>
                       <div style={{
-                        width: day.isToday ? '20px' : '16px',
-                        height: day.isToday ? '20px' : '16px',
+                        width: day.isToday ? '22px' : '18px',
+                        height: day.isToday ? '22px' : '18px',
                         borderRadius: '50%',
                         background: day.isActive
-                          ? 'var(--success)'
+                          ? 'linear-gradient(135deg, #10b981, #059669)'
                           : day.isToday
-                            ? 'var(--primary-light)'
-                            : 'var(--bg-tertiary)',
+                            ? 'rgba(99, 102, 241, 0.15)'
+                            : 'var(--consistency-inactive-bg)',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: '8px', color: day.isActive ? '#fff' : 'var(--text)', fontWeight: 900,
-                        border: day.isToday ? '2px solid var(--primary)' : '1px solid var(--border)',
+                        fontSize: '9px', color: day.isActive ? '#fff' : 'var(--text)', fontWeight: 900,
+                        border: day.isActive
+                          ? 'none'
+                          : day.isToday
+                            ? '2px solid var(--primary)'
+                            : '1px solid var(--consistency-inactive-border)',
+                        boxShadow: day.isActive 
+                          ? '0 0 8px rgba(16, 185, 129, 0.4)'
+                          : day.isToday
+                            ? '0 0 8px rgba(99, 102, 241, 0.25)'
+                            : 'none',
                         transition: 'all 0.2s ease',
                       }}>
                         {day.isActive ? '✓' : ''}
                       </div>
                       <span style={{
-                        fontSize: '0.6rem',
+                        fontSize: '0.65rem',
                         color: day.isToday ? 'var(--primary)' : 'var(--text-secondary)',
-                        fontWeight: day.isToday ? 700 : 400,
+                        fontWeight: day.isToday ? 800 : 500,
                       }}>
                         {day.label}
                       </span>
                       <span style={{
-                        fontSize: '0.55rem',
+                        fontSize: '0.6rem',
                         color: day.isToday ? 'var(--text)' : 'var(--text-secondary)',
-                        fontWeight: day.isToday ? 600 : 400,
-                        opacity: 0.7,
+                        fontWeight: day.isToday ? 700 : 500,
+                        opacity: 0.8,
                       }}>
                         {day.date}
                       </span>
@@ -4425,29 +4649,47 @@ Do not include any markdown, code blocks, or conversational text. Output raw JSO
 
 
           {/* 3. MISTAKE CLINIC & CONCEPT REVISION RECAP */}
-          <section className="card" style={{ borderLeft: '4px solid var(--accent)', marginTop: '1.5rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem', flexWrap: 'wrap', gap: '0.5rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <span style={{ fontSize: '1.1rem' }}>🧠</span>
-                <h2 style={{ fontSize: '1.1rem', margin: 0 }}>My MCQ Mistake Locker</h2>
+          <section className="card" style={{
+            background: 'linear-gradient(135deg, rgba(96, 165, 250, 0.04) 0%, rgba(99, 102, 241, 0.04) 100%)',
+            border: '1px solid rgba(96, 165, 250, 0.18)',
+            borderLeft: '4px solid #60a5fa',
+            marginTop: '1.5rem',
+            boxShadow: '0 8px 30px rgba(96, 165, 250, 0.05)'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                <span style={{ fontSize: '1.25rem' }}>🧠</span>
+                <h2 style={{ fontSize: '1.1rem', margin: 0, fontWeight: 800, color: 'var(--text)' }}>My MCQ Mistake Locker</h2>
                 <button
                   onClick={() => setShowMistakeLocker(!showMistakeLocker)}
                   style={{
-                    background: showMistakeLocker ? 'rgba(59,130,246,0.15)' : 'rgba(59,130,246,0.1)',
-                    border: '1px solid rgba(59,130,246,0.4)',
+                    background: showMistakeLocker ? 'rgba(59, 130, 246, 0.2)' : 'linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(99, 102, 241, 0.15))',
+                    border: showMistakeLocker ? '1px solid rgba(59, 130, 246, 0.45)' : '1px solid rgba(59, 130, 246, 0.35)',
                     color: '#60a5fa',
                     cursor: 'pointer',
-                    fontSize: '0.72rem',
-                    fontWeight: 700,
-                    padding: '0.2rem 0.6rem',
-                    borderRadius: '6px',
-                    marginLeft: '0.25rem',
+                    fontSize: '0.75rem',
+                    fontWeight: 800,
+                    padding: '0.3rem 0.75rem',
+                    borderRadius: '8px',
+                    marginLeft: '0.35rem',
                     display: 'inline-flex',
                     alignItems: 'center',
-                    gap: '0.25rem',
-                    boxShadow: showMistakeLocker ? 'none' : '0 0 8px rgba(59,130,246,0.35)',
-                    animation: showMistakeLocker ? 'none' : 'btnPulseBlue 2s ease-in-out infinite',
-                    transition: 'all 0.2s ease'
+                    gap: '0.3rem',
+                    boxShadow: showMistakeLocker ? 'none' : '0 0 10px rgba(59, 130, 246, 0.35)',
+                    animation: showMistakeLocker ? 'none' : 'btnPulseBlue 2.2s ease-in-out infinite',
+                    transition: 'all 0.22s ease-in-out'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!showMistakeLocker) {
+                      e.currentTarget.style.background = 'linear-gradient(135deg, rgba(59, 130, 246, 0.25), rgba(99, 102, 241, 0.25))';
+                      e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.55)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!showMistakeLocker) {
+                      e.currentTarget.style.background = 'linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(99, 102, 241, 0.15))';
+                      e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.35)';
+                    }
                   }}
                 >
                   {showMistakeLocker ? 'Hide Locker ✕' : `Open Locker (${mcqAttempts.length}) 📖`}

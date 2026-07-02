@@ -24,7 +24,7 @@ const createTransporter = () => {
 };
 
 // ── Base URL ─────────────────────────────────────────────────────────────────
-const BASE_URL = 'https://tanios.in';
+const BASE_URL = 'https://www.tanios.in';
 
 // ── Base HTML Shell ───────────────────────────────────────────────────────────
 const emailShell = (content) => `
