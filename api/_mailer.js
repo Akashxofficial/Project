@@ -23,6 +23,9 @@ const createTransporter = () => {
   });
 };
 
+// ── Base URL ─────────────────────────────────────────────────────────────────
+const BASE_URL = 'https://tanios.in';
+
 // ── Base HTML Shell ───────────────────────────────────────────────────────────
 const emailShell = (content) => `
 <!DOCTYPE html>
@@ -75,9 +78,9 @@ const emailShell = (content) => `
             <td style="padding:20px 36px 32px;border-top:1px solid rgba(255,255,255,0.06);">
               <p style="margin:0;font-size:0.75rem;color:rgba(255,255,255,0.25);text-align:center;line-height:1.6;">
                 TaniOS AI — Smart Study Platform for Indian Students<br/>
-                <a href="https://tanios.vercel.app" style="color:#6366f1;text-decoration:none;">tanios.vercel.app</a>
+                <a href="${BASE_URL}" style="color:#6366f1;text-decoration:none;">tanios.in</a>
                 &nbsp;·&nbsp;
-                <a href="https://tanios.vercel.app/unsubscribe" style="color:rgba(255,255,255,0.25);text-decoration:none;">
+                <a href="${BASE_URL}/unsubscribe" style="color:rgba(255,255,255,0.25);text-decoration:none;">
                   Unsubscribe
                 </a>
               </p>
@@ -171,7 +174,7 @@ export const sendWelcomeEmail = (email, name) => {
     </table>
 
     <div style="text-align:center;">
-      <a href="https://tanios.vercel.app"
+      <a href="${BASE_URL}"
          style="display:inline-block;padding:14px 36px;
                 background:linear-gradient(135deg,#6366f1,#8b5cf6);
                 color:#fff;font-weight:700;font-size:0.95rem;
@@ -221,7 +224,7 @@ export const sendStreakReminderEmail = (email, name, currentStreak) => {
     </p>
 
     <div style="text-align:center;">
-      <a href="https://tanios.vercel.app/chat"
+      <a href="${BASE_URL}/chat"
          style="display:inline-block;padding:14px 36px;
                 background:linear-gradient(135deg,#f59e0b,#ef4444);
                 color:#fff;font-weight:700;font-size:0.95rem;
@@ -292,7 +295,7 @@ export const sendStudyReminderEmail = (email, name) => {
           ['🧪', 'Take a Test', '/test'],
         ].map(([icon, label, path]) => `
           <td width="33%" style="padding:0 6px;text-align:center;">
-            <a href="https://tanios.vercel.app${path}"
+            <a href="${BASE_URL}${path}"
                style="display:block;background:rgba(255,255,255,0.04);
                       border:1px solid rgba(255,255,255,0.08);border-radius:10px;
                       padding:16px 8px;text-decoration:none;
@@ -306,7 +309,7 @@ export const sendStudyReminderEmail = (email, name) => {
     </table>
 
     <div style="text-align:center;">
-      <a href="https://tanios.vercel.app"
+      <a href="${BASE_URL}"
          style="display:inline-block;padding:13px 32px;
                 background:linear-gradient(135deg,#6366f1,#8b5cf6);
                 color:#fff;font-weight:700;font-size:0.9rem;
@@ -363,7 +366,7 @@ export const sendSubscriptionApprovedEmail = (email, name, plan = 'Pro AI Member
     </div>
 
     <div style="text-align:center;">
-      <a href="https://tanios.vercel.app/chat"
+      <a href="${BASE_URL}/chat"
          style="display:inline-block;padding:14px 36px;
                 background:linear-gradient(135deg,#10b981,#059669);
                 color:#fff;font-weight:700;font-size:0.95rem;
@@ -414,7 +417,7 @@ export const sendSubscriptionRejectedEmail = (email, name) => {
     </p>
 
     <div style="text-align:center;">
-      <a href="https://tanios.vercel.app/subscribe"
+      <a href="${BASE_URL}/subscribe"
          style="display:inline-block;padding:13px 32px;
                 background:linear-gradient(135deg,#6366f1,#8b5cf6);
                 color:#fff;font-weight:700;font-size:0.9rem;
@@ -448,7 +451,7 @@ export const sendBroadcastEmail = (recipients, subject, messageHtml) => {
     </div>
 
     <div style="text-align:center;">
-      <a href="https://tanios.vercel.app"
+      <a href="${BASE_URL}"
          style="display:inline-block;padding:13px 32px;
                 background:linear-gradient(135deg,#6366f1,#8b5cf6);
                 color:#fff;font-weight:700;font-size:0.9rem;
@@ -623,7 +626,7 @@ export const sendDynamicDailyEmail = async (student, timeOfDay) => {
         <div style="color: rgba(255,255,255,0.85); font-size: 0.88rem; line-height: 1.5; margin-bottom: 14px;">
           Get unlimited AI doubt solving, RAG textbook uploads, and unlimited mock tests for just <strong>₹199</strong> one-time!
         </div>
-        <a href="https://tanios.vercel.app/subscribe" style="display: inline-block; background: linear-gradient(135deg, #f59e0b, #ef4444); color: #fff; text-decoration: none; padding: 8px 18px; border-radius: 8px; font-weight: 700; font-size: 0.82rem;">Upgrade Now 👑</a>
+        <a href="${BASE_URL}/subscribe" style="display: inline-block; background: linear-gradient(135deg, #f59e0b, #ef4444); color: #fff; text-decoration: none; padding: 8px 18px; border-radius: 8px; font-weight: 700; font-size: 0.82rem;">Upgrade Now 👑</a>
       </div>
     `;
   }
@@ -668,7 +671,7 @@ export const sendDynamicDailyEmail = async (student, timeOfDay) => {
     <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
       <tr>
         <td width="33%" style="padding:0 6px;text-align:center;">
-          <a href="https://tanios.vercel.app/chat"
+          <a href="${BASE_URL}/chat"
              style="display:block;background:rgba(255,255,255,0.03);
                     border:1px solid rgba(255,255,255,0.06);border-radius:10px;
                     padding:16px 8px;text-decoration:none;">
@@ -677,7 +680,7 @@ export const sendDynamicDailyEmail = async (student, timeOfDay) => {
           </a>
         </td>
         <td width="33%" style="padding:0 6px;text-align:center;">
-          <a href="https://tanios.vercel.app/notes"
+          <a href="${BASE_URL}/notes"
              style="display:block;background:rgba(255,255,255,0.03);
                     border:1px solid rgba(255,255,255,0.06);border-radius:10px;
                     padding:16px 8px;text-decoration:none;">
@@ -686,7 +689,7 @@ export const sendDynamicDailyEmail = async (student, timeOfDay) => {
           </a>
         </td>
         <td width="33%" style="padding:0 6px;text-align:center;">
-          <a href="https://tanios.vercel.app/test"
+          <a href="${BASE_URL}/test"
              style="display:block;background:rgba(255,255,255,0.03);
                     border:1px solid rgba(255,255,255,0.06);border-radius:10px;
                     padding:16px 8px;text-decoration:none;">
@@ -733,7 +736,7 @@ export const sendDynamicDailyEmail = async (student, timeOfDay) => {
     ${quickActionsHtml}
 
     <div style="text-align:center;">
-      <a href="https://tanios.vercel.app"
+      <a href="${BASE_URL}"
          style="display:inline-block;padding:13px 32px;
                 background:linear-gradient(135deg,#6366f1,#8b5cf6);
                 color:#fff;font-weight:700;font-size:0.9rem;
