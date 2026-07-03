@@ -184,8 +184,12 @@ function MainApp() {
 
       {/* Sidebar */}
       <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
-        <div className="logo" onClick={() => navigate('/')} style={{ cursor: 'pointer' }} title="Go to Dashboard">
-          <div className="logo-icon"><Sparkles size={16} /></div>
+        <div className="logo" onClick={() => navigate('/')} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.75rem' }} title="Go to Dashboard">
+          <img 
+            src={theme === 'light' ? '/logo-icon-light.png' : '/logo-icon-dark.png'} 
+            alt="TaniOS AI Logo" 
+            className="logo-img-crop" 
+          />
           <span>TaniOS <span className="text-gradient">AI</span></span>
         </div>
 
@@ -352,11 +356,14 @@ function MainApp() {
             className="mobile-logo"
             onClick={() => navigate('/')}
             title="Go to Dashboard"
-            style={{ cursor: 'pointer', position: 'static', transform: 'none', flex: '0 0 auto' }}
+            style={{ cursor: 'pointer', position: 'static', transform: 'none', flex: '0 0 auto', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
           >
-            <div className="mobile-logo-icon">
-              <Sparkles size={12} color="white" />
-            </div>
+            <img 
+              src={theme === 'light' ? '/logo-icon-light.png' : '/logo-icon-dark.png'} 
+              alt="TaniOS AI Logo" 
+              className="logo-img-crop" 
+              style={{ height: '24px', width: '24px' }} 
+            />
             <span className="mobile-logo-text">
               TaniOS <span className="text-gradient">AI</span>
             </span>

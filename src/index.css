@@ -426,6 +426,17 @@ img { max-width: 100%; }
   letter-spacing: -0.02em;
 }
 
+.logo-img-crop {
+  width: 2.125rem;
+  height: 2.125rem;
+  object-fit: contain;
+  transition: transform var(--spring);
+}
+
+.logo:hover .logo-img-crop {
+  transform: rotate(12deg) scale(1.12);
+}
+
 .logo-icon {
   width: 2.125rem; height: 2.125rem;
   background: linear-gradient(135deg, var(--primary) 0%, #8b5cf6 50%, var(--accent) 100%);

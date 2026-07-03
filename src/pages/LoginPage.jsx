@@ -82,14 +82,15 @@ export default function LoginPage() {
         <div style={{ textAlign: 'center', marginBottom: '1.75rem', animation: 'fadeUp 0.4s 0.1s both' }}>
           <div style={{
             width: '3.5rem', height: '3.5rem',
-            background: 'linear-gradient(135deg, #4f46e5, #f59e0b)',
-            borderRadius: '1rem',
             display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 4px 20px rgba(79,70,229,0.4)',
             marginBottom: '1rem',
             animation: 'float 3s ease-in-out infinite',
           }}>
-            <Sparkles size={22} color="white" />
+            <img 
+              src={document.documentElement.classList.contains('light-theme') ? '/logo-icon-light.png' : '/logo-icon-dark.png'} 
+              alt="TaniOS AI Logo" 
+              style={{ width: '100%', height: '100%', objectFit: 'contain' }} 
+            />
           </div>
           <h1 style={{ fontSize: '1.75rem', fontWeight: 800, margin: 0 }}>
             TaniOS <span className="text-gradient">AI</span>
