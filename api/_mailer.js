@@ -50,14 +50,12 @@ const emailShell = (content) => `
               <table width="100%" cellpadding="0" cellspacing="0">
                 <tr>
                   <td>
-                    <div style="display:inline-flex;align-items:center;gap:10px;">
-                      <div style="width:36px;height:36px;background:linear-gradient(135deg,#6366f1,#8b5cf6,#f59e0b);
-                                  border-radius:10px;display:inline-block;vertical-align:middle;
-                                  line-height:36px;text-align:center;font-size:18px;">✨</div>
+                    <div style="display:inline-flex;align-items:center;">
+                      <img src="${BASE_URL}/logo-icon-dark.png" alt="TaniOS AI Logo" style="width:36px;height:36px;vertical-align:middle;" />
                       <span style="font-size:1.35rem;font-weight:800;color:#fff;vertical-align:middle;
-                                   letter-spacing:-0.02em;margin-left:10px;">
+                                   letter-spacing:-0.02em;margin-left:12px;">
                         TaniOS <span style="background:linear-gradient(90deg,#6366f1,#f59e0b);
-                                            -webkit-background-clip:text;-webkit-text-fill-color:transparent;">AI</span>
+                                             -webkit-background-clip:text;-webkit-text-fill-color:transparent;">AI</span>
                       </span>
                     </div>
                   </td>
