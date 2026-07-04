@@ -21,6 +21,19 @@ const Instagram = (props) => (
   </svg>
 );
 
+// Standalone SVG WhatsApp Icon
+const WhatsApp = (props) => (
+  <svg
+    viewBox="0 0 24 24"
+    width={props.size || 18}
+    height={props.size || 18}
+    fill="currentColor"
+    style={props.style}
+  >
+    <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.517 2.266 2.27 3.507 5.289 3.507 8.494-.007 6.66-5.345 11.997-11.957 11.997-2.005-.001-3.973-.502-5.724-1.458L0 24zm6.59-4.846c1.6.95 3.188 1.449 4.825 1.451 5.436.002 9.858-4.42 9.863-9.864.003-2.637-1.03-5.114-2.909-6.995-1.878-1.88-4.357-2.914-6.997-2.914-5.443 0-9.866 4.422-9.871 9.865-.002 1.777.464 3.51 1.349 5.038l-1.01 3.687 3.75-.983zm11.567-5.64c-.29-.146-1.72-.85-1.987-.947-.266-.097-.46-.146-.653.146-.193.29-.748.947-.917 1.141-.168.194-.338.219-.628.074-.29-.145-1.228-.453-2.338-1.445-.864-.77-1.447-1.721-1.616-2.012-.17-.29-.018-.447.127-.591.13-.13.29-.34.435-.51.145-.17.193-.29.29-.485.097-.194.048-.364-.025-.51-.072-.145-.653-1.573-.895-2.154-.235-.568-.475-.49-.653-.499-.168-.008-.362-.01-.555-.01-.193 0-.507.073-.772.364-.266.29-1.014.992-1.014 2.422 0 1.43 1.039 2.81 1.184 3.003.145.194 2.046 3.125 4.956 4.382.693.3 1.233.479 1.654.613.697.221 1.332.19 1.833.115.559-.084 1.72-.703 1.961-1.382.242-.678.242-1.26.17-1.38-.073-.12-.27-.193-.56-.34z"/>
+  </svg>
+);
+
 export default function Support() {
   const { currentUser } = useAuth();
   
@@ -244,9 +257,9 @@ export default function Support() {
                 </div>
               </a>
 
-              {/* Instagram Card */}
+              {/* WhatsApp Card */}
               <a 
-                href="https://instagram.com/tanios_ai" 
+                href="https://wa.me/917412948856" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 style={{ 
@@ -269,12 +282,12 @@ export default function Support() {
                   e.currentTarget.style.background = 'var(--nested-card-bg)';
                 }}
               >
-                <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'rgba(236, 72, 153, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ec4899' }}>
-                  <Instagram size={18} />
+                <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'rgba(37, 211, 102, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#25d366' }}>
+                  <WhatsApp size={18} />
                 </div>
                 <div>
-                  <div style={{ color: 'var(--text)', fontWeight: 700, fontSize: '0.85rem' }}>DM us on Instagram</div>
-                  <div style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', marginTop: '2px' }}>@tanios_ai</div>
+                  <div style={{ color: 'var(--text)', fontWeight: 700, fontSize: '0.85rem' }}>DM on WhatsApp</div>
+                  <div style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', marginTop: '2px' }}>+91 7412948856</div>
                 </div>
               </a>
 

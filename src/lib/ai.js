@@ -5,6 +5,47 @@ import { limiter } from './rateLimiter';
 
 const API_ENDPOINT = "/api/generate";
 
+const getUserId = () => {
+  try {
+    const persisted = localStorage.getItem('tanios_user');
+    if (persisted) {
+      const user = JSON.parse(persisted);
+      return user.uid || user.email || 'guest';
+    }
+  } catch (e) {}
+  return 'guest';
+};
+
+const isUserPro = () => {
+  try {
+    const persisted = localStorage.getItem('tanios_subscription');
+    if (persisted) {
+      const sub = JSON.parse(persisted);
+      return !!sub.active;
+    }
+  } catch (e) {}
+  return false;
+};
+
+const adjustProQuotaForModel = (modelName) => {
+  if (modelName === 'gemini-2.5-pro' && isUserPro()) {
+    const userId = getUserId();
+    try {
+      const raw = localStorage.getItem(`tanios_ai_usage_${userId}`);
+      if (raw) {
+        const data = JSON.parse(raw);
+        // We already incremented by 1 before the request in incrementGuestUsage.
+        // We now add 15 more points to make the total cost of this request 16 points.
+        data.proDailyUsed = (data.proDailyUsed || 0) + 15;
+        localStorage.setItem(`tanios_ai_usage_${userId}`, JSON.stringify(data));
+        console.log(`[Quota] Adjusted quota for model ${modelName}. Added 15 points. Total daily used: ${data.proDailyUsed}`);
+      }
+    } catch (e) {
+      console.warn("Failed to adjust pro quota in localStorage:", e);
+    }
+  }
+};
+
 
 
 /**
@@ -252,6 +293,7 @@ export const generateAIContent = async (prompt, onStatus = null, image = null) =
         cache.set(prompt, result);
       }
       onStatus?.(null);
+      adjustProQuotaForModel(data.model);
       return { text: result, model: data.model };
 
     } catch (error) {
@@ -296,6 +338,7 @@ export const generateAIContentStream = async (prompt, onChunk, onStatus = null, 
     };
   }
 
+  let modelUsed = null;
   try {
     onStatus?.("thinking");
     const controller = new AbortController();
@@ -349,6 +392,9 @@ export const generateAIContentStream = async (prompt, onChunk, onStatus = null, 
             fullText += data.text;
             onChunk?.(fixMathFormatting(fullText));
           }
+          if (data.model) {
+            modelUsed = data.model;
+          }
         } catch (e) {
           console.warn("Could not parse stream JSON chunk:", jsonStr);
         }
@@ -365,6 +411,9 @@ export const generateAIContentStream = async (prompt, onChunk, onStatus = null, 
             fullText += data.text;
             onChunk?.(fixMathFormatting(fullText));
           }
+          if (data.model) {
+            modelUsed = data.model;
+          }
         } catch (e) {}
       }
     }
@@ -374,7 +423,8 @@ export const generateAIContentStream = async (prompt, onChunk, onStatus = null, 
       cache.set(prompt, fullText);
     }
     onStatus?.(null);
-    return { text: fixMathFormatting(fullText), success: true };
+    adjustProQuotaForModel(modelUsed);
+    return { text: fixMathFormatting(fullText), success: true, model: modelUsed };
 
   } catch (err) {
     console.error("Streaming Fetch Failure:", err);

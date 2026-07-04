@@ -288,6 +288,7 @@ export default async function handler(req, res) {
                 compiledText += chunkText;
                 res.write(`data: ${JSON.stringify({ text: chunkText })}\n\n`);
               }
+              res.write(`data: ${JSON.stringify({ model: modelName })}\n\n`);
               res.write("data: [DONE]\n\n");
               res.end();
             } catch (streamIterErr) {

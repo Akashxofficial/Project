@@ -4038,28 +4038,7 @@ Do not include any markdown, code blocks, or conversational text. Output raw JSO
                                                     }
                                                   };
                                                   setSelectedSubTopicsMap(newMap);
-
-                                                  // Compute if this chapter should be marked done based on updatedList and completed list
-                                                   const isChapterDone = updatedList.length === 0 || updatedList.every(t => completed.includes(t));
-
-                                                   if (isChapterDone) {
-                                                     const targetMission = missions.find(m => m.subject === subj && m.chapter === currentCh && m.type !== 'login');
-                                                     if (targetMission && !targetMission.done) {
-                                                       toggleMission(targetMission.id);
-                                                     }
-                                                   } else {
-                                                     setMissions(prevMissions => {
-                                                       const updated = prevMissions.map(m => {
-                                                         if (m.subject === subj && m.chapter === currentCh && m.type !== 'login') {
-                                                           return { ...m, done: false };
-                                                         }
-                                                         return m;
-                                                       });
-                                                       localStorage.setItem(getUserKey('tanios_missions'), JSON.stringify(updated));
-                                                       return updated;
-                                                     });
-                                                   }
-                                                 }}
+                                                }}
                                                 style={{ marginTop: '0.08rem', width: '12px', height: '12px', accentColor: 'var(--primary)' }}
                                               />
                                               <span style={{ 
@@ -4095,11 +4074,13 @@ Do not include any markdown, code blocks, or conversational text. Output raw JSO
                                               };
                                               localStorage.setItem(getUserKey('tanios_selected_subtopics'), JSON.stringify(newMap));
                                               
-                                              // Reactivate daily study mission for this subject/chapter if done
+                                              // Update daily study mission status (mark done if only completed/no topics selected, else active)
+                                              const currentCompleted = JSON.parse(localStorage.getItem(getUserKey('tanios_completed_topics')) || '{}')[subj]?.[currentCh] || [];
+                                              const hasUncompleted = selected.some(t => !currentCompleted.includes(t));
                                               setMissions(prevMissions => {
                                                 const updated = prevMissions.map(m => {
-                                                  if (m.subject === subj && m.chapter === currentCh && m.done) {
-                                                    return { ...m, done: false };
+                                                  if (m.subject === subj && m.chapter === currentCh && m.type !== 'login') {
+                                                    return { ...m, done: !hasUncompleted };
                                                   }
                                                   return m;
                                                 });
