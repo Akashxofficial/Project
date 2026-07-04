@@ -1959,6 +1959,23 @@ export default function Home() {
       completedMap[subject][currentChapter] = newCompleted;
       localStorage.setItem(getUserKey('tanios_completed_topics'), JSON.stringify(completedMap));
 
+      // 2c. Automatically select the next uncompleted topics in this chapter
+      const savedInline = JSON.parse(localStorage.getItem(getUserKey('tanios_inline_subtopics')) || '{}');
+      const chapterTopics = savedInline[subject]?.[currentChapter]?.topics || [];
+      const remainingUncompleted = chapterTopics.filter(t => !newCompleted.includes(t));
+      if (remainingUncompleted.length > 0) {
+        if (!savedSelected[subject]) savedSelected[subject] = {};
+        savedSelected[subject][currentChapter] = remainingUncompleted;
+        localStorage.setItem(getUserKey('tanios_selected_subtopics'), JSON.stringify(savedSelected));
+        setSelectedSubTopicsMap(prev => ({
+          ...prev,
+          [subject]: {
+            ...(prev[subject] || {}),
+            [currentChapter]: remainingUncompleted
+          }
+        }));
+      }
+
       // 3. Calculate exam target pacing
       const now = new Date();
       let examDate;
@@ -1991,8 +2008,6 @@ export default function Home() {
       const daysPerChapter = Math.max(5, Math.round(diffDays / chaptersRemaining));
 
       let isChapterComplete = false;
-      const savedInline = JSON.parse(localStorage.getItem(getUserKey('tanios_inline_subtopics')) || '{}');
-      const chapterTopics = savedInline[subject]?.[currentChapter]?.topics || [];
       if (chapterTopics.length > 0) {
         isChapterComplete = chapterTopics.every(t => newCompleted.includes(t));
       } else {
@@ -4393,30 +4408,43 @@ Do not include any markdown, code blocks, or conversational text. Output raw JSO
                             )
                           )}
 
-                          {mission.done && mission.type !== 'login' && (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                              <span style={{ fontSize: '0.72rem', color: 'var(--success)', fontWeight: 700 }}>✓ Done</span>
-                              <button 
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  startStudyMission(mission);
-                                }}
-                                className="btn btn-secondary" 
-                                style={{ 
-                                  padding: '0.2rem 0.4rem', 
-                                  fontSize: '0.68rem', 
-                                  display: 'flex', 
-                                  alignItems: 'center', 
-                                  gap: '0.25rem', 
-                                  whiteSpace: 'nowrap',
-                                  borderColor: 'var(--border)',
-                                  color: 'var(--text)'
-                                }}
-                              >
-                                Review <Play size={8} />
-                              </button>
-                            </div>
-                          )}
+                          {mission.done && mission.type !== 'login' && (() => {
+                            const subj = mission.subject;
+                            const currentCh = mission.chapter;
+                            const savedInline = JSON.parse(localStorage.getItem(getUserKey('tanios_inline_subtopics')) || '{}');
+                            const chapterTopics = savedInline[subj]?.[currentCh]?.topics || [];
+                            const completed = JSON.parse(localStorage.getItem(getUserKey('tanios_completed_topics')) || '{}')[subj]?.[currentCh] || [];
+                            
+                            let progressText = "✓ Done";
+                            if (chapterTopics.length > 0) {
+                              progressText = `✓ Done (${completed.length}/${chapterTopics.length} Topics)`;
+                            }
+                            
+                            return (
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                <span style={{ fontSize: '0.72rem', color: 'var(--success)', fontWeight: 700 }}>{progressText}</span>
+                                <button 
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    startStudyMission(mission);
+                                  }}
+                                  className="btn btn-secondary" 
+                                  style={{ 
+                                    padding: '0.2rem 0.4rem', 
+                                    fontSize: '0.68rem', 
+                                    display: 'flex', 
+                                    alignItems: 'center', 
+                                    gap: '0.25rem', 
+                                    whiteSpace: 'nowrap',
+                                    borderColor: 'var(--border)',
+                                    color: 'var(--text)'
+                                  }}
+                                >
+                                  Review <Play size={8} />
+                                </button>
+                              </div>
+                            );
+                          })()}
                         </div>
                       </div>
                       );
