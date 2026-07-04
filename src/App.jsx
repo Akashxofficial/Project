@@ -121,8 +121,9 @@ const AdminRoute = ({ children }) => {
 
 // ── Inner app — handles primary navigation & layouts ──────────────────────────
 function MainApp() {
-  const { currentUser, setShowLoginModal, logout, subscription } = useAuth();
+  const { currentUser, setShowLoginModal, logout, subscription, getRemainingQuota } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [showSubscriptionDetailsModal, setShowSubscriptionDetailsModal] = useState(false);
   const [headerScrolled, setHeaderScrolled] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
@@ -252,7 +253,14 @@ function MainApp() {
         {/* Dynamic Premium Upgrade Sidebar Card */}
         {currentUser && !currentUser.isGuest && (
           <div
-            onClick={() => { navigate('/subscribe'); setSidebarOpen(false); }}
+            onClick={() => {
+              if (subscription?.active) {
+                setShowSubscriptionDetailsModal(true);
+              } else {
+                navigate('/subscribe');
+              }
+              setSidebarOpen(false);
+            }}
             style={{
               background: subscription?.active
                 ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.06), rgba(5, 150, 105, 0.08))'
@@ -420,6 +428,79 @@ function MainApp() {
           <Route path="/support" element={<Support />} />
         </Routes>
       </main>
+
+      {/* ── Active Subscription Details Modal ── */}
+      {showSubscriptionDetailsModal && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(10, 10, 10, 0.85)', backdropFilter: 'blur(10px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          zIndex: 9999, padding: '1.5rem',
+        }}>
+          <div className="card" style={{
+            maxWidth: '400px', width: '100%',
+            background: 'rgba(22, 22, 26, 0.9)',
+            border: '1px solid rgba(16, 185, 129, 0.25)',
+            boxShadow: '0 20px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05)',
+            padding: '2.5rem 2rem', borderRadius: '16px', textAlign: 'center',
+          }}>
+            <div style={{
+              width: '4rem', height: '4rem',
+              background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(5, 150, 105, 0.15))',
+              borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              margin: '0 auto 1.5rem', color: '#10b981'
+            }}>
+              <Sparkles size={32} />
+            </div>
+            
+            <h3 style={{ fontSize: '1.35rem', fontWeight: 800, marginBottom: '0.5rem', color: '#fff' }}>
+              Pro Member Details 👑
+            </h3>
+            
+            <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '1.5rem' }}>
+              Thank you for being a premium student on TaniOS! Your subscription is active.
+            </p>
+
+            <div style={{
+              background: 'rgba(16, 185, 129, 0.05)',
+              border: '1px solid rgba(16, 185, 129, 0.15)',
+              borderRadius: '12px',
+              padding: '1rem',
+              marginBottom: '1.75rem',
+              textAlign: 'left',
+              fontSize: '0.85rem'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                <span style={{ color: 'var(--text-secondary)' }}>Status:</span>
+                <strong style={{ color: '#10b981' }}>Active Pro</strong>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                <span style={{ color: 'var(--text-secondary)' }}>AI Quota Today:</span>
+                <strong style={{ color: '#fff' }}>{getRemainingQuota()} / 20 Remaining</strong>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: 'var(--text-secondary)' }}>Plan Price:</span>
+                <strong style={{ color: '#fff' }}>₹199 / month</strong>
+              </div>
+            </div>
+
+            <button 
+              onClick={() => setShowSubscriptionDetailsModal(false)} 
+              style={{
+                width: '100%', padding: '0.875rem',
+                background: 'linear-gradient(135deg, #10b981, #059669)',
+                color: 'white', border: 'none', borderRadius: 'var(--radius-sm)',
+                fontSize: '0.95rem', fontWeight: 700, cursor: 'pointer',
+                boxShadow: '0 6px 20px rgba(16, 185, 129, 0.25)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+                transition: 'all 0.2s'
+              }}
+            >
+              Keep Learning 🚀
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
