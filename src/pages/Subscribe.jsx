@@ -910,7 +910,7 @@ export default function Subscribe() {
                 boxShadow: '0 4px 24px rgba(108,99,255,0.12)',
               }}>
                 {/* Razorpay branding row */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem', flexWrap: 'wrap' }}>
                   <div style={{
                     background: 'linear-gradient(135deg,#072654,#2d87f0)',
                     borderRadius: '6px',
@@ -921,7 +921,7 @@ export default function Subscribe() {
                     letterSpacing: '0.5px'
                   }}>RAZORPAY</div>
                   <span style={{ fontSize: '0.72rem', color: '#10b981', fontWeight: 700 }}>✓ Verified & Secured</span>
-                  <span style={{ marginLeft: 'auto', fontSize: '0.7rem', color: 'var(--text-secondary)' }}>UPI · Cards · NetBanking · Wallets</span>
+                  <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', width: '100%', marginTop: '0.2rem' }}>UPI · Cards · NetBanking · Wallets</span>
                 </div>
 
                 <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '1rem', lineHeight: 1.5 }}>

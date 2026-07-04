@@ -3126,9 +3126,10 @@ Do not include any markdown, code blocks, or conversational text. Output raw JSO
             width: 100% !important;
           }
           .mission-item {
+            display: flex;
             flex-direction: row;
             flex-wrap: wrap;
-            align-items: flex-start !important;
+            align-items: center !important;
             gap: 0.5rem !important;
             padding: 0.75rem !important;
           }
@@ -3138,10 +3139,17 @@ Do not include any markdown, code blocks, or conversational text. Output raw JSO
           }
           .mission-item > div:nth-child(2) {
             flex: 1;
-            min-width: 0;
+            min-width: 150px;
           }
           .mission-item > div:last-child {
-            flex-shrink: 0;
+            width: 100%;
+            padding-left: 2.1rem;
+            margin-top: 0.25rem;
+            box-sizing: border-box;
+            display: flex;
+            justify-content: flex-start !important;
+            flex-wrap: wrap;
+            gap: 0.5rem;
           }
           /* Quick action grid tighter */
           .quick-action-grid {
