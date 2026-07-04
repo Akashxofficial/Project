@@ -3219,9 +3219,10 @@ Do not include any markdown, code blocks, or conversational text. Output raw JSO
             gap: 0.5rem;
           }
           .gamified-header-card .btn {
-            flex: 1 1 auto !important;
-            text-align: center !important;
+            width: 100% !important;
             justify-content: center !important;
+            white-space: nowrap !important;
+            flex-wrap: nowrap !important;
           }
           .gamified-header-title {
             font-size: 1.2rem !important;
