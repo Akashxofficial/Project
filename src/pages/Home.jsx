@@ -2782,8 +2782,8 @@ Do not include any markdown, code blocks, or conversational text. Output raw JSO
         
         /* ── WELCOME & HERO BANNER REDESIGN ── */
         @keyframes border-slide {
-          0% { left: -100%; }
-          100% { left: 100%; }
+          0% { transform: translateX(-250%); }
+          100% { transform: translateX(250%); }
         }
         @keyframes wave {
           0%, 100% { transform: rotate(0deg); }
@@ -2810,10 +2810,11 @@ Do not include any markdown, code blocks, or conversational text. Output raw JSO
           content: '';
           position: absolute;
           top: 0;
-          left: -100%;
+          left: 0;
           width: 40%;
           height: 2px;
           background: linear-gradient(90deg, transparent, var(--primary), #a78bfa, var(--accent), transparent);
+          transform: translateX(-250%);
           animation: border-slide 5s ease-in-out infinite;
           pointer-events: none;
         }

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { auth, loginWithGoogle, logout, logActivity, syncUserToMongo, syncGuestDataToUser, saveUserProfile, buildProfileSnapshot } from '../lib/firebase';
+import { auth, loginWithGoogle, logout, logActivity, syncUserToMongo, syncGuestDataToUser, saveUserProfile, buildProfileSnapshot, loadAndMergeUserProfile } from '../lib/firebase';
 
 const AuthContext = createContext();
 
@@ -116,31 +116,40 @@ export function AuthProvider({ children }) {
     // ── localStorage-only session detection (no Firebase calls on page load) ───────
     // Firebase Auth is lazy-initialized only when user clicks Sign In.
     // This prevents accounts:lookup and getProjectConfig calls on every page load.
-    let persistedUser = null;
-    try {
-      const persisted = localStorage.getItem('tanios_user');
-      if (persisted) {
-        persistedUser = JSON.parse(persisted);
-        // Sanitize corrupted mock guest or demo email
-        if ((persistedUser.email === 'guest@tanios.ai' || persistedUser.email === 'student@demo.com') && !persistedUser.isGuest) {
-          persistedUser.email = '';
-          localStorage.setItem('tanios_user', JSON.stringify(persistedUser));
+    const initUser = async () => {
+      let persistedUser = null;
+      try {
+        const persisted = localStorage.getItem('tanios_user');
+        if (persisted) {
+          persistedUser = JSON.parse(persisted);
+          // Sanitize corrupted mock guest or demo email
+          if ((persistedUser.email === 'guest@tanios.ai' || persistedUser.email === 'student@demo.com') && !persistedUser.isGuest) {
+            persistedUser.email = '';
+            localStorage.setItem('tanios_user', JSON.stringify(persistedUser));
+          }
         }
+      } catch (e) {
+        console.warn(e);
       }
-    } catch (e) {
-      console.warn(e);
-    }
 
-    if (persistedUser && !persistedUser.isGuest && persistedUser.uid) {
-      setCurrentUser(persistedUser);
-      // Background sync to MongoDB (no Firebase calls)
-      syncUserToMongo(persistedUser.uid, persistedUser.email, persistedUser.displayName, persistedUser.photoURL).catch(console.warn);
-      syncGuestDataToUser(persistedUser).catch(console.error);
-    } else {
-      setCurrentUser(GUEST_USER);
-      localStorage.setItem('tanios_user', JSON.stringify(GUEST_USER));
-    }
-    setLoading(false);
+      if (persistedUser && !persistedUser.isGuest && persistedUser.uid) {
+        // Fetch and merge profile data from the cloud BEFORE unlocking loading/rendering state
+        try {
+          await loadAndMergeUserProfile(persistedUser.uid);
+        } catch (e) {
+          console.warn("Initial cloud profile merge failed:", e);
+        }
+        setCurrentUser(persistedUser);
+        // Background sync to MongoDB (no Firebase calls)
+        syncUserToMongo(persistedUser.uid, persistedUser.email, persistedUser.displayName, persistedUser.photoURL).catch(console.warn);
+        syncGuestDataToUser(persistedUser).catch(console.error);
+      } else {
+        setCurrentUser(GUEST_USER);
+        localStorage.setItem('tanios_user', JSON.stringify(GUEST_USER));
+      }
+      setLoading(false);
+    };
+    initUser();
   }, []);
 
   // ── Sync User Subscription Status in Real-Time ──────────────────────────────
@@ -212,6 +221,13 @@ export function AuthProvider({ children }) {
           uid: user.uid || user.email || "student_demo_id",
           isGuest: false
         };
+        // Fetch and merge profile data from cloud BEFORE setting user state
+        // to prevent local state initialization from overwriting cloud database
+        try {
+          await loadAndMergeUserProfile(userObj.uid);
+        } catch (e) {
+          console.warn("Login cloud profile merge failed:", e);
+        }
         setCurrentUser(userObj);
         localStorage.setItem('tanios_user', JSON.stringify(userObj));
         setShowLoginModal(false);

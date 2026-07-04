@@ -1720,6 +1720,31 @@ h3 { font-size: 1.15rem; }
 
   /* Fix any display:flex with fixed widths */
   [style*="display: flex"], [style*="display:flex"] { max-width: 100%; flex-shrink: 1; }
+
+  /* 🚀 MOBILE PERFORMANCE & BATTERY SAVER OPTIMIZATIONS 🚀 */
+  body::before, body::after {
+    display: none !important;
+    animation: none !important;
+  }
+  
+  /* Disable expensive real-time backdrop blur filters on mobile GPUs */
+  .gamified-header-card, .card, .gateway-card, .benefit-card, .daily-mission-overlay {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  /* Disable heavy infinite graphic/glow animation loops */
+  .pulse-streak::before, .card:hover .card-icon, .target-doubt-card:hover, .badge-new {
+    animation: none !important;
+    transform: none !important;
+    filter: none !important;
+  }
+
+  /* Hide decorative canvas/gradient backgrounds that cause redraws */
+  .gamified-header-card::before {
+    display: none !important;
+    animation: none !important;
+  }
 }
 
 /* Mobile (phones) */
