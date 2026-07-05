@@ -41,6 +41,8 @@ export default function History() {
   const [copied, setCopied] = useState(false);
   const contentRef = useRef(null);
   const [downloading, setDownloading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 9;
 
   useEffect(() => {
     async function fetchDocs() {
@@ -172,27 +174,95 @@ export default function History() {
           <p style={{ color: 'var(--text-secondary)' }}>You haven't saved any materials yet. Try generating some notes or a test!</p>
         </div>
       ) : (
-        <div className="grid-cards">
-          {documents.map(doc => (
-            <div key={doc.id} className="card" style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column' }} onClick={() => setSelectedDoc(doc)}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
-                <div style={{ padding: '0.5rem', backgroundColor: 'var(--bg)', borderRadius: 'var(--radius)' }}>
-                  {getIcon(doc.type)}
+        <>
+          <div className="grid-cards">
+            {documents.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map(doc => (
+              <div key={doc.id} className="card" style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column' }} onClick={() => setSelectedDoc(doc)}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
+                  <div style={{ padding: '0.5rem', backgroundColor: 'var(--bg)', borderRadius: 'var(--radius)' }}>
+                    {getIcon(doc.type)}
+                  </div>
+                  <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+                    {doc.createdAt?.toDate ? doc.createdAt.toDate().toLocaleDateString() : 'Just now'}
+                  </div>
                 </div>
-                <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
-                  {doc.createdAt?.toDate ? doc.createdAt.toDate().toLocaleDateString() : 'Just now'}
-                </div>
+                <h3 style={{ fontSize: '1.125rem', marginBottom: '0.5rem' }}>{doc.title}</h3>
+                <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>
+                  Type: {getTypeLabel(doc.type)}
+                </p>
+                <p style={{ color: 'var(--primary)', fontSize: '0.875rem', fontWeight: 600, marginTop: 'auto' }}>
+                  View Document &rarr;
+                </p>
               </div>
-              <h3 style={{ fontSize: '1.125rem', marginBottom: '0.5rem' }}>{doc.title}</h3>
-              <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>
-                Type: {getTypeLabel(doc.type)}
-              </p>
-              <p style={{ color: 'var(--primary)', fontSize: '0.875rem', fontWeight: 600, marginTop: 'auto' }}>
-                View Document &rarr;
-              </p>
+            ))}
+          </div>
+
+          {Math.ceil(documents.length / itemsPerPage) > 1 && (
+            <div style={{
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              gap: '0.5rem',
+              marginTop: '2.5rem',
+              padding: '1rem',
+              borderTop: '1px solid var(--border)'
+            }}>
+              <button
+                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                disabled={currentPage === 1}
+                style={{
+                  background: 'transparent',
+                  border: '1px solid var(--border)',
+                  color: currentPage === 1 ? 'rgba(255,255,255,0.1)' : 'var(--text)',
+                  padding: '0.4rem 0.75rem',
+                  borderRadius: '6px',
+                  cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+                  fontSize: '0.85rem',
+                  transition: 'all 0.2s'
+                }}
+              >
+                Previous
+              </button>
+              
+              {Array.from({ length: Math.ceil(documents.length / itemsPerPage) }, (_, i) => i + 1).map(pageNumber => (
+                <button
+                  key={pageNumber}
+                  onClick={() => setCurrentPage(pageNumber)}
+                  style={{
+                    background: currentPage === pageNumber ? 'var(--primary)' : 'transparent',
+                    border: currentPage === pageNumber ? '1px solid var(--primary)' : '1px solid var(--border)',
+                    color: '#fff',
+                    padding: '0.4rem 0.75rem',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    fontSize: '0.85rem',
+                    fontWeight: currentPage === pageNumber ? 'bold' : 'normal',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  {pageNumber}
+                </button>
+              ))}
+
+              <button
+                onClick={() => setCurrentPage(prev => Math.min(Math.ceil(documents.length / itemsPerPage), prev + 1))}
+                disabled={currentPage === Math.ceil(documents.length / itemsPerPage)}
+                style={{
+                  background: 'transparent',
+                  border: '1px solid var(--border)',
+                  color: currentPage === Math.ceil(documents.length / itemsPerPage) ? 'rgba(255,255,255,0.1)' : 'var(--text)',
+                  padding: '0.4rem 0.75rem',
+                  borderRadius: '6px',
+                  cursor: currentPage === Math.ceil(documents.length / itemsPerPage) ? 'not-allowed' : 'pointer',
+                  fontSize: '0.85rem',
+                  transition: 'all 0.2s'
+                }}
+              >
+                Next
+              </button>
             </div>
-          ))}
-        </div>
+          )}
+        </>
       )}
 
       {/* ── DOCUMENT VIEWER MODAL ── */}

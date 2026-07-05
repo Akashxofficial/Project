@@ -52,6 +52,9 @@
     { "source": "/api/admin/payments",             "destination": "/api/admin.js?action=payments" },
     { "source": "/api/admin/approve-subscription", "destination": "/api/admin.js?action=subscription-action&subAction=approve" },
     { "source": "/api/admin/reject-subscription",  "destination": "/api/admin.js?action=subscription-action&subAction=reject" },
+    { "source": "/api/admin/revoke-subscription",  "destination": "/api/admin.js?action=subscription-action&subAction=revoke" },
+    { "source": "/api/admin/grant-subscription",   "destination": "/api/admin.js?action=subscription-action&subAction=grant" },
+    { "source": "/api/admin/toggle-role",          "destination": "/api/admin.js?action=toggle-role" },
     { "source": "/api/admin/broadcast",            "destination": "/api/admin.js?action=broadcast" },
     {
       "source": "/((?!api/).*)",

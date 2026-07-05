@@ -46,6 +46,7 @@ const studentSchema = new mongoose.Schema({
     studyReminder:  { type: Boolean, default: true },
     announcements:  { type: Boolean, default: true },
   },
+  role: { type: String, default: 'student' },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now }
 });

@@ -26,8 +26,18 @@ export default async function handler(req, res) {
     // 1. Fetch Admin Log Activities
     if (action === 'activities') {
       if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed for activities' });
-      const limit = parseInt(req.query?.limit) || 100;
-      const activities = await ActivityModel.find({}).sort({ createdAt: -1 }).limit(limit);
+      const page = parseInt(req.query?.page) || 1;
+      const limit = parseInt(req.query?.limit) || 20;
+      const skip = (page - 1) * limit;
+
+      const totalRecords = await ActivityModel.countDocuments({});
+      const totalPages = Math.ceil(totalRecords / limit);
+
+      const activities = await ActivityModel.find({})
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit);
+
       const mapped = activities.map(a => ({
         id: a._id.toString(),
         userId: a.userId,
@@ -36,22 +46,51 @@ export default async function handler(req, res) {
         details: a.details,
         createdAt: a.createdAt
       }));
-      return res.status(200).json(mapped);
+
+      return res.status(200).json({
+        success: true,
+        activities: mapped,
+        pagination: { currentPage: page, totalPages, totalRecords, limit }
+      });
     }
 
     // 2. Fetch Student Registry list
     if (action === 'students') {
       if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed for students' });
-      const limit = parseInt(req.query?.limit) || 500;
-      const students = await StudentModel.find({}).sort({ lastLoginAt: -1, createdAt: -1 }).limit(limit);
-      return res.status(200).json(students);
+      const page = parseInt(req.query?.page) || 1;
+      const limit = parseInt(req.query?.limit) || 20;
+      const skip = (page - 1) * limit;
+
+      const totalRecords = await StudentModel.countDocuments({});
+      const totalPages = Math.ceil(totalRecords / limit);
+
+      const students = await StudentModel.find({})
+        .sort({ lastLoginAt: -1, createdAt: -1 })
+        .skip(skip)
+        .limit(limit);
+
+      return res.status(200).json({
+        success: true,
+        students,
+        pagination: { currentPage: page, totalPages, totalRecords, limit }
+      });
     }
 
     // 3. Fetch Payments list
     if (action === 'payments') {
       if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed for payments' });
-      const limit = parseInt(req.query?.limit) || 100;
-      const payments = await PaymentModel.find({}).sort({ createdAt: -1 }).limit(limit);
+      const page = parseInt(req.query?.page) || 1;
+      const limit = parseInt(req.query?.limit) || 20;
+      const skip = (page - 1) * limit;
+
+      const totalRecords = await PaymentModel.countDocuments({});
+      const totalPages = Math.ceil(totalRecords / limit);
+
+      const payments = await PaymentModel.find({})
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit);
+
       const mapped = [];
       for (const p of payments) {
         const student = await StudentModel.findOne({ uid: p.userId });
@@ -66,7 +105,12 @@ export default async function handler(req, res) {
           createdAt: p.createdAt
         });
       }
-      return res.status(200).json(mapped);
+
+      return res.status(200).json({
+        success: true,
+        payments: mapped,
+        pagination: { currentPage: page, totalPages, totalRecords, limit }
+      });
     }
 
     // ──────────────────────────────────────────────────────────────────────────
@@ -79,8 +123,11 @@ export default async function handler(req, res) {
       const subAction = req.query.subAction || req.body?.subAction;
       const { requestId, userId, userName, userEmail, utr, amount } = req.body;
 
-      if (!requestId || (!userId && !userEmail)) {
-        return res.status(400).json({ error: 'Missing requestId, userId, or userEmail' });
+      if (subAction !== 'revoke' && subAction !== 'grant' && !requestId) {
+        return res.status(400).json({ error: 'Missing requestId' });
+      }
+      if (!userId && !userEmail) {
+        return res.status(400).json({ error: 'Missing userId or userEmail' });
       }
 
       const queryCond = userId ? { uid: userId } : { email: userEmail };
@@ -153,9 +200,89 @@ export default async function handler(req, res) {
         }
 
         return res.status(200).json({ success: true, user: updated });
+      } else if (subAction === 'revoke') {
+        const updated = await StudentModel.findOneAndUpdate(
+          queryCond,
+          {
+            subscriptionActive: false,
+            subscriptionPlan: 'None (Revoked by Admin)',
+            subscriptionAmount: 0,
+            updatedAt: new Date()
+          },
+          { new: true, upsert: false }
+        );
+
+        const revokeActivity = new ActivityModel({
+          userId: userId || 'admin',
+          userName: userName || 'Admin',
+          action: 'subscription_revoked',
+          details: `Revoked Pro subscription access for ${userName || userEmail || 'Student'}`
+        });
+        await revokeActivity.save();
+
+        console.log(`🚫 [Admin] Subscription revoked for userId: ${userId || 'N/A'}, email: ${userEmail || 'N/A'}`);
+
+        return res.status(200).json({ success: true, user: updated });
+      } else if (subAction === 'grant') {
+        const updated = await StudentModel.findOneAndUpdate(
+          queryCond,
+          {
+            subscriptionActive: true,
+            subscriptionPlan: 'Pro AI Member (Granted by Admin)',
+            subscriptionAmount: 0,
+            subscriptionUtr: 'GRANTED_BY_ADMIN',
+            subscriptionActivatedAt: new Date(),
+            updatedAt: new Date()
+          },
+          { new: true, upsert: false }
+        );
+
+        const grantActivity = new ActivityModel({
+          userId: userId || 'admin',
+          userName: userName || 'Admin',
+          action: 'subscription_granted',
+          details: `Granted Pro subscription access to ${userName || userEmail || 'Student'}`
+        });
+        await grantActivity.save();
+
+        console.log(`👑 [Admin] Subscription granted for userId: ${userId || 'N/A'}, email: ${userEmail || 'N/A'}`);
+
+        return res.status(200).json({ success: true, user: updated });
       } else {
         return res.status(400).json({ error: `Invalid subAction: ${subAction}` });
       }
+    }
+
+    // 4.5. Handle Role Toggle (Make Admin / Demote Student)
+    if (action === 'toggle-role') {
+      if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed for toggle-role' });
+      const { userId, userEmail, userName, role } = req.body;
+      if (!userId && !userEmail) {
+        return res.status(400).json({ error: 'Missing userId or userEmail' });
+      }
+      if (role !== 'admin' && role !== 'student') {
+        return res.status(400).json({ error: 'Invalid role' });
+      }
+
+      const queryCond = userId ? { uid: userId } : { email: userEmail };
+
+      const updated = await StudentModel.findOneAndUpdate(
+        queryCond,
+        { role, updatedAt: new Date() },
+        { new: true, upsert: false }
+      );
+
+      const roleActivity = new ActivityModel({
+        userId: userId || 'admin',
+        userName: userName || 'Admin',
+        action: 'role_changed',
+        details: `Changed role for ${userName || userEmail || 'Student'} to ${role}`
+      });
+      await roleActivity.save();
+
+      console.log(`👤 [Admin] Role changed for userId: ${userId || 'N/A'}, email: ${userEmail || 'N/A'} to ${role}`);
+
+      return res.status(200).json({ success: true, user: updated });
     }
 
     // 5. Handle Broadcast Announcement Email

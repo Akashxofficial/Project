@@ -141,7 +141,13 @@ export function AuthProvider({ children }) {
         }
         setCurrentUser(persistedUser);
         // Background sync to MongoDB (no Firebase calls)
-        syncUserToMongo(persistedUser.uid, persistedUser.email, persistedUser.displayName, persistedUser.photoURL).catch(console.warn);
+        syncUserToMongo(persistedUser.uid, persistedUser.email, persistedUser.displayName, persistedUser.photoURL)
+          .then((mongoData) => {
+            if (mongoData?.success && mongoData?.user) {
+              localStorage.setItem('tanios_user_role', mongoData.user.role || 'student');
+            }
+          })
+          .catch(console.warn);
         syncGuestDataToUser(persistedUser).catch(console.error);
       } else {
         setCurrentUser(GUEST_USER);
@@ -237,6 +243,9 @@ export function AuthProvider({ children }) {
         // Sync to MongoDB + welcome email on first login
         syncUserToMongo(userObj.uid, userObj.email, userObj.displayName, userObj.photoURL)
           .then(async (mongoData) => {
+            if (mongoData?.success && mongoData?.user) {
+              localStorage.setItem('tanios_user_role', mongoData.user.role || 'student');
+            }
             if (mongoData?.user?.loginCount === 1) {
               fetch('/api/notify/welcome', {
                 method: 'POST',
@@ -282,6 +291,7 @@ export function AuthProvider({ children }) {
       'tanios_net_score',
       'tanios_rag_context',
       'tanios_rag_filename',
+      'tanios_user_role',
     ];
     taniosKeys.forEach(key => {
       localStorage.removeItem(key);

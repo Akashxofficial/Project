@@ -331,22 +331,32 @@ export const trackSubscriptionInMongo = async (uid, subscriptionData) => {
   } catch (e) { console.error('❌ Error updating subscription in MongoDB:', e); }
 };
 
-export const getActivities = async () => {
+export const getActivities = async (page = 1, limit = 20) => {
   try {
-    const response = await fetch(`${BACKEND_URL}/api/admin/activities?limit=100`);
+    const response = await fetch(`${BACKEND_URL}/api/admin/activities?page=${page}&limit=${limit}`);
     if (response.ok) return await response.json();
   } catch (e) { console.warn('⚠️ Failed to fetch activities from MongoDB:', e.message); }
   try {
-    return JSON.parse(localStorage.getItem('tanios_admin_activities') || '[]');
-  } catch { return []; }
+    const local = JSON.parse(localStorage.getItem('tanios_admin_activities') || '[]');
+    const totalRecords = local.length;
+    const totalPages = Math.ceil(totalRecords / limit);
+    const sliced = local.slice((page - 1) * limit, page * limit);
+    return {
+      success: true,
+      activities: sliced,
+      pagination: { currentPage: page, totalPages, totalRecords, limit }
+    };
+  } catch {
+    return { success: false, activities: [], pagination: { currentPage: 1, totalPages: 0, totalRecords: 0, limit } };
+  }
 };
 
-export const getStudents = async () => {
+export const getStudents = async (page = 1, limit = 20) => {
   try {
-    const response = await fetch(`${BACKEND_URL}/api/admin/students?limit=500`);
+    const response = await fetch(`${BACKEND_URL}/api/admin/students?page=${page}&limit=${limit}`);
     if (response.ok) return await response.json();
   } catch (e) { console.warn('⚠️ Failed to fetch students from MongoDB:', e.message); }
-  return [];
+  return { success: false, students: [], pagination: { currentPage: 1, totalPages: 0, totalRecords: 0, limit } };
 };
 
 // ── Guest → User data sync (uses backend API) ──────────────────────────────────
