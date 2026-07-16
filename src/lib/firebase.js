@@ -7,10 +7,10 @@ const BACKEND_URL = '';
 
 // ─── Firebase config ─────────────────────────────────────────────────────────────
 const firebaseConfig = {
-  apiKey:    import.meta.env.VITE_FIREBASE_API_KEY     || 'dummy-api-key',
-  authDomain:import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || 'dummy.firebaseapp.com',
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || 'dummy-api-key',
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || 'dummy.firebaseapp.com',
   projectId: 'tanios-3cd37',
-  appId:     '1:635893073596:web:1839eead55e75b7f3972b9',
+  appId: '1:635893073596:web:1839eead55e75b7f3972b9',
 };
 
 // ─── LAZY init: Firebase only boots when user clicks Sign In ───────────────────────
@@ -26,7 +26,7 @@ const getFirebaseAuth = () => {
 
 // auth is null until loginWithGoogle() is called — AuthContext no longer needs it directly
 export const auth = null;
-export const db   = null; // Firestore fully removed
+export const db = null; // Firestore fully removed
 
 // ─── Auth Providers ─────────────────────────────────────────────────────────────
 const googleProvider = new GoogleAuthProvider();
@@ -36,7 +36,7 @@ googleProvider.setCustomParameters({ prompt: 'select_account' });
 export const loginWithGoogle = async () => {
   try {
     const authInst = getFirebaseAuth(); // 🔑 Firebase initializes HERE (user-initiated only)
-    const result   = await signInWithPopup(authInst, googleProvider);
+    const result = await signInWithPopup(authInst, googleProvider);
     return result.user;
   } catch (error) {
     console.error('Error signing in with Google', error);
@@ -111,7 +111,7 @@ export const getUserDocuments = async (userId) => {
             createdAt: d.createdAt.toDate().getTime()
           }));
           localStorage.setItem(fbKey, JSON.stringify(plain));
-        } catch {}
+        } catch { }
         return normalized;
       }
     } catch (e) {
@@ -138,7 +138,7 @@ export const deleteDocument = async (userId, docId) => {
     const fbKey = `fallback_documents_${userId}`;
     const existing = JSON.parse(localStorage.getItem(fbKey) || '[]');
     localStorage.setItem(fbKey, JSON.stringify(existing.filter(d => d.id !== docId)));
-  } catch {}
+  } catch { }
 
   // Remove from backend
   if (!userId || userId === 'guest') return;
@@ -222,14 +222,14 @@ export const getUserChatSessions = async (userId) => {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ userId, sessionId: ls.id, title: ls.title, messages: sanitizeMessages(ls.messages) })
-            }).catch(() => {});
+            }).catch(() => { });
           }
         }
         // Update localStorage cache
         localStorage.setItem(fbKey, JSON.stringify(normalized.map(s => ({
           id: s.id, userId, title: s.title, messages: s.messages, updatedAt: s.updatedAt
         }))));
-      } catch {}
+      } catch { }
 
       normalized.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
       return normalized;
@@ -253,7 +253,7 @@ export const deleteChatSession = async (userId, sessionId) => {
     const fbKey = `fallback_chats_${userId}`;
     const existing = JSON.parse(localStorage.getItem(fbKey) || '[]');
     localStorage.setItem(fbKey, JSON.stringify(existing.filter(s => s.id !== sessionId)));
-  } catch {}
+  } catch { }
 
   // Soft-delete on backend
   fetch(`${BACKEND_URL}/api/db/chats/delete`, {
@@ -331,32 +331,22 @@ export const trackSubscriptionInMongo = async (uid, subscriptionData) => {
   } catch (e) { console.error('❌ Error updating subscription in MongoDB:', e); }
 };
 
-export const getActivities = async (page = 1, limit = 20) => {
+export const getActivities = async () => {
   try {
-    const response = await fetch(`${BACKEND_URL}/api/admin/activities?page=${page}&limit=${limit}`);
+    const response = await fetch(`${BACKEND_URL}/api/admin/activities?limit=100`);
     if (response.ok) return await response.json();
   } catch (e) { console.warn('⚠️ Failed to fetch activities from MongoDB:', e.message); }
   try {
-    const local = JSON.parse(localStorage.getItem('tanios_admin_activities') || '[]');
-    const totalRecords = local.length;
-    const totalPages = Math.ceil(totalRecords / limit);
-    const sliced = local.slice((page - 1) * limit, page * limit);
-    return {
-      success: true,
-      activities: sliced,
-      pagination: { currentPage: page, totalPages, totalRecords, limit }
-    };
-  } catch {
-    return { success: false, activities: [], pagination: { currentPage: 1, totalPages: 0, totalRecords: 0, limit } };
-  }
+    return JSON.parse(localStorage.getItem('tanios_admin_activities') || '[]');
+  } catch { return []; }
 };
 
-export const getStudents = async (page = 1, limit = 20) => {
+export const getStudents = async () => {
   try {
-    const response = await fetch(`${BACKEND_URL}/api/admin/students?page=${page}&limit=${limit}`);
+    const response = await fetch(`${BACKEND_URL}/api/admin/students?limit=500`);
     if (response.ok) return await response.json();
   } catch (e) { console.warn('⚠️ Failed to fetch students from MongoDB:', e.message); }
-  return { success: false, students: [], pagination: { currentPage: 1, totalPages: 0, totalRecords: 0, limit } };
+  return [];
 };
 
 // ── Guest → User data sync (uses backend API) ──────────────────────────────────
@@ -372,13 +362,13 @@ export const syncGuestDataToUser = async (user) => {
       try {
         const val = JSON.parse(localStorage.getItem(k) || '[]');
         if (Array.isArray(val)) guestDocs = guestDocs.concat(val);
-      } catch {}
+      } catch { }
     });
 
     if (guestDocs.length > 0) {
       const userDocsKey = `fallback_documents_${newUserId}`;
       const userDocs = JSON.parse(localStorage.getItem(userDocsKey) || '[]');
-      
+
       for (const docObj of guestDocs) {
         const resolvedId = docObj.id || docObj.docId;
         const updated = { ...docObj, id: resolvedId, userId: newUserId };
@@ -387,7 +377,7 @@ export const syncGuestDataToUser = async (user) => {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ userId: newUserId, docId: resolvedId, type: updated.type, title: updated.title, content: updated.content })
-        }).catch(() => {});
+        }).catch(() => { });
         if (!userDocs.find(d => (d.id || d.docId) === resolvedId)) userDocs.push(updated);
       }
       localStorage.setItem(userDocsKey, JSON.stringify(userDocs));
@@ -403,13 +393,13 @@ export const syncGuestDataToUser = async (user) => {
       try {
         const val = JSON.parse(localStorage.getItem(k) || '[]');
         if (Array.isArray(val)) guestChats = guestChats.concat(val);
-      } catch {}
+      } catch { }
     });
 
     if (guestChats.length > 0) {
       const userChatsKey = `fallback_chats_${newUserId}`;
       const userChats = JSON.parse(localStorage.getItem(userChatsKey) || '[]');
-      
+
       for (const chatObj of guestChats) {
         const resolvedId = chatObj.id || chatObj.sessionId;
         const updated = { ...chatObj, id: resolvedId, userId: newUserId };
@@ -418,7 +408,7 @@ export const syncGuestDataToUser = async (user) => {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ userId: newUserId, sessionId: resolvedId, title: updated.title, messages: sanitizeMessages(updated.messages) })
-        }).catch(() => {});
+        }).catch(() => { });
         if (!userChats.find(c => (c.id || c.sessionId) === resolvedId)) userChats.push(updated);
       }
       localStorage.setItem(userChatsKey, JSON.stringify(userChats));
@@ -463,7 +453,7 @@ export const loadAndMergeUserProfile = async (userId) => {
         const val = typeof cloudData[baseKey] === 'object'
           ? JSON.stringify(cloudData[baseKey])
           : cloudData[baseKey].toString();
-        try { localStorage.setItem(localKey, val); } catch {}
+        try { localStorage.setItem(localKey, val); } catch { }
       }
     });
     console.log('[loadAndMergeUserProfile] Cloud data merged into localStorage for', userId);

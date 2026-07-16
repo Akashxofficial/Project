@@ -26,18 +26,8 @@ export default async function handler(req, res) {
     // 1. Fetch Admin Log Activities
     if (action === 'activities') {
       if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed for activities' });
-      const page = parseInt(req.query?.page) || 1;
-      const limit = parseInt(req.query?.limit) || 20;
-      const skip = (page - 1) * limit;
-
-      const totalRecords = await ActivityModel.countDocuments({});
-      const totalPages = Math.ceil(totalRecords / limit);
-
-      const activities = await ActivityModel.find({})
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(limit);
-
+      const limit = parseInt(req.query?.limit) || 100;
+      const activities = await ActivityModel.find({}).sort({ createdAt: -1 }).limit(limit);
       const mapped = activities.map(a => ({
         id: a._id.toString(),
         userId: a.userId,
@@ -46,51 +36,22 @@ export default async function handler(req, res) {
         details: a.details,
         createdAt: a.createdAt
       }));
-
-      return res.status(200).json({
-        success: true,
-        activities: mapped,
-        pagination: { currentPage: page, totalPages, totalRecords, limit }
-      });
+      return res.status(200).json(mapped);
     }
 
     // 2. Fetch Student Registry list
     if (action === 'students') {
       if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed for students' });
-      const page = parseInt(req.query?.page) || 1;
-      const limit = parseInt(req.query?.limit) || 20;
-      const skip = (page - 1) * limit;
-
-      const totalRecords = await StudentModel.countDocuments({});
-      const totalPages = Math.ceil(totalRecords / limit);
-
-      const students = await StudentModel.find({})
-        .sort({ lastLoginAt: -1, createdAt: -1 })
-        .skip(skip)
-        .limit(limit);
-
-      return res.status(200).json({
-        success: true,
-        students,
-        pagination: { currentPage: page, totalPages, totalRecords, limit }
-      });
+      const limit = parseInt(req.query?.limit) || 500;
+      const students = await StudentModel.find({}).sort({ lastLoginAt: -1, createdAt: -1 }).limit(limit);
+      return res.status(200).json(students);
     }
 
     // 3. Fetch Payments list
     if (action === 'payments') {
       if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed for payments' });
-      const page = parseInt(req.query?.page) || 1;
-      const limit = parseInt(req.query?.limit) || 20;
-      const skip = (page - 1) * limit;
-
-      const totalRecords = await PaymentModel.countDocuments({});
-      const totalPages = Math.ceil(totalRecords / limit);
-
-      const payments = await PaymentModel.find({})
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(limit);
-
+      const limit = parseInt(req.query?.limit) || 100;
+      const payments = await PaymentModel.find({}).sort({ createdAt: -1 }).limit(limit);
       const mapped = [];
       for (const p of payments) {
         const student = await StudentModel.findOne({ uid: p.userId });
@@ -105,12 +66,7 @@ export default async function handler(req, res) {
           createdAt: p.createdAt
         });
       }
-
-      return res.status(200).json({
-        success: true,
-        payments: mapped,
-        pagination: { currentPage: page, totalPages, totalRecords, limit }
-      });
+      return res.status(200).json(mapped);
     }
 
     // ──────────────────────────────────────────────────────────────────────────

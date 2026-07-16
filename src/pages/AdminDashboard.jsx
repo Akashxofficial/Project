@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { LayoutDashboard, Key, ShieldAlert, Users, Settings, Activity, Sparkles, RefreshCw, CheckCircle, AlertTriangle, CreditCard, ClipboardList, Mail, Send, Bell } from 'lucide-react';
 import { getActivities, getStudents, trackSubscriptionInMongo } from '../lib/firebase';
-import { useAuth } from '../context/AuthContext';
 
 export default function AdminDashboard() {
-  const { currentUser } = useAuth();
   const [activeTab, setActiveTab] = useState('diagnostics');
   const [loading, setLoading] = useState(false);
 
@@ -37,20 +35,12 @@ export default function AdminDashboard() {
   // Real students from MongoDB — loaded when tab is active
   const [students, setStudents] = useState([]);
   const [fetchingStudents, setFetchingStudents] = useState(false);
-  const [studentsPage, setStudentsPage] = useState(1);
-  const [studentsLimit, setStudentsLimit] = useState(20);
-  const [studentsPagination, setStudentsPagination] = useState({ currentPage: 1, totalPages: 1, totalRecords: 0, limit: 20 });
 
-  const fetchStudents = async (page = studentsPage, limit = studentsLimit) => {
+  const fetchStudents = async () => {
     setFetchingStudents(true);
     try {
-      const resData = await getStudents(page, limit);
-      if (resData && resData.success) {
-        setStudents(resData.students || []);
-        setStudentsPagination(resData.pagination || { currentPage: page, totalPages: 1, totalRecords: 0, limit });
-      } else {
-        setStudents(Array.isArray(resData) ? resData : []);
-      }
+      const data = await getStudents();
+      setStudents(data);
     } catch (e) {
       console.warn('Failed to fetch students:', e);
     }
@@ -72,16 +62,10 @@ export default function AdminDashboard() {
   // ── Subscription Queue State & Methods ──────────────────────────────────────
   const [requests, setRequests] = useState([]);
   const [fetchingReqs, setFetchingReqs] = useState(false);
-  const [paymentsPage, setPaymentsPage] = useState(1);
-  const [paymentsLimit, setPaymentsLimit] = useState(20);
-  const [paymentsPagination, setPaymentsPagination] = useState({ currentPage: 1, totalPages: 1, totalRecords: 0, limit: 20 });
 
   // ── Platform Activity State ──
   const [platformActivities, setPlatformActivities] = useState([]);
   const [fetchingActivities, setFetchingActivities] = useState(false);
-  const [activitiesPage, setActivitiesPage] = useState(1);
-  const [activitiesLimit, setActivitiesLimit] = useState(20);
-  const [activitiesPagination, setActivitiesPagination] = useState({ currentPage: 1, totalPages: 1, totalRecords: 0, limit: 20 });
 
   // ── Email Notification State ──────────────────────────────────────────────────
   const [emailStats, setEmailStats] = useState(null);
@@ -133,36 +117,26 @@ export default function AdminDashboard() {
     setReminderSending('');
   };
 
-  const fetchPlatformActivities = async (page = activitiesPage, limit = activitiesLimit) => {
+  const fetchPlatformActivities = async () => {
     setFetchingActivities(true);
     try {
-      const resData = await getActivities(page, limit);
-      if (resData && resData.success) {
-        setPlatformActivities(resData.activities || []);
-        setActivitiesPagination(resData.pagination || { currentPage: page, totalPages: 1, totalRecords: 0, limit });
-      } else {
-        setPlatformActivities(Array.isArray(resData) ? resData : []);
-      }
+      const data = await getActivities();
+      setPlatformActivities(data);
     } catch (e) {
       console.warn("Failed to fetch activities:", e);
     }
     setFetchingActivities(false);
   };
 
-  const fetchRequests = async (page = paymentsPage, limit = paymentsLimit) => {
+  const fetchRequests = async () => {
     setFetchingReqs(true);
     const BACKEND_URL = '';
     try {
       // 1. Try to fetch payment requests from backend server (MongoDB)
-      const res = await fetch(`${BACKEND_URL}/api/admin/payments?page=${page}&limit=${limit}`);
+      const res = await fetch(`${BACKEND_URL}/api/admin/payments`);
       if (res.ok) {
-        const resData = await res.json();
-        if (resData && resData.success) {
-          setRequests(resData.payments || []);
-          setPaymentsPagination(resData.pagination || { currentPage: page, totalPages: 1, totalRecords: 0, limit });
-        } else {
-          setRequests(Array.isArray(resData) ? resData : []);
-        }
+        const data = await res.json();
+        setRequests(data);
       } else {
         throw new Error("Backend responded with error: " + res.status);
       }
@@ -178,16 +152,14 @@ export default function AdminDashboard() {
           snap.forEach(docSnap => {
             list.push({ id: docSnap.id, ...docSnap.data() });
           });
-          setRequests(list.slice((page - 1) * limit, page * limit));
-          setPaymentsPagination({ currentPage: page, totalPages: Math.ceil(list.length / limit), totalRecords: list.length, limit });
+          setRequests(list);
         } else {
           // Fallback offline mock payment logs
           const localLogs = [
             { id: 'pay_1', userId: 'mock_user_1', userName: 'Akash Sharma', userEmail: 'akash@tanios.ai', utr: '627192837416', amount: 199, status: 'pending', createdAt: new Date() },
             { id: 'pay_2', userId: 'mock_user_2', userName: 'Rajesh Kumar', userEmail: 'rajesh@rediff.com', utr: '817293847291', amount: 199, status: 'approved', createdAt: new Date(Date.now() - 3600000) }
           ];
-          setRequests(localLogs.slice((page - 1) * limit, page * limit));
-          setPaymentsPagination({ currentPage: page, totalPages: Math.ceil(localLogs.length / limit), totalRecords: localLogs.length, limit });
+          setRequests(localLogs);
         }
       } catch (fsErr) {
         console.error("Firestore fallback failed:", fsErr.message);
@@ -196,8 +168,7 @@ export default function AdminDashboard() {
           { id: 'pay_1', userId: 'mock_user_1', userName: 'Akash Sharma', userEmail: 'akash@tanios.ai', utr: '627192837416', amount: 199, status: 'pending', createdAt: new Date() },
           { id: 'pay_2', userId: 'mock_user_2', userName: 'Rajesh Kumar', userEmail: 'rajesh@rediff.com', utr: '817293847291', amount: 199, status: 'approved', createdAt: new Date(Date.now() - 3600000) }
         ];
-        setRequests(localLogs.slice((page - 1) * limit, page * limit));
-        setPaymentsPagination({ currentPage: page, totalPages: Math.ceil(localLogs.length / limit), totalRecords: localLogs.length, limit });
+        setRequests(localLogs);
       }
     }
     setFetchingReqs(false);
@@ -288,6 +259,7 @@ export default function AdminDashboard() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          requestId: 'revoke_action',
           userId: student.uid || '',
           userName: student.displayName || '',
           userEmail: student.email || '',
@@ -335,187 +307,6 @@ export default function AdminDashboard() {
       console.error("Server grant failed:", e.message);
       alert("❌ Error processing grant: " + e.message);
     }
-  };
-
-  const handleToggleRole = async (student, newRole) => {
-    const actionWord = newRole === 'admin' ? 'promote to ADMIN' : 'demote to STUDENT';
-    if (!window.confirm(`Are you absolutely sure you want to ${actionWord} ${student.displayName || student.email}?`)) return;
-
-    const BACKEND_URL = '';
-
-    try {
-      const serverRes = await fetch(`${BACKEND_URL}/api/admin/toggle-role`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: student.uid || '',
-          userName: student.displayName || '',
-          userEmail: student.email || '',
-          role: newRole
-        })
-      });
-
-      if (serverRes.ok) {
-        alert(`✅ User role updated successfully!`);
-        fetchStudents();
-      } else {
-        const errorData = await serverRes.json();
-        throw new Error(errorData.error || `Server responded with status ${serverRes.status}`);
-      }
-    } catch (e) {
-      console.error("Server role toggle failed:", e.message);
-      alert("❌ Error processing role change: " + e.message);
-    }
-  };
-
-  const renderPaginationControls = (pagination, onPageChange, onLimitChange, pageState, limitState) => {
-    const { currentPage, totalPages, totalRecords } = pagination;
-    if (totalPages <= 1 && totalRecords <= limitState) return null;
-
-    const pageNumbers = [];
-    const maxVisiblePages = 5;
-    let startPage = Math.max(1, currentPage - 2);
-    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
-
-    if (endPage - startPage < maxVisiblePages - 1) {
-      startPage = Math.max(1, endPage - maxVisiblePages + 1);
-    }
-
-    for (let i = startPage; i <= endPage; i++) {
-      pageNumbers.push(i);
-    }
-
-    const showingFrom = totalRecords === 0 ? 0 : (currentPage - 1) * limitState + 1;
-    const showingTo = Math.min(currentPage * limitState, totalRecords);
-
-    return (
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        flexWrap: 'wrap',
-        gap: '1rem',
-        marginTop: '1.25rem',
-        padding: '0.75rem 0.5rem',
-        borderTop: '1px solid var(--border)',
-        fontSize: '0.82rem',
-        color: 'var(--text-secondary)'
-      }}>
-        <div>
-          Showing <span style={{ fontWeight: 600, color: 'var(--text)' }}>{showingFrom}</span> to{' '}
-          <span style={{ fontWeight: 600, color: 'var(--text)' }}>{showingTo}</span> of{' '}
-          <span style={{ fontWeight: 600, color: 'var(--text)' }}>{totalRecords}</span> entries
-        </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          {/* Limit dropdown */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <span>Show:</span>
-            <select
-              value={limitState}
-              onChange={(e) => {
-                const newLimit = parseInt(e.target.value);
-                onLimitChange(newLimit);
-                onPageChange(1);
-              }}
-              style={{
-                background: 'rgba(255,255,255,0.03)',
-                border: '1px solid var(--border)',
-                borderRadius: '4px',
-                color: 'var(--text)',
-                padding: '0.2rem 0.4rem',
-                fontSize: '0.82rem',
-                cursor: 'pointer',
-                outline: 'none'
-              }}
-            >
-              {[10, 20, 50, 100].map(val => (
-                <option key={val} value={val} style={{ background: '#0f172a' }}>{val}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Page buttons */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-            <button
-              onClick={() => onPageChange(1)}
-              disabled={currentPage === 1}
-              style={{
-                padding: '0.25rem 0.5rem',
-                border: '1px solid var(--border)',
-                background: 'transparent',
-                color: currentPage === 1 ? 'rgba(255,255,255,0.1)' : 'var(--text)',
-                borderRadius: '4px',
-                cursor: currentPage === 1 ? 'not-allowed' : 'pointer'
-              }}
-            >
-              &laquo;
-            </button>
-            <button
-              onClick={() => onPageChange(currentPage - 1)}
-              disabled={currentPage === 1}
-              style={{
-                padding: '0.25rem 0.5rem',
-                border: '1px solid var(--border)',
-                background: 'transparent',
-                color: currentPage === 1 ? 'rgba(255,255,255,0.1)' : 'var(--text)',
-                borderRadius: '4px',
-                cursor: currentPage === 1 ? 'not-allowed' : 'pointer'
-              }}
-            >
-              &lt;
-            </button>
-
-            {pageNumbers.map(num => (
-              <button
-                key={num}
-                onClick={() => onPageChange(num)}
-                style={{
-                  padding: '0.25rem 0.5rem',
-                  border: num === currentPage ? '1px solid var(--primary)' : '1px solid var(--border)',
-                  background: num === currentPage ? 'var(--primary)' : 'transparent',
-                  color: '#fff',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  fontWeight: num === currentPage ? 'bold' : 'normal'
-                }}
-              >
-                {num}
-              </button>
-            ))}
-
-            <button
-              onClick={() => onPageChange(currentPage + 1)}
-              disabled={currentPage === totalPages}
-              style={{
-                padding: '0.25rem 0.5rem',
-                border: '1px solid var(--border)',
-                background: 'transparent',
-                color: currentPage === totalPages ? 'rgba(255,255,255,0.1)' : 'var(--text)',
-                borderRadius: '4px',
-                cursor: currentPage === totalPages ? 'not-allowed' : 'pointer'
-              }}
-            >
-              &gt;
-            </button>
-            <button
-              onClick={() => onPageChange(totalPages)}
-              disabled={currentPage === totalPages}
-              style={{
-                padding: '0.25rem 0.5rem',
-                border: '1px solid var(--border)',
-                background: 'transparent',
-                color: currentPage === totalPages ? 'rgba(255,255,255,0.1)' : 'var(--text)',
-                borderRadius: '4px',
-                cursor: currentPage === totalPages ? 'not-allowed' : 'pointer'
-              }}
-            >
-              &raquo;
-            </button>
-          </div>
-        </div>
-      </div>
-    );
   };
 
   return (
@@ -882,7 +673,6 @@ export default function AdminDashboard() {
                         <tr style={{ borderBottom: '1px solid var(--border)', textAlign: 'left', color: 'var(--text-secondary)' }}>
                           <th style={{ padding: '0.75rem 0.5rem' }}>Student</th>
                           <th style={{ padding: '0.75rem 0.5rem' }}>Email</th>
-                          <th style={{ padding: '0.75rem 0.5rem' }}>Role</th>
                           <th style={{ padding: '0.75rem 0.5rem' }}>Subscription</th>
                           <th style={{ padding: '0.75rem 0.5rem' }}>Logins</th>
                           <th style={{ padding: '0.75rem 0.5rem' }}>Last Login</th>
@@ -914,18 +704,6 @@ export default function AdminDashboard() {
                                 borderRadius: '4px',
                                 fontSize: '0.7rem',
                                 fontWeight: 700,
-                                background: s.role === 'admin' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(99, 102, 241, 0.08)',
-                                color: s.role === 'admin' ? '#ef4444' : 'var(--text-secondary)'
-                              }}>
-                                {s.role === 'admin' ? '👑 Admin' : '👤 Student'}
-                              </span>
-                            </td>
-                            <td style={{ padding: '0.75rem 0.5rem' }}>
-                              <span style={{
-                                padding: '0.2rem 0.5rem',
-                                borderRadius: '4px',
-                                fontSize: '0.7rem',
-                                fontWeight: 700,
                                 background: s.subscriptionActive ? 'rgba(16,185,129,0.1)' : 'rgba(100,100,100,0.08)',
                                 color: s.subscriptionActive ? '#10b981' : 'var(--text-secondary)'
                               }}>
@@ -942,83 +720,48 @@ export default function AdminDashboard() {
                             <td style={{ padding: '0.75rem 0.5rem', color: 'var(--primary)', fontWeight: 'bold' }}>{s.xp || 0} XP</td>
                             <td style={{ padding: '0.75rem 0.5rem', color: '#ef4444', fontWeight: 'bold' }}>🔥 {s.streak || 0}</td>
                             <td style={{ padding: '0.75rem 0.5rem', textAlign: 'right' }}>
-                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.5rem' }}>
-                                {s.subscriptionActive ? (
-                                  <button
-                                    onClick={() => handleRevoke(s)}
-                                    className="btn"
-                                    style={{
-                                      padding: '0.25rem 0.5rem',
-                                      fontSize: '0.68rem',
-                                      background: 'rgba(239, 68, 68, 0.1)',
-                                      color: '#ef4444',
-                                      border: '1px solid rgba(239, 68, 68, 0.25)',
-                                      borderRadius: '4px',
-                                      fontWeight: 700,
-                                      cursor: 'pointer',
-                                      transition: 'all 0.2s'
-                                    }}
-                                  >
-                                    Revoke Pro
-                                  </button>
-                                ) : (
-                                  <button
-                                    onClick={() => handleGrant(s)}
-                                    className="btn"
-                                    style={{
-                                      padding: '0.25rem 0.5rem',
-                                      fontSize: '0.68rem',
-                                      background: 'rgba(16, 185, 129, 0.1)',
-                                      color: '#10b981',
-                                      border: '1px solid rgba(16, 185, 129, 0.25)',
-                                      borderRadius: '4px',
-                                      fontWeight: 700,
-                                      cursor: 'pointer',
-                                      transition: 'all 0.2s'
-                                    }}
-                                  >
-                                    Grant Pro
-                                  </button>
-                                )}
-
-                                {s.email !== currentUser?.email && (
-                                  <button
-                                    onClick={() => handleToggleRole(s, s.role === 'admin' ? 'student' : 'admin')}
-                                    className="btn"
-                                    style={{
-                                      padding: '0.25rem 0.5rem',
-                                      fontSize: '0.68rem',
-                                      background: s.role === 'admin' ? 'rgba(245, 158, 11, 0.1)' : 'rgba(99, 102, 241, 0.1)',
-                                      color: s.role === 'admin' ? '#f59e0b' : 'var(--primary)',
-                                      border: s.role === 'admin' ? '1px solid rgba(245, 158, 11, 0.25)' : '1px solid rgba(99, 102, 241, 0.25)',
-                                      borderRadius: '4px',
-                                      fontWeight: 700,
-                                      cursor: 'pointer',
-                                      transition: 'all 0.2s'
-                                    }}
-                                  >
-                                    {s.role === 'admin' ? 'Demote' : 'Make Admin'}
-                                  </button>
-                                )}
-                              </div>
+                              {s.subscriptionActive ? (
+                                <button
+                                  onClick={() => handleRevoke(s)}
+                                  className="btn"
+                                  style={{
+                                    padding: '0.25rem 0.5rem',
+                                    fontSize: '0.68rem',
+                                    background: 'rgba(239, 68, 68, 0.1)',
+                                    color: '#ef4444',
+                                    border: '1px solid rgba(239, 68, 68, 0.25)',
+                                    borderRadius: '4px',
+                                    fontWeight: 700,
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s'
+                                  }}
+                                >
+                                  Revoke Pro
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={() => handleGrant(s)}
+                                  className="btn"
+                                  style={{
+                                    padding: '0.25rem 0.5rem',
+                                    fontSize: '0.68rem',
+                                    background: 'rgba(16, 185, 129, 0.1)',
+                                    color: '#10b981',
+                                    border: '1px solid rgba(16, 185, 129, 0.25)',
+                                    borderRadius: '4px',
+                                    fontWeight: 700,
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s'
+                                  }}
+                                >
+                                  Grant Pro
+                                </button>
+                              )}
                             </td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
-                    {renderPaginationControls(
-                      studentsPagination,
-                      (newPage) => {
-                        setStudentsPage(newPage);
-                        fetchStudents(newPage, studentsLimit);
-                      },
-                      (newLimit) => {
-                        setStudentsLimit(newLimit);
-                        fetchStudents(1, newLimit);
-                      },
-                      studentsPage,
-                      studentsLimit
-                    )}
                   </div>
                 )}
               </section>
@@ -1188,19 +931,6 @@ export default function AdminDashboard() {
                         ))}
                       </tbody>
                     </table>
-                    {renderPaginationControls(
-                      paymentsPagination,
-                      (newPage) => {
-                        setPaymentsPage(newPage);
-                        fetchRequests(newPage, paymentsLimit);
-                      },
-                      (newLimit) => {
-                        setPaymentsLimit(newLimit);
-                        fetchRequests(1, newLimit);
-                      },
-                      paymentsPage,
-                      paymentsLimit
-                    )}
                   </div>
                 )}
               </section>
@@ -1258,19 +988,6 @@ export default function AdminDashboard() {
                         })}
                       </tbody>
                     </table>
-                    {renderPaginationControls(
-                      activitiesPagination,
-                      (newPage) => {
-                        setActivitiesPage(newPage);
-                        fetchPlatformActivities(newPage, activitiesLimit);
-                      },
-                      (newLimit) => {
-                        setActivitiesLimit(newLimit);
-                        fetchPlatformActivities(1, newLimit);
-                      },
-                      activitiesPage,
-                      activitiesLimit
-                    )}
                   </div>
                 )}
               </section>

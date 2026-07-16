@@ -41,8 +41,6 @@ export default function History() {
   const [copied, setCopied] = useState(false);
   const contentRef = useRef(null);
   const [downloading, setDownloading] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 9;
 
   useEffect(() => {
     async function fetchDocs() {
@@ -61,7 +59,7 @@ export default function History() {
   }, [currentUser]);
 
   const getIcon = (type) => {
-    switch(type) {
+    switch (type) {
       case 'note': return <FileText size={20} color="var(--primary)" />;
       case 'test': return <GraduationCap size={20} color="#f43f5e" />;
       case 'timetable': return <Clock size={20} color="#8b5cf6" />;
@@ -71,7 +69,7 @@ export default function History() {
   };
 
   const getTypeLabel = (type) => {
-    switch(type) {
+    switch (type) {
       case 'note': return 'Short Notes';
       case 'test': return 'Mock Test';
       case 'timetable': return 'Study Timetable';
@@ -120,7 +118,7 @@ export default function History() {
         <p style={{ color: 'var(--text-secondary)', maxWidth: '400px', lineHeight: 1.6, marginBottom: '1.75rem' }}>
           Get instant access to your history of custom AI notes, test papers, and timetables. Sign in with Google to enable permanent saving!
         </p>
-        <button 
+        <button
           onClick={() => useAuth().setShowLoginModal(true)}
           style={{
             background: 'linear-gradient(135deg, var(--primary), var(--accent))',
@@ -174,95 +172,27 @@ export default function History() {
           <p style={{ color: 'var(--text-secondary)' }}>You haven't saved any materials yet. Try generating some notes or a test!</p>
         </div>
       ) : (
-        <>
-          <div className="grid-cards">
-            {documents.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map(doc => (
-              <div key={doc.id} className="card" style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column' }} onClick={() => setSelectedDoc(doc)}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
-                  <div style={{ padding: '0.5rem', backgroundColor: 'var(--bg)', borderRadius: 'var(--radius)' }}>
-                    {getIcon(doc.type)}
-                  </div>
-                  <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
-                    {doc.createdAt?.toDate ? doc.createdAt.toDate().toLocaleDateString() : 'Just now'}
-                  </div>
+        <div className="grid-cards">
+          {documents.map(doc => (
+            <div key={doc.id} className="card" style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column' }} onClick={() => setSelectedDoc(doc)}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
+                <div style={{ padding: '0.5rem', backgroundColor: 'var(--bg)', borderRadius: 'var(--radius)' }}>
+                  {getIcon(doc.type)}
                 </div>
-                <h3 style={{ fontSize: '1.125rem', marginBottom: '0.5rem' }}>{doc.title}</h3>
-                <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>
-                  Type: {getTypeLabel(doc.type)}
-                </p>
-                <p style={{ color: 'var(--primary)', fontSize: '0.875rem', fontWeight: 600, marginTop: 'auto' }}>
-                  View Document &rarr;
-                </p>
+                <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+                  {doc.createdAt?.toDate ? doc.createdAt.toDate().toLocaleDateString() : 'Just now'}
+                </div>
               </div>
-            ))}
-          </div>
-
-          {Math.ceil(documents.length / itemsPerPage) > 1 && (
-            <div style={{
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              gap: '0.5rem',
-              marginTop: '2.5rem',
-              padding: '1rem',
-              borderTop: '1px solid var(--border)'
-            }}>
-              <button
-                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                disabled={currentPage === 1}
-                style={{
-                  background: 'transparent',
-                  border: '1px solid var(--border)',
-                  color: currentPage === 1 ? 'rgba(255,255,255,0.1)' : 'var(--text)',
-                  padding: '0.4rem 0.75rem',
-                  borderRadius: '6px',
-                  cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
-                  fontSize: '0.85rem',
-                  transition: 'all 0.2s'
-                }}
-              >
-                Previous
-              </button>
-              
-              {Array.from({ length: Math.ceil(documents.length / itemsPerPage) }, (_, i) => i + 1).map(pageNumber => (
-                <button
-                  key={pageNumber}
-                  onClick={() => setCurrentPage(pageNumber)}
-                  style={{
-                    background: currentPage === pageNumber ? 'var(--primary)' : 'transparent',
-                    border: currentPage === pageNumber ? '1px solid var(--primary)' : '1px solid var(--border)',
-                    color: '#fff',
-                    padding: '0.4rem 0.75rem',
-                    borderRadius: '6px',
-                    cursor: 'pointer',
-                    fontSize: '0.85rem',
-                    fontWeight: currentPage === pageNumber ? 'bold' : 'normal',
-                    transition: 'all 0.2s'
-                  }}
-                >
-                  {pageNumber}
-                </button>
-              ))}
-
-              <button
-                onClick={() => setCurrentPage(prev => Math.min(Math.ceil(documents.length / itemsPerPage), prev + 1))}
-                disabled={currentPage === Math.ceil(documents.length / itemsPerPage)}
-                style={{
-                  background: 'transparent',
-                  border: '1px solid var(--border)',
-                  color: currentPage === Math.ceil(documents.length / itemsPerPage) ? 'rgba(255,255,255,0.1)' : 'var(--text)',
-                  padding: '0.4rem 0.75rem',
-                  borderRadius: '6px',
-                  cursor: currentPage === Math.ceil(documents.length / itemsPerPage) ? 'not-allowed' : 'pointer',
-                  fontSize: '0.85rem',
-                  transition: 'all 0.2s'
-                }}
-              >
-                Next
-              </button>
+              <h3 style={{ fontSize: '1.125rem', marginBottom: '0.5rem' }}>{doc.title}</h3>
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>
+                Type: {getTypeLabel(doc.type)}
+              </p>
+              <p style={{ color: 'var(--primary)', fontSize: '0.875rem', fontWeight: 600, marginTop: 'auto' }}>
+                View Document &rarr;
+              </p>
             </div>
-          )}
-        </>
+          ))}
+        </div>
       )}
 
       {/* ── DOCUMENT VIEWER MODAL ── */}
@@ -283,7 +213,7 @@ export default function History() {
             overflow: 'hidden',
             animation: 'fadeIn 0.2s ease-out'
           }} onClick={e => e.stopPropagation()}>
-            
+
             {/* Modal Header */}
             <div style={{
               display: 'flex', justifyContent: 'space-between', alignItems: 'center',
@@ -333,9 +263,9 @@ export default function History() {
                   {copied ? <Check size={16} color="green" /> : <Copy size={16} />}
                   {copied ? 'Copied!' : 'Copy Text'}
                 </button>
-                <button 
-                  className="btn btn-primary" 
-                  style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', opacity: downloading ? 0.7 : 1 }} 
+                <button
+                  className="btn btn-primary"
+                  style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', opacity: downloading ? 0.7 : 1 }}
                   onClick={handleDownloadPDF}
                   disabled={downloading}
                 >

@@ -63,7 +63,7 @@ app.post('/api/razorpay-order', async (req, res) => {
   if (!razorpay) {
     console.log(`💻 [Razorpay Sandbox] Initializing mock checkout order for user: ${userEmail}`);
     const mockOrderId = `order_mock_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-    
+
     return res.status(200).json({
       orderId: mockOrderId,
       amount: 19900,
@@ -87,7 +87,7 @@ app.post('/api/razorpay-order', async (req, res) => {
 
     const order = await razorpay.orders.create(options);
     console.log(`💳 [Razorpay] Created order: ${order.id} for user: ${userEmail}`);
-    
+
     res.status(200).json({
       orderId: order.id,
       amount: order.amount,
@@ -103,13 +103,13 @@ app.post('/api/razorpay-order', async (req, res) => {
 
 // POST endpoint to verify Razorpay signatures (idempotent, anti-tampering)
 app.post('/api/razorpay-verify', async (req, res) => {
-  const { 
-    razorpay_order_id, 
-    razorpay_payment_id, 
-    razorpay_signature, 
-    userId, 
-    userEmail, 
-    userName 
+  const {
+    razorpay_order_id,
+    razorpay_payment_id,
+    razorpay_signature,
+    userId,
+    userEmail,
+    userName
   } = req.body;
 
   if (!razorpay_order_id || !userId || !userEmail) {
@@ -165,7 +165,7 @@ app.post('/api/generate', handler);
 app.post('/api/track/activity', async (req, res) => {
   try {
     const { userId, userName, action, details } = req.body;
-    
+
     // Create new activity doc
     const newActivity = new ActivityModel({
       userId: userId || 'anonymous',
@@ -174,7 +174,7 @@ app.post('/api/track/activity', async (req, res) => {
       details
     });
     await newActivity.save();
-    
+
     res.status(200).json({ success: true, id: newActivity._id });
   } catch (error) {
     console.error("❌ [MongoDB] Error tracking activity:", error);
@@ -182,21 +182,14 @@ app.post('/api/track/activity', async (req, res) => {
   }
 });
 
-// Fetch activities for Admin Panel (Paginated)
+// Fetch activities for Admin Panel
 app.get('/api/admin/activities', async (req, res) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 20;
-    const skip = (page - 1) * limit;
-
-    const totalRecords = await ActivityModel.countDocuments({});
-    const totalPages = Math.ceil(totalRecords / limit);
-
+    const limit = parseInt(req.query.limit) || 100;
     const activities = await ActivityModel.find({})
       .sort({ createdAt: -1 })
-      .skip(skip)
       .limit(limit);
-      
+
     // Map _id to id so it matches existing frontend expectations
     const mapped = activities.map(a => ({
       id: a._id.toString(),
@@ -206,12 +199,8 @@ app.get('/api/admin/activities', async (req, res) => {
       details: a.details,
       createdAt: a.createdAt
     }));
-    
-    res.status(200).json({
-      success: true,
-      activities: mapped,
-      pagination: { currentPage: page, totalPages, totalRecords, limit }
-    });
+
+    res.status(200).json(mapped);
   } catch (error) {
     console.error("❌ [MongoDB] Error fetching activities:", error);
     res.status(500).json({ error: "Failed to fetch activities" });
@@ -223,7 +212,7 @@ app.post('/api/track/user', async (req, res) => {
   try {
     const { uid, email, displayName, photoURL } = req.body;
     console.log(`[MongoDB Sync] Received user sync request:`, { uid, email, displayName });
-    
+
     if (!uid) {
       console.warn(`[MongoDB Sync] Skipping user sync because uid is missing`);
       return res.status(400).json({ error: "Missing uid" });
@@ -294,47 +283,28 @@ app.post('/api/track/subscription', async (req, res) => {
   }
 });
 
-// Fetch all students for Admin Panel (Paginated)
+// Fetch all students for Admin Panel
 app.get('/api/admin/students', async (req, res) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 20;
-    const skip = (page - 1) * limit;
-
-    const totalRecords = await StudentModel.countDocuments({});
-    const totalPages = Math.ceil(totalRecords / limit);
-
+    const limit = parseInt(req.query.limit) || 500;
     const students = await StudentModel.find({})
       .sort({ lastLoginAt: -1, createdAt: -1 })
-      .skip(skip)
       .limit(limit);
-
-    res.status(200).json({
-      success: true,
-      students,
-      pagination: { currentPage: page, totalPages, totalRecords, limit }
-    });
+    res.status(200).json(students);
   } catch (error) {
     console.error('❌ [MongoDB] Error fetching students:', error);
     res.status(500).json({ error: 'Failed to fetch students' });
   }
 });
 
-// Fetch all payments for Admin Panel (Paginated)
+// Fetch all payments for Admin Panel
 app.get('/api/admin/payments', async (req, res) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 20;
-    const skip = (page - 1) * limit;
-
-    const totalRecords = await PaymentModel.countDocuments({});
-    const totalPages = Math.ceil(totalRecords / limit);
-
+    const limit = parseInt(req.query.limit) || 100;
     const payments = await PaymentModel.find({})
       .sort({ createdAt: -1 })
-      .skip(skip)
       .limit(limit);
-    
+
     const mapped = [];
     for (const p of payments) {
       const student = await StudentModel.findOne({ uid: p.userId });
@@ -349,18 +319,13 @@ app.get('/api/admin/payments', async (req, res) => {
         createdAt: p.createdAt
       });
     }
-    
-    res.status(200).json({
-      success: true,
-      payments: mapped,
-      pagination: { currentPage: page, totalPages, totalRecords, limit }
-    });
+
+    res.status(200).json(mapped);
   } catch (error) {
     console.error("❌ [MongoDB] Error fetching payments:", error);
     res.status(500).json({ error: "Failed to fetch payments" });
   }
 });
-
 
 // ── Admin: Handle Subscription Action (Approve / Reject / Revoke) ────────────────
 app.post('/api/admin/subscription-action', async (req, res) => {
