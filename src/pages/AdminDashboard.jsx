@@ -186,13 +186,22 @@ export default function AdminDashboard() {
     }
   }, [activeTab]);
 
+  // Helper: safely parse JSON from a fetch response (avoids "invalid JSON" crash on HTML error pages)
+  const safeParseJSON = async (res) => {
+    const text = await res.text();
+    try {
+      return JSON.parse(text);
+    } catch {
+      console.error('[Admin] Non-JSON response received:', text.slice(0, 200));
+      throw new Error(`Server returned unexpected response (status ${res.status}). Check network & backend.`);
+    }
+  };
+
   const handleApprove = async (req) => {
     if (!window.confirm(`Are you sure you want to APPROVE UTR ${req.utr} for ${req.userName}?`)) return;
 
-    const BACKEND_URL = '';
-
     try {
-      const serverRes = await fetch(`${BACKEND_URL}/api/admin/subscription-action?action=approve`, {
+      const serverRes = await fetch(`/api/admin/approve-subscription`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -205,12 +214,12 @@ export default function AdminDashboard() {
         })
       });
 
+      const data = await safeParseJSON(serverRes);
       if (serverRes.ok) {
         alert("✅ Subscription approved and activated for " + req.userName + "!");
         fetchRequests();
       } else {
-        const errorData = await serverRes.json();
-        throw new Error(errorData.error || `Server responded with status ${serverRes.status}`);
+        throw new Error(data.error || `Server responded with status ${serverRes.status}`);
       }
     } catch (e) {
       console.error("Server approval failed:", e.message);
@@ -221,10 +230,8 @@ export default function AdminDashboard() {
   const handleReject = async (req) => {
     if (!window.confirm(`Are you sure you want to REJECT UTR ${req.utr} for ${req.userName}?`)) return;
 
-    const BACKEND_URL = '';
-
     try {
-      const serverRes = await fetch(`${BACKEND_URL}/api/admin/subscription-action?action=reject`, {
+      const serverRes = await fetch(`/api/admin/reject-subscription`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -236,12 +243,12 @@ export default function AdminDashboard() {
         })
       });
 
+      const data = await safeParseJSON(serverRes);
       if (serverRes.ok) {
         alert("❌ Subscription request rejected for " + req.userName + ".");
         fetchRequests();
       } else {
-        const errorData = await serverRes.json();
-        throw new Error(errorData.error || `Server responded with status ${serverRes.status}`);
+        throw new Error(data.error || `Server responded with status ${serverRes.status}`);
       }
     } catch (e) {
       console.error("Server rejection failed:", e.message);
@@ -252,10 +259,8 @@ export default function AdminDashboard() {
   const handleRevoke = async (student) => {
     if (!window.confirm(`Are you absolutely sure you want to REVOKE Pro access for ${student.displayName || student.email}?`)) return;
 
-    const BACKEND_URL = '';
-
     try {
-      const serverRes = await fetch(`${BACKEND_URL}/api/admin/subscription-action?action=revoke`, {
+      const serverRes = await fetch(`/api/admin/revoke-subscription`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -266,12 +271,12 @@ export default function AdminDashboard() {
         })
       });
 
+      const data = await safeParseJSON(serverRes);
       if (serverRes.ok) {
         alert("✅ Pro subscription successfully revoked for " + (student.displayName || student.email) + ".");
         fetchStudents();
       } else {
-        const errorData = await serverRes.json();
-        throw new Error(errorData.error || `Server responded with status ${serverRes.status}`);
+        throw new Error(data.error || `Server responded with status ${serverRes.status}`);
       }
     } catch (e) {
       console.error("Server revocation failed:", e.message);
@@ -282,10 +287,8 @@ export default function AdminDashboard() {
   const handleGrant = async (student) => {
     if (!window.confirm(`Are you sure you want to GRANT Pro access to ${student.displayName || student.email}?`)) return;
 
-    const BACKEND_URL = '';
-
     try {
-      const serverRes = await fetch(`${BACKEND_URL}/api/admin/subscription-action?action=grant`, {
+      const serverRes = await fetch(`/api/admin/grant-subscription`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -296,12 +299,12 @@ export default function AdminDashboard() {
         })
       });
 
+      const data = await safeParseJSON(serverRes);
       if (serverRes.ok) {
         alert("👑 Pro subscription successfully granted to " + (student.displayName || student.email) + ".");
         fetchStudents();
       } else {
-        const errorData = await serverRes.json();
-        throw new Error(errorData.error || `Server responded with status ${serverRes.status}`);
+        throw new Error(data.error || `Server responded with status ${serverRes.status}`);
       }
     } catch (e) {
       console.error("Server grant failed:", e.message);

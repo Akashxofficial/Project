@@ -327,10 +327,10 @@ app.get('/api/admin/payments', async (req, res) => {
   }
 });
 
-// ── Admin: Handle Subscription Action (Approve / Reject / Revoke) ────────────────
-app.post('/api/admin/subscription-action', async (req, res) => {
+// ── Admin: Handle Subscription Action (Approve / Reject / Revoke / Grant) ─────
+// Both old ?action= style (legacy) AND new dedicated Vercel-style routes are handled.
+const handleSubscriptionAction = async (req, res, action) => {
   try {
-    const action = req.query.action; // 'approve', 'reject', or 'revoke'
     const { requestId, userId, userName, userEmail, utr, amount } = req.body;
     if (action !== 'revoke' && action !== 'grant' && !requestId) {
       return res.status(400).json({ error: 'Missing requestId' });
@@ -464,7 +464,20 @@ app.post('/api/admin/subscription-action', async (req, res) => {
     console.error('❌ [Admin] Error performing subscription action:', error);
     res.status(500).json({ error: 'Subscription action failed: ' + error.message });
   }
+};
+
+// ── Vercel-compatible dedicated routes (used by frontend) ─────────────────────
+app.post('/api/admin/approve-subscription', (req, res) => handleSubscriptionAction(req, res, 'approve'));
+app.post('/api/admin/reject-subscription',  (req, res) => handleSubscriptionAction(req, res, 'reject'));
+app.post('/api/admin/revoke-subscription',  (req, res) => handleSubscriptionAction(req, res, 'revoke'));
+app.post('/api/admin/grant-subscription',   (req, res) => handleSubscriptionAction(req, res, 'grant'));
+
+// ── Legacy route (kept for backwards compat) ──────────────────────────────────
+app.post('/api/admin/subscription-action', (req, res) => {
+  const action = req.query.action;
+  handleSubscriptionAction(req, res, action);
 });
+
 
 // ── Admin: Handle Role Toggle (Make Admin / Demote Student) ──────────────────────
 app.post('/api/admin/toggle-role', async (req, res) => {
